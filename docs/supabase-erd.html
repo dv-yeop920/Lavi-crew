@@ -1,0 +1,1074 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
+<title>라비크루 Supabase ERD</title>
+<style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;max-width:736px;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
+</head>
+<body>
+<iframe sandbox="allow-scripts" referrerpolicy="no-referrer" title="라비크루 Supabase ERD" srcdoc="&lt;!doctype html&gt;
+&lt;html lang=&quot;en&quot;&gt;
+&lt;head&gt;
+&lt;meta charset=&quot;utf-8&quot;&gt;
+&lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
+&lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
+&lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
+&lt;title&gt;라비크루 Supabase ERD&lt;/title&gt;
+&lt;style&gt;:root {
+  color-scheme: light dark;
+  background-color: var(--background) !important;
+
+  /* Agent-facing contract; keep in sync with SKILL.md. */
+  --background: light-dark(rgb(255 255 255), rgb(24 24 24));
+  --foreground: light-dark(rgb(26 28 31), rgb(255 255 255));
+  --card: color-mix(in oklab, var(--foreground) 5%, transparent);
+  --card-foreground: var(--foreground);
+  --popover: light-dark(rgb(255 255 255), rgb(45 45 45));
+  --popover-foreground: var(--foreground);
+  --primary: light-dark(rgb(51 156 255), rgb(131 195 255));
+  --primary-foreground: light-dark(rgb(255 255 255), rgb(13 13 13));
+  --secondary: light-dark(rgb(255 255 255 / 96%), rgb(54 54 54 / 96%));
+  --secondary-foreground: var(--foreground);
+  --muted: color-mix(in srgb, var(--foreground) 10%, transparent);
+  --muted-foreground: light-dark(
+    rgb(26 28 31 / 49.4%),
+    rgb(255 255 255 / 49.8%)
+  );
+  --accent: light-dark(rgb(229 242 255), rgb(13 39 63));
+  --accent-foreground: var(--primary);
+  --destructive: light-dark(rgb(226 85 7), rgb(255 133 73));
+  --border: light-dark(rgb(26 28 31 / 8%), rgb(255 255 255 / 8.2%));
+  --input: light-dark(
+    rgb(26 28 31 / 11.8%),
+    color-mix(in oklab, rgb(0 0 0) 10%, transparent)
+  );
+  --ring: light-dark(rgb(51 156 255), rgb(131 195 255 / 76%));
+  --font-size-base: 14px;
+  --viz-series-1: var(--primary);
+  --viz-series-2: light-dark(rgb(243 136 59), rgb(245 154 86));
+  --viz-series-3: light-dark(rgb(93 201 119), rgb(116 213 139));
+  --viz-series-4: light-dark(rgb(235 119 177), rgb(240 143 192));
+  --viz-series-5: light-dark(rgb(155 121 236), rgb(170 145 239));
+  --viz-series-6: light-dark(rgb(58 185 177), rgb(90 203 194));
+
+  /* Internal implementation variables; not part of the agent contract. */
+  --font-sans: -apple-system, system-ui, &quot;Segoe UI&quot;, sans-serif;
+  --font-mono:
+    ui-monospace, SFMono-Regular, &quot;SF Mono&quot;, Menlo, Consolas, &quot;Liberation Mono&quot;,
+    monospace;
+  --font-size-normal: max(11px, var(--font-size-base));
+  --font-size-tooltip: calc(var(--font-size-base) - 1px);
+  --font-size-small: max(11px, calc(var(--font-size-base) - 2px));
+  --font-size-h1: calc(var(--font-size-normal) * 1.7142857143);
+  --font-size-h2: calc(var(--font-size-normal) * 1.4285714286);
+  --font-size-h3: calc(var(--font-size-normal) * 1.2857142857);
+  --font-weight-normal: 430;
+  --font-weight-medium: 500;
+  --line-height-normal: calc(var(--font-size-normal) * 1.5);
+  --line-height-tooltip: calc(var(--font-size-tooltip) * 1.4285714286);
+  --line-height-small: calc(var(--font-size-small) + 4px);
+  --radius: 12.5px;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-2xl: calc(var(--radius) * 1.6);
+  --radius-full: 9999px;
+  --shadow-sm: 0 1px 2px -1px rgb(0 0 0 / 8%);
+  --checkmark-image: url(&quot;data:image/svg+xml,%3Csvg xmlns=&#x27;http://www.w3.org/2000/svg&#x27; viewBox=&#x27;0 0 17 17&#x27;%3E%3Cpath d=&#x27;M12.8961 3.64101C13.1297 3.41418 13.4984 3.37523 13.7779 3.56581C14.0571 3.75635 14.1554 4.11331 14.0299 4.41347L13.9615 4.53847L7.71151 13.7045C7.59411 13.8767 7.4063 13.9877 7.19881 14.0072C6.99136 14.0267 6.78564 13.9533 6.63826 13.806L2.88826 10.056L2.79842 9.9457C2.6192 9.67407 2.64927 9.30496 2.88826 9.06581C3.12738 8.82669 3.49647 8.79676 3.76815 8.97597L3.8785 9.06581L7.03084 12.2182L12.8053 3.74941L12.8961 3.64101Z&#x27;/%3E%3C/svg%3E&quot;);
+
+  /* Legacy aliases; not part of the current agent contract. */
+  --viz-bg: transparent;
+  --viz-panel: var(--card);
+  --viz-border: var(--border);
+  --viz-text: var(--foreground);
+  --viz-muted: var(--muted-foreground);
+  --viz-accent: var(--primary);
+  --viz-accent-text: var(--primary-foreground);
+  --viz-accent-bg: var(--accent);
+  --viz-font-size: var(--font-size-base);
+  --viz-warning: var(--destructive);
+  --color-background-primary: var(--background);
+  --color-text-primary: var(--foreground);
+  --color-border-secondary: var(--border);
+}
+
+:root[data-theme=&quot;light&quot;] {
+  color-scheme: light;
+}
+
+:root[data-theme=&quot;dark&quot;] {
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html &gt; body {
+  margin: 0;
+  padding: 5px;
+  color: var(--foreground);
+  background: transparent !important;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-normal);
+  font-weight: var(--font-weight-normal);
+  line-height: var(--line-height-normal);
+}
+
+a {
+  color: color-mix(in srgb, var(--viz-accent) 80%, var(--viz-text) 20%);
+  cursor: pointer;
+  font-weight: var(--viz-font-weight-medium);
+  text-decoration: none;
+  text-underline-offset: 2px;
+}
+
+a:is(:hover, :focus-visible) {
+  text-decoration-line: underline;
+  text-decoration-style: dashed;
+  text-decoration-thickness: 0.5px;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin-block: 0;
+}
+
+h1 {
+  font-size: var(--font-size-h1);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h2 {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+h3,
+h4,
+h5,
+h6 {
+  font-size: var(--font-size-h3);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.3;
+}
+
+b,
+strong,
+th {
+  font-weight: var(--font-weight-medium);
+}
+
+code:not(pre code) {
+  display: inline;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  corner-shape: superellipse(1.5);
+  background: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  overflow-wrap: anywhere;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+  word-break: break-word;
+}
+
+#widget {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  background: transparent !important;
+}
+
+.card {
+  min-width: 0;
+  padding: 12px;
+  overflow: hidden;
+  overflow-wrap: break-word;
+  border-radius: var(--radius-2xl);
+  corner-shape: superellipse(1.5);
+  color: var(--card-foreground);
+  background: var(--card);
+}
+
+#widget &gt; :not(.card) {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 50;
+  top: 0;
+  left: 0;
+  width: max-content;
+  max-width: min(
+    20rem,
+    var(--tooltip-available-width, calc(100vw - 10px)),
+    calc(100vw - 10px)
+  );
+  max-height: min(
+    var(--tooltip-available-height, calc(100vh - 10px)),
+    calc(100vh - 10px)
+  );
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--popover-foreground);
+  background: var(--popover);
+  box-shadow: none;
+  font-size: var(--font-size-tooltip);
+  line-height: var(--line-height-tooltip);
+  overflow-wrap: break-word;
+  white-space: normal;
+  pointer-events: none;
+  user-select: none;
+}
+
+.viz-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(max(180px, 24%), 1fr));
+  gap: 10px;
+}
+
+.viz-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.viz-stat-value {
+  font-size: var(--font-size-h2);
+  font-weight: var(--font-weight-medium);
+  line-height: 1.25;
+}
+
+.viz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+}
+
+.viz-badge {
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  color: var(--accent-foreground);
+  background: var(--accent);
+  font-weight: var(--font-weight-medium);
+}
+
+small,
+.text-small,
+.viz-badge {
+  font-size: var(--font-size-small);
+  line-height: var(--line-height-small);
+}
+
+.text-muted {
+  color: var(--muted-foreground);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.viz-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.viz-controls &gt; .form-label {
+  display: grid;
+  min-width: min(100%, 260px);
+  flex: 1 1 280px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 2px 12px;
+  margin-bottom: 0;
+}
+
+.viz-controls &gt; .form-label &gt; :is(.form-control, .form-range, .form-select) {
+  grid-column: 1 / -1;
+}
+
+.btn,
+.form-check-input,
+.form-control,
+.form-range,
+.form-select {
+  font: inherit;
+}
+
+.btn {
+  appearance: button;
+  display: inline-flex;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  min-height: 28px;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  margin: 0;
+  padding: 0 8px;
+  -webkit-app-region: no-drag;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: var(--cursor-interaction, pointer);
+  text-align: center;
+  text-decoration: none;
+  white-space: nowrap;
+  user-select: none;
+  -webkit-font-smoothing: antialiased;
+}
+
+.btn:is(.btn-block, .viz-tile) {
+  inline-size: 100%;
+}
+
+.btn.viz-tile {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  white-space: normal;
+}
+
+a.btn {
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.btn:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn-primary {
+  border-color: transparent;
+  color: var(--primary-foreground);
+  background: var(--foreground);
+  background-clip: padding-box;
+}
+
+.btn-primary .text-muted {
+  color: color-mix(in srgb, var(--primary-foreground) 50%, transparent);
+}
+
+.btn-primary:not(:disabled):hover {
+  background: color-mix(in srgb, var(--foreground) 80%, transparent);
+  background-clip: padding-box;
+}
+
+.btn-ghost {
+  border-color: transparent;
+  color: var(--muted-foreground);
+  background: transparent;
+}
+
+.btn-ghost:not(:disabled):hover {
+  color: var(--foreground);
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+[data-lucide] {
+  stroke-width: 1.6;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--foreground);
+}
+
+.form-control {
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  padding: 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--foreground);
+  background: var(--secondary);
+}
+
+.form-control::placeholder {
+  color: var(--muted-foreground);
+}
+
+.form-control[type=&quot;file&quot;] {
+  padding: 0;
+  overflow: hidden;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control[type=&quot;file&quot;]::file-selector-button {
+  min-height: 26px;
+  margin-right: 8px;
+  padding: 0 8px;
+  border: 0;
+  border-right: 1px solid var(--input);
+  color: var(--secondary-foreground);
+  background: var(--secondary);
+  cursor: inherit;
+  font: inherit;
+}
+
+.form-control[type=&quot;file&quot;]:not(:disabled):hover::file-selector-button {
+  background: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-control-color[type=&quot;color&quot;] {
+  width: 40px;
+  height: 28px;
+  padding: 3px;
+  cursor: var(--cursor-interaction, pointer);
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch-wrapper {
+  padding: 0;
+}
+
+.form-control-color[type=&quot;color&quot;]::-webkit-color-swatch {
+  border: 0;
+  border-radius: calc(var(--radius-lg) - 4px);
+  corner-shape: superellipse(1.5);
+}
+
+textarea.form-control {
+  height: auto;
+  min-height: 72px;
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.form-control:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-control:disabled,
+.form-select:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.form-select {
+  appearance: none;
+  display: block;
+  width: 100%;
+  min-height: 28px;
+  margin: 0;
+  padding: 0 32px 0 8px;
+  outline: none;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-lg);
+  corner-shape: superellipse(1.5);
+  color: var(--foreground);
+  background-color: var(--secondary);
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted-foreground) 50%),
+    linear-gradient(135deg, var(--muted-foreground) 50%, transparent 50%);
+  background-position:
+    calc(100% - 14px) 50%,
+    calc(100% - 10px) 50%;
+  background-repeat: no-repeat;
+  background-size: 4px 4px;
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-select:not(:disabled):hover {
+  background-color: color-mix(in srgb, var(--foreground) 6%, var(--secondary));
+}
+
+.form-select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-check {
+  display: flex;
+  min-height: 20px;
+  align-items: center;
+  gap: 6px;
+}
+
+.form-check-input {
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  margin: 0;
+  border: 1px solid var(--input);
+  color: var(--primary-foreground);
+  background-color: transparent;
+  cursor: var(--cursor-interaction, default);
+  transition:
+    background-color 150ms,
+    border-color 150ms,
+    box-shadow 150ms;
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;] {
+  border-color: var(--input);
+  border-radius: var(--radius-sm);
+  corner-shape: superellipse(1.5);
+  background-color: var(--secondary);
+  box-shadow: var(--shadow-sm);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input:not(:disabled):not(:checked):hover {
+  background-color: var(--card);
+}
+
+.form-check:not(.form-switch) .form-check-input[type=&quot;checkbox&quot;]:checked {
+  border-color: var(--primary);
+  background-color: var(--primary);
+}
+
+.form-check:not(.form-switch)
+  .form-check-input[type=&quot;checkbox&quot;]:checked::before {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--primary-foreground);
+  content: &quot;&quot;;
+  mask: var(--checkmark-image) center / 12px 12px no-repeat;
+}
+
+.form-check-input[type=&quot;radio&quot;] {
+  width: 14px;
+  height: 14px;
+  border-radius: var(--radius-full);
+}
+
+.form-check-input[type=&quot;radio&quot;]:checked {
+  border: 2px solid var(--primary);
+  background:
+    radial-gradient(circle, var(--primary-foreground) 0 2.5px, transparent 3px),
+    var(--primary);
+}
+
+.form-check:not(.form-switch) .form-check-input:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled {
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.form-check:not(.form-switch) .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+}
+
+.form-switch .form-check-input:disabled,
+.form-switch .form-check-input:disabled + .form-check-label {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.form-check-label {
+  color: var(--foreground);
+  cursor: var(--cursor-interaction, default);
+}
+
+.form-switch .form-check-input {
+  position: relative;
+  width: 32px;
+  height: 20px;
+  border: 0;
+  border-radius: var(--radius-full);
+  background: var(--muted);
+  box-shadow: none;
+  transition: background-color 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input::before {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  width: 16px;
+  height: 16px;
+  box-sizing: border-box;
+  border: 1px solid light-dark(var(--primary-foreground), var(--foreground));
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+  box-shadow: var(--shadow-sm);
+  content: &quot;&quot;;
+  transform: translate(2px, -50%);
+  transition: transform 200ms cubic-bezier(0, 0, 0.2, 1);
+}
+
+.form-switch .form-check-input:checked {
+  background: var(--primary);
+}
+
+.form-switch .form-check-input:checked::before {
+  transform: translate(14px, -50%);
+}
+
+.form-switch .form-check-input:focus-visible {
+  box-shadow: 0 0 0 2px var(--ring);
+}
+
+.form-range {
+  appearance: none;
+  display: block;
+  width: 100%;
+  height: 28px;
+  flex: 1;
+  margin: 0;
+  padding: 0;
+  outline: none;
+  border: 0;
+  accent-color: var(--primary);
+  background: linear-gradient(
+      color-mix(in srgb, var(--foreground) 7%, transparent),
+      color-mix(in srgb, var(--foreground) 7%, transparent)
+    )
+    center / 100% 2px no-repeat;
+}
+
+.form-range::-webkit-slider-runnable-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-webkit-slider-thumb {
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-webkit-slider-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range::-moz-range-track {
+  height: 28px;
+  background: transparent;
+}
+
+.form-range::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+  background: light-dark(var(--primary-foreground), var(--foreground));
+}
+
+.form-range:focus-visible::-moz-range-thumb {
+  border-color: var(--ring);
+  box-shadow: inset 0 0 0 1px var(--ring);
+}
+
+.form-range:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.btn:not(.btn-primary, .viz-tile):is(
+    [aria-pressed=&quot;true&quot;],
+    [aria-selected=&quot;true&quot;],
+    .is-selected
+  ) {
+  border-color: var(--primary);
+  color: var(--primary-foreground);
+  background: var(--primary);
+}
+
+.btn.viz-tile:is([aria-pressed=&quot;true&quot;], [aria-selected=&quot;true&quot;], .is-selected) {
+  border-color: var(--primary);
+  box-shadow: inset 0 0 0 1px var(--primary);
+}
+
+.btn:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+svg {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+#widget &gt; svg {
+  width: 100%;
+}
+
+.text-warning,
+.text-destructive {
+  color: var(--destructive);
+}
+
+html&gt;body{padding:0}&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id=&quot;supabase-erd&quot;&gt;
+  &lt;style&gt;
+    #supabase-erd .chart { position: relative; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); grid-template-areas: &quot;users profiles .&quot; &quot;invites shifts notices&quot; &quot;applications assignments reads&quot; &quot;positions attendance notifications&quot; &quot;. items .&quot; &quot;. payrolls .&quot;; gap: 38px 34px; }
+    #supabase-erd .entity { position: relative; z-index: 1; min-width: 0; }
+    #supabase-erd .entity h3 { margin: 0 0 8px; }
+    #supabase-erd .entity ul { margin: 0; padding-left: 18px; }
+    #supabase-erd .entity li { margin: 3px 0; overflow-wrap: anywhere; }
+    #supabase-erd .muted { color: var(--muted-foreground); }
+    #supabase-erd #erd-lines { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; color: var(--muted-foreground); overflow: visible; }
+    #supabase-erd .connection { fill: none; stroke: currentColor; stroke-width: 1.5; }
+    #supabase-erd #users { grid-area: users; } #supabase-erd #profiles { grid-area: profiles; } #supabase-erd #invites { grid-area: invites; } #supabase-erd #shifts { grid-area: shifts; } #supabase-erd #notices { grid-area: notices; } #supabase-erd #applications { grid-area: applications; } #supabase-erd #assignments { grid-area: assignments; } #supabase-erd #reads { grid-area: reads; } #supabase-erd #positions { grid-area: positions; } #supabase-erd #attendance { grid-area: attendance; } #supabase-erd #notifications { grid-area: notifications; } #supabase-erd #items { grid-area: items; } #supabase-erd #payrolls { grid-area: payrolls; }
+    @media (max-width: 600px) { #supabase-erd .chart { grid-template-columns: 1fr; grid-template-areas: &quot;users&quot; &quot;profiles&quot; &quot;invites&quot; &quot;shifts&quot; &quot;notices&quot; &quot;applications&quot; &quot;assignments&quot; &quot;positions&quot; &quot;attendance&quot; &quot;items&quot; &quot;payrolls&quot; &quot;reads&quot; &quot;notifications&quot;; gap: 34px; } }
+  &lt;/style&gt;
+  &lt;section class=&quot;chart&quot; aria-label=&quot;라비크루 Supabase 관계형 데이터베이스 ERD&quot;&gt;
+    &lt;svg id=&quot;erd-lines&quot; aria-hidden=&quot;true&quot;&gt;&lt;defs&gt;&lt;marker id=&quot;erd-arrow&quot; viewBox=&quot;0 0 10 10&quot; refX=&quot;9&quot; refY=&quot;5&quot; markerWidth=&quot;6&quot; markerHeight=&quot;6&quot; orient=&quot;auto&quot;&gt;&lt;path d=&quot;M 0 0 L 10 5 L 0 10 z&quot; fill=&quot;currentColor&quot;&gt;&lt;/path&gt;&lt;/marker&gt;&lt;/defs&gt;&lt;/svg&gt;
+    &lt;article id=&quot;users&quot; class=&quot;card entity&quot;&gt;&lt;h3&gt;auth.users &lt;span class=&quot;muted&quot;&gt;인증 사용자&lt;/span&gt;&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;&lt;code&gt;id&lt;/code&gt; · 사용자 고유 ID · PK&lt;/li&gt;&lt;li&gt;&lt;code&gt;phone&lt;/code&gt; · 로그인용 휴대폰 번호&lt;/li&gt;&lt;li&gt;&lt;code&gt;encrypted_password&lt;/code&gt; · 암호화 비밀번호&lt;/li&gt;&lt;/ul&gt;&lt;/article&gt;
+    &lt;article id=&quot;profiles&quot; class=&quot;card entity&quot;&gt;&lt;h3&gt;profiles &lt;span class=&quot;muted&quot;&gt;회원 프로필&lt;/span&gt;&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;&lt;code&gt;id&lt;/code&gt; · 사용자 ID · PK/FK&lt;/li&gt;&lt;li&gt;&lt;code&gt;name&lt;/code&gt; · 이름&lt;/li&gt;&lt;li&gt;&lt;code&gt;role&lt;/code&gt; · 역할 · 알바/관리자&lt;/li&gt;&lt;li&gt;&lt;code&gt;is_active&lt;/code&gt; · 계정 활성 여부&lt;/li&gt;&lt;li&gt;&lt;code&gt;kakao_consent&lt;/code&gt; · 카카오 알림 동의&lt;/li&gt;&lt;/ul&gt;&lt;/article&gt;
+    &lt;article id=&quot;invites&quot; class=&quot;card entity&quot;&gt;&lt;h3&gt;invite_codes &lt;span class=&quot;muted&quot;&gt;초대 코드&lt;/span&gt;&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;&lt;code&gt;id&lt;/code&gt; · 초대 코드 ID · PK&lt;/li&gt;&lt;li&gt;&lt;code&gt;code&lt;/code&gt; · 가입용 코드 · UNIQUE&lt;/li&gt;&lt;li&gt;&lt;code&gt;expires_at&lt;/code&gt; · 만료 일시&lt;/li&gt;&lt;li&gt;&lt;code&gt;max_uses/used_count&lt;/code&gt; · 사용 가능/사용 횟수&lt;/li&gt;&lt;li&gt;&lt;code&gt;created_by&lt;/code&gt; · 생성 관리자 ID · FK&lt;/li&gt;&lt;/ul&gt;&lt;/article&gt;
+    &lt;article id=&quot;shifts&quot; class=&quot;card entity&quot;&gt;&lt;h3&gt;shifts &lt;span class=&quot;muted&quot;&gt;근무 일정&lt;/span&gt;&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;&lt;code&gt;id&lt;/code&gt; · 일정 ID · PK&lt;/li&gt;&lt;li&gt;&lt;code&gt;work_date&lt;/code&gt; · 근무 날짜&lt;/li&gt;&lt;li&gt;&lt;code&gt;start_time/end_time&lt;/code&gt; · 근무 시작/종료&lt;/li&gt;&lt;li&gt;&lt;code&gt;ceremony_count/times&lt;/code&gt; · 예식 수/시간 목록&lt;/li&gt;&lt;li&gt;&lt;code&gt;application_deadline&lt;/code&gt; · 신청 마감 일시&lt;/li&gt;&lt;li&gt;&lt;code&gt;status&lt;/code&gt; · 일정 상태&lt;/li&gt;&lt;li&gt;&lt;code&gt;created_by&lt;/code&gt; · 등록 관리자 ID · FK&lt;/li&gt;&lt;/ul&gt;&lt;/article&gt;
+    &lt;article id=&quot;notices&quot; class=&quot;card entity&quot;&gt;&lt;h3&gt;notices &lt;span class=&quot;muted&quot;&gt;공지&lt;/span&gt;&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;&lt;code&gt;id&lt;/code&gt; · 공지 ID · PK&lt;/li&gt;&lt;li&gt;&lt;code&gt;title/content&lt;/code&gt; · 제목/내용&lt;/li&gt;&lt;li&gt;&lt;code&gt;is_pinned&lt;/code&gt; · 상단 고정 여부&lt;/li&gt;&lt;li&gt;&lt;code&gt;author_id&lt;/code&gt; · 작성 관리자 ID · FK&lt;/li&gt;&lt;/ul&gt;&lt;/article&gt;
+    &lt;article id=&quot;applications&quot; class=&quot;card entity&quot;&gt;&lt;h3&gt;schedule_applications &lt;span class=&quot;muted&quot;&gt;일정 신청&lt;/span&gt;&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;&lt;code&gt;id&lt;/code&gt; · 신청 ID · PK&lt;/li&gt;&lt;li&gt;&lt;code&gt;shift_id&lt;/code&gt; · 일정 ID · FK&lt;/li&gt;&lt;li&gt;&lt;code&gt;worker_id&lt;/code&gt; · 신청 알바 ID · FK&lt;/li&gt;&lt;li&gt;&lt;code&gt;status&lt;/code&gt; · 신청/취소 상태&lt;/li&gt;&lt;li&gt;&lt;code&gt;cancelled_at&lt;/code&gt; · 취소 일시&lt;/li&gt;&lt;/ul&gt;&lt;/article&gt;
+    &lt;article id=&quot;assignments&quot; class=&quot;card entity&quot;&gt;&lt;h3&gt;shift_assignments &lt;span class=&quot;muted&quot;&gt;근무 배정&lt;/span&gt;&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;&lt;code&gt;id&lt;/code&gt; · 배정 ID · PK&lt;/li&gt;&lt;li&gt;&lt;code&gt;shift_id&lt;/code&gt; · 일정 ID · FK&lt;/li&gt;&lt;li&gt;&lt;code&gt;worker_id&lt;/code&gt; · 배정 알바 ID · FK&lt;/li&gt;&lt;li&gt;&lt;code&gt;position_id&lt;/code&gt; · 포지션 ID · FK&lt;/li&gt;&lt;li&gt;&lt;code&gt;is_training&lt;/code&gt; · 교육 인원 여부&lt;/li&gt;&lt;li&gt;&lt;code&gt;hourly_wage_snapshot&lt;/code&gt; · 배정 시점 시급&lt;/li&gt;&lt;/ul&gt;&lt;/article&gt;
+    &lt;article id=&quot;reads&quot; class=&quot;card entity&quot;&gt;&lt;h3&gt;notice_reads &lt;span class=&quot;muted&quot;&gt;공지 읽음&lt;/span&gt;&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;&lt;code&gt;notice_id&lt;/code&gt; · 공지 ID · PK/FK&lt;/li&gt;&lt;li&gt;&lt;code&gt;worker_id&lt;/code&gt; · 읽은 알바 ID · PK/FK&lt;/li&gt;&lt;li&gt;&lt;code&gt;read_at&lt;/code&gt; · 읽은 일시&lt;/li&gt;&lt;/ul&gt;&lt;/article&gt;
+    &lt;article id=&quot;positions&quot; class=&quot;card entity&quot;&gt;&lt;h3&gt;positions &lt;span class=&quot;muted&quot;&gt;포지션 · 시급&lt;/span&gt;&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;&lt;code&gt;id&lt;/code&gt; · 포지션 ID · PK&lt;/li&gt;&lt;li&gt;&lt;code&gt;name&lt;/code&gt; · 포지션 이름&lt;/li&gt;&lt;li&gt;&lt;code&gt;hourly_wage&lt;/code&gt; · 기본 시급&lt;/li&gt;&lt;li&gt;&lt;code&gt;is_active&lt;/code&gt; · 사용 여부&lt;/li&gt;&lt;/ul&gt;&lt;/article&gt;
+    &lt;article id=&quot;attendance&quot; class=&quot;card entity&quot;&gt;&lt;h3&gt;attendance_records &lt;span class=&quot;muted&quot;&gt;출석 기록&lt;/span&gt;&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;&lt;code&gt;id&lt;/code&gt; · 출석 ID · PK&lt;/li&gt;&lt;li&gt;&lt;code&gt;assignment_id&lt;/code&gt; · 배정 ID · UNIQUE FK&lt;/li&gt;&lt;li&gt;&lt;code&gt;status&lt;/code&gt; · 출석/결근&lt;/li&gt;&lt;li&gt;&lt;code&gt;confirmed_by&lt;/code&gt; · 확정 관리자 ID · FK&lt;/li&gt;&lt;li&gt;&lt;code&gt;confirmed_at&lt;/code&gt; · 확정 일시&lt;/li&gt;&lt;/ul&gt;&lt;/article&gt;
+    &lt;article id=&quot;notifications&quot; class=&quot;card entity&quot;&gt;&lt;h3&gt;notification_logs &lt;span class=&quot;muted&quot;&gt;알림 발송 기록&lt;/span&gt;&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;&lt;code&gt;id&lt;/code&gt; · 알림 ID · PK&lt;/li&gt;&lt;li&gt;&lt;code&gt;recipient_id&lt;/code&gt; · 수신 알바 ID · FK&lt;/li&gt;&lt;li&gt;&lt;code&gt;type&lt;/code&gt; · 확정/변경/취소 유형&lt;/li&gt;&lt;li&gt;&lt;code&gt;channel&lt;/code&gt; · 발송 채널 · 알림톡&lt;/li&gt;&lt;li&gt;&lt;code&gt;sent_at&lt;/code&gt; · 발송 일시&lt;/li&gt;&lt;/ul&gt;&lt;/article&gt;
+    &lt;article id=&quot;items&quot; class=&quot;card entity&quot;&gt;&lt;h3&gt;payroll_items &lt;span class=&quot;muted&quot;&gt;급여 상세&lt;/span&gt;&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;&lt;code&gt;id&lt;/code&gt; · 급여 상세 ID · PK&lt;/li&gt;&lt;li&gt;&lt;code&gt;payroll_id&lt;/code&gt; · 월 급여 ID · FK&lt;/li&gt;&lt;li&gt;&lt;code&gt;assignment_id&lt;/code&gt; · 배정 ID · FK&lt;/li&gt;&lt;li&gt;&lt;code&gt;regular_minutes&lt;/code&gt; · 기본 근무 분&lt;/li&gt;&lt;li&gt;&lt;code&gt;overtime_minutes&lt;/code&gt; · 9시간 초과 분&lt;/li&gt;&lt;li&gt;&lt;code&gt;amount&lt;/code&gt; · 지급 금액&lt;/li&gt;&lt;/ul&gt;&lt;/article&gt;
+    &lt;article id=&quot;payrolls&quot; class=&quot;card entity&quot;&gt;&lt;h3&gt;monthly_payrolls &lt;span class=&quot;muted&quot;&gt;월별 급여&lt;/span&gt;&lt;/h3&gt;&lt;ul&gt;&lt;li&gt;&lt;code&gt;id&lt;/code&gt; · 월 급여 ID · PK&lt;/li&gt;&lt;li&gt;&lt;code&gt;worker_id&lt;/code&gt; · 알바 ID · FK&lt;/li&gt;&lt;li&gt;&lt;code&gt;year_month&lt;/code&gt; · 정산 연월&lt;/li&gt;&lt;li&gt;&lt;code&gt;total_amount&lt;/code&gt; · 월 확정 급여&lt;/li&gt;&lt;li&gt;&lt;code&gt;status&lt;/code&gt; · 계산/마감 상태&lt;/li&gt;&lt;/ul&gt;&lt;/article&gt;
+  &lt;/section&gt;
+  &lt;script&gt;
+    const root = document.getElementById(&#x27;supabase-erd&#x27;)
+    const chart = root.querySelector(&#x27;.chart&#x27;)
+    const lines = document.getElementById(&#x27;erd-lines&#x27;)
+    const links = [
+      [&#x27;users&#x27;, &#x27;profiles&#x27;], [&#x27;profiles&#x27;, &#x27;invites&#x27;], [&#x27;profiles&#x27;, &#x27;shifts&#x27;], [&#x27;profiles&#x27;, &#x27;notices&#x27;],
+      [&#x27;shifts&#x27;, &#x27;applications&#x27;], [&#x27;shifts&#x27;, &#x27;assignments&#x27;], [&#x27;positions&#x27;, &#x27;assignments&#x27;], [&#x27;assignments&#x27;, &#x27;attendance&#x27;],
+      [&#x27;attendance&#x27;, &#x27;items&#x27;], [&#x27;items&#x27;, &#x27;payrolls&#x27;], [&#x27;notices&#x27;, &#x27;reads&#x27;], [&#x27;profiles&#x27;, &#x27;notifications&#x27;, &#x27;right&#x27;], [&#x27;profiles&#x27;, &#x27;payrolls&#x27;, &#x27;left&#x27;],
+    ]
+    const ns = &#x27;http://www.w3.org/2000/svg&#x27;
+    const draw = () =&gt; {
+      const box = chart.getBoundingClientRect()
+      lines.querySelectorAll(&#x27;.connection&#x27;).forEach((line) =&gt; line.remove())
+      lines.setAttribute(&#x27;viewBox&#x27;, `0 0 ${box.width} ${box.height}`)
+      links.forEach(([fromId, toId, route]) =&gt; {
+        const from = document.getElementById(fromId).getBoundingClientRect()
+        const to = document.getElementById(toId).getBoundingClientRect()
+        const fx = from.left - box.left + from.width / 2
+        const fy = from.top - box.top + from.height / 2
+        const tx = to.left - box.left + to.width / 2
+        const ty = to.top - box.top + to.height / 2
+        let d
+        if (route === &#x27;right&#x27; || route === &#x27;left&#x27;) {
+          const side = route === &#x27;right&#x27; ? box.width - 12 : 12
+          const startX = route === &#x27;right&#x27; ? from.right - box.left : from.left - box.left
+          const endX = route === &#x27;right&#x27; ? to.right - box.left : to.left - box.left
+          d = `M ${startX} ${fy} L ${side} ${fy} L ${side} ${ty} L ${endX} ${ty}`
+        } else if (Math.abs(ty - fy) &gt;= Math.abs(tx - fx)) {
+          const startY = ty &gt; fy ? from.bottom - box.top : from.top - box.top
+          const endY = ty &gt; fy ? to.top - box.top : to.bottom - box.top
+          const bend = (startY + endY) / 2
+          d = `M ${fx} ${startY} L ${fx} ${bend} L ${tx} ${bend} L ${tx} ${endY}`
+        } else {
+          const startX = tx &gt; fx ? from.right - box.left : from.left - box.left
+          const endX = tx &gt; fx ? to.left - box.left : to.right - box.left
+          const bend = (startX + endX) / 2
+          d = `M ${startX} ${fy} L ${bend} ${fy} L ${bend} ${ty} L ${endX} ${ty}`
+        }
+        const path = document.createElementNS(ns, &#x27;path&#x27;)
+        path.setAttribute(&#x27;d&#x27;, d)
+        path.setAttribute(&#x27;class&#x27;, &#x27;connection&#x27;)
+        path.setAttribute(&#x27;marker-end&#x27;, &#x27;url(#erd-arrow)&#x27;)
+        lines.appendChild(path)
+      })
+    }
+    new ResizeObserver(draw).observe(chart)
+    window.addEventListener(&#x27;resize&#x27;, draw)
+    requestAnimationFrame(draw)
+  &lt;/script&gt;
+&lt;/div&gt;
+
+&lt;script src=&quot;https://unpkg.com/@floating-ui/core@1.7.3/dist/floating-ui.core.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script src=&quot;https://unpkg.com/@floating-ui/dom@1.7.4/dist/floating-ui.dom.umd.min.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  if (window.FloatingUIDOM == null) {
+    return;
+  }
+  const { autoUpdate, computePosition, flip, offset, shift, size } =
+    window.FloatingUIDOM;
+  const tooltipPlacements = new Set([&quot;top&quot;, &quot;right&quot;, &quot;bottom&quot;, &quot;left&quot;]);
+  const tooltipId = `codex-visualization-tooltip-${
+    window.crypto?.randomUUID?.() ?? Date.now().toString(36)
+  }`;
+  const tooltipGap = 5;
+  const hoverDelay = 700;
+  const skipDelay = 300;
+  let activeTrigger = null;
+  let pendingTrigger = null;
+  let tooltip = null;
+  let openTimeout = null;
+  let autoUpdateCleanup = null;
+  let positionRequest = 0;
+  let skipDelayUntil = 0;
+
+  const getTrigger = (target) =&gt;
+    target?.nodeType === Node.ELEMENT_NODE
+      ? target.closest(&quot;[data-tooltip]&quot;)
+      : null;
+  const containsTarget = (trigger, target) =&gt;
+    target?.nodeType != null &amp;&amp; trigger.contains(target);
+  const getContent = (trigger) =&gt;
+    trigger.getAttribute(&quot;data-tooltip&quot;)?.trim() ?? &quot;&quot;;
+  const getPlacement = (trigger) =&gt; {
+    const placement = trigger.getAttribute(&quot;data-tooltip-placement&quot;);
+    return tooltipPlacements.has(placement) ? placement : &quot;top&quot;;
+  };
+  const getTooltip = () =&gt; {
+    if (tooltip == null) {
+      tooltip = document.createElement(&quot;div&quot;);
+      tooltip.id = tooltipId;
+      tooltip.className = &quot;tooltip&quot;;
+      tooltip.setAttribute(&quot;role&quot;, &quot;tooltip&quot;);
+    }
+    return tooltip;
+  };
+  const setDescribedBy = (trigger, described) =&gt; {
+    const ids = new Set(
+      (trigger.getAttribute(&quot;aria-describedby&quot;) ?? &quot;&quot;)
+        .split(/\s+/)
+        .filter(Boolean),
+    );
+    if (described) {
+      ids.add(tooltipId);
+    } else {
+      ids.delete(tooltipId);
+    }
+    if (ids.size === 0) {
+      trigger.removeAttribute(&quot;aria-describedby&quot;);
+    } else {
+      trigger.setAttribute(&quot;aria-describedby&quot;, [...ids].join(&quot; &quot;));
+    }
+  };
+  const clearOpenTimeout = () =&gt; {
+    if (openTimeout != null) {
+      window.clearTimeout(openTimeout);
+      openTimeout = null;
+    }
+    pendingTrigger = null;
+  };
+  const closeTooltip = (activateSkipDelay = true) =&gt; {
+    clearOpenTimeout();
+    positionRequest += 1;
+    autoUpdateCleanup?.();
+    autoUpdateCleanup = null;
+    if (activeTrigger == null) {
+      return;
+    }
+    setDescribedBy(activeTrigger, false);
+    activeTrigger = null;
+    tooltip?.remove();
+    if (activateSkipDelay) {
+      skipDelayUntil = Date.now() + skipDelay;
+    }
+  };
+  const updatePosition = (trigger, floating) =&gt; {
+    const request = ++positionRequest;
+    void computePosition(trigger, floating, {
+      middleware: [
+        offset(tooltipGap),
+        flip({ padding: tooltipGap }),
+        shift({ padding: tooltipGap }),
+        size({
+          padding: tooltipGap,
+          apply({ availableHeight, availableWidth, elements }) {
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-width&quot;,
+              `${Math.max(0, availableWidth)}px`,
+            );
+            elements.floating.style.setProperty(
+              &quot;--tooltip-available-height&quot;,
+              `${Math.max(0, availableHeight)}px`,
+            );
+          },
+        }),
+      ],
+      placement: getPlacement(trigger),
+      strategy: &quot;fixed&quot;,
+    })
+      .then(({ x, y }) =&gt; {
+        if (activeTrigger !== trigger || request !== positionRequest) {
+          return;
+        }
+        const scale = window.devicePixelRatio || 1;
+        floating.style.transform = `translate(${Math.round(x * scale) / scale}px, ${Math.round(y * scale) / scale}px)`;
+        floating.style.visibility = &quot;visible&quot;;
+      })
+      .catch(() =&gt; {
+        if (activeTrigger === trigger &amp;&amp; request === positionRequest) {
+          closeTooltip(false);
+        }
+      });
+  };
+  const openTooltip = (trigger) =&gt; {
+    const content = getContent(trigger);
+    if (!trigger.isConnected || content.length === 0) {
+      return;
+    }
+    clearOpenTimeout();
+    if (activeTrigger === trigger) {
+      return;
+    }
+    closeTooltip();
+    const floating = getTooltip();
+    floating.textContent = content;
+    floating.style.visibility = &quot;hidden&quot;;
+    floating.style.transform = &quot;translate(0, 0)&quot;;
+    document.body.appendChild(floating);
+    activeTrigger = trigger;
+    setDescribedBy(trigger, true);
+    autoUpdateCleanup = autoUpdate(trigger, floating, () =&gt; {
+      updatePosition(trigger, floating);
+    });
+  };
+  const requestOpen = (trigger, immediate = false) =&gt; {
+    if (
+      getContent(trigger).length === 0 ||
+      activeTrigger === trigger ||
+      pendingTrigger === trigger
+    ) {
+      return;
+    }
+    clearOpenTimeout();
+    pendingTrigger = trigger;
+    const delay =
+      immediate || activeTrigger != null || Date.now() &lt; skipDelayUntil
+        ? 0
+        : hoverDelay;
+    if (delay === 0) {
+      openTooltip(trigger);
+      return;
+    }
+    openTimeout = window.setTimeout(() =&gt; {
+      openTimeout = null;
+      pendingTrigger = null;
+      openTooltip(trigger);
+    }, delay);
+  };
+  const handlePointerOpen = (event) =&gt; {
+    if (event.pointerType === &quot;touch&quot;) {
+      return;
+    }
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    requestOpen(trigger);
+  };
+  const handleLeave = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger == null || containsTarget(trigger, event.relatedTarget)) {
+      return;
+    }
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const handleFocusIn = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (trigger?.matches(&quot;:focus-visible&quot;)) {
+      requestOpen(trigger, true);
+    }
+  };
+  const handleKeyDown = (event) =&gt; {
+    if (event.key === &quot;Escape&quot;) {
+      closeTooltip();
+    }
+  };
+  const handleContextMenu = (event) =&gt; {
+    const trigger = getTrigger(event.target);
+    if (activeTrigger === trigger || pendingTrigger === trigger) {
+      closeTooltip();
+    }
+  };
+  const destroy = () =&gt; {
+    closeTooltip(false);
+    document.removeEventListener(&quot;pointerover&quot;, handlePointerOpen);
+    document.removeEventListener(&quot;pointerout&quot;, handleLeave);
+    document.removeEventListener(&quot;focusin&quot;, handleFocusIn);
+    document.removeEventListener(&quot;focusout&quot;, handleLeave);
+    document.removeEventListener(&quot;keydown&quot;, handleKeyDown);
+    document.removeEventListener(&quot;contextmenu&quot;, handleContextMenu);
+    tooltip = null;
+  };
+
+  document.addEventListener(&quot;pointerover&quot;, handlePointerOpen);
+  document.addEventListener(&quot;pointerout&quot;, handleLeave);
+  document.addEventListener(&quot;focusin&quot;, handleFocusIn);
+  document.addEventListener(&quot;focusout&quot;, handleLeave);
+  document.addEventListener(&quot;keydown&quot;, handleKeyDown);
+  document.addEventListener(&quot;contextmenu&quot;, handleContextMenu);
+  window.addEventListener(&quot;pagehide&quot;, destroy, { once: true });
+})();
+&lt;/script&gt;
+&lt;script id=&quot;codex-visualization-lucide&quot; async src=&quot;https://unpkg.com/lucide@1.17.0/dist/umd/lucide.js&quot;&gt;&lt;/script&gt;
+&lt;script&gt;
+(() =&gt; {
+  const initialize = () =&gt; {
+    globalThis.lucide?.createIcons({ attrs: { width: 16, height: 16 } });
+  };
+  if (globalThis.lucide != null) {
+    initialize();
+    return;
+  }
+  document
+    .getElementById(&quot;codex-visualization-lucide&quot;)
+    ?.addEventListener(&quot;load&quot;, initialize, { once: true });
+})();
+&lt;/script&gt;
+
+&lt;/body&gt;
+&lt;/html&gt;
+"></iframe>
+</body>
+</html>
