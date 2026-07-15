@@ -1,0 +1,16 @@
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"$(git rev-parse --show-toplevel)/.codex/hooks/check-verification.mjs\"",
+            "timeout": 20,
+            "statusMessage": "아키텍처와 하네스 상태를 확인하는 중"
+          }
+        ]
+      }
+    ]
+  }
+}

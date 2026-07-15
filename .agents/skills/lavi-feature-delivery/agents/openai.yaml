@@ -1,0 +1,4 @@
+interface:
+  display_name: "Lavi Feature Delivery"
+  short_description: "Orchestrate complex Lavi Crew features."
+  default_prompt: "Use $lavi-feature-delivery to deliver this cross-layer feature."

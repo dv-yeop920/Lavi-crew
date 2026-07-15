@@ -1,0 +1,13 @@
+.next/
+node_modules/
+out/
+build/
+coverage/
+package-lock.json
+next-env.d.ts
+
+# 기획·하네스 문서는 코드 포맷 도입 범위에서 제외
+AGENTS.md
+Design.md
+.agents/
+docs/

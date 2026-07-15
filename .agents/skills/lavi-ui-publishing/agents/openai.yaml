@@ -1,0 +1,4 @@
+interface:
+  display_name: "Lavi UI Publishing"
+  short_description: "Publish Lavi Crew mobile UI."
+  default_prompt: "Use $lavi-ui-publishing to implement this UI from the design rules."
