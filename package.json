@@ -1,0 +1,27 @@
+{
+  "name": "lavi-crew",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "lint": "oxlint",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@vanilla-extract/css": "^1.21.1",
+    "@vanilla-extract/vite-plugin": "^5.2.5",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@rolldown/binding-darwin-arm64": "^1.1.5",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.2.0",
+    "babel-plugin-react-compiler": "^1.0.0",
+    "oxlint": "^1.71.0",
+    "vite": "^6.4.3"
+  }
+}
