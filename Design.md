@@ -582,3 +582,51 @@ src/shared/styles/tokens/
 ```
 
 토큰 변경은 Figma → token data → CSS Variables → components 순서로 반영한다.
+
+---
+
+## 17. Lavi Crew Confirmed Theme
+
+사용자 승인에 따라 라비크루 MVP는 흰 배경의 Light theme를 기본이자 유일한 테마로 사용한다.
+
+### 17.1 Primary palette
+
+| Token | Value | Usage |
+|---|---:|---|
+| `purple-900` | `#2A0049` | pressed, 가장 강한 강조 |
+| `purple-800` | `#3A0065` | hover, strong text |
+| `purple-700` | `#4B0082` | primary brand color |
+| `purple-600` | `#622398` | 보조 강조 |
+| `purple-500` | `#7A46A8` | 아이콘·그래프 보조색 |
+| `purple-300` | `#B592CB` | 강조 테두리 |
+| `purple-100` | `#EEE6F4` | 선택·강조 배경 |
+| `purple-50` | `#F8F5FA` | 가장 옅은 surface |
+| `blue-700` | `#1D4ED8` | 달력의 토요일 텍스트 |
+| `red-700` | `#B42318` | 달력의 일요일 텍스트 |
+
+- 페이지 배경과 기본 카드는 `#FFFFFF`를 사용한다.
+- 컴포넌트는 위 값을 직접 사용하지 않고 `color-semantic-*` 토큰을 참조한다.
+- `color-semantic-primary-muted`는 `purple-600`을 참조하며 Primary보다 한 단계 옅은 강조 테두리에 사용한다.
+- 인원 상세의 가능한 포지션은 개별 체크 항목이 아니라 그룹 전체를 감싸는 외곽선에 `color-semantic-primary-muted`를 적용한다.
+- Dark theme는 별도 사용자 결정 전까지 제공하지 않는다.
+- 월간 달력은 토요일을 `color-semantic-weekend-saturday`, 일요일을 `color-semantic-weekend-sunday`로 구분한다. 선택 상태처럼 배경 대비가 우선인 상태에서는 `color-semantic-on-primary`를 사용한다.
+- 월간 달력의 날짜 셀은 테두리 없이 표현하며, 선택·등록 상태는 배경색과 글자색으로 구분한다.
+- 스케줄 인원 배정 테이블은 `34rem` 이하에서 행마다 세로 카드로 전환한다. 포지션명은 카드 상단 전체 폭, 인원 셀렉트·이력·추가 및 삭제 액션은 그 아래 전체 폭에 배치하며 페이지 가로 스크롤을 만들지 않는다.
+
+### 17.2 Typography system
+
+기본 글꼴은 Pretendard JP이며 없을 경우 Pretendard와 운영체제 기본 sans-serif로 대체한다.
+
+| Hierarchy | Styles |
+|---|---|
+| Display | `display` 40px |
+| Title | `title-large` 32px · `title-medium` 28px · `title-small` 24px |
+| Heading | `heading-large` 22px · `heading-medium` 20px · `heading-small` 18px |
+| Body | `body-large` 16px · `body-medium` 15px · `body-small` 14px |
+| Label | `label-large` 15px · `label-medium` 14px · `label-small` 12px |
+| Caption | `caption-large` 13px · `caption-small` 12px |
+| Number | `number-large` 32px · `number-medium` 24px · `number-small` 16px |
+
+- 제목은 1.25, 본문은 1.5~1.6 line-height를 사용한다.
+- 제목과 큰 숫자는 `-0.02em`, 본문과 라벨은 기본 자간을 사용한다.
+- 페이지와 컴포넌트에서 임의의 `font-size`를 추가하지 않는다.

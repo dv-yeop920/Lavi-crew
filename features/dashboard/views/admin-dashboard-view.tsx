@@ -1,5 +1,10 @@
 import Link from 'next/link'
 
+import {
+  getRegisteredSchedulesForWeek,
+  RegisteredScheduleCard,
+  registeredSchedules,
+} from '@/features/schedule'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
@@ -8,18 +13,25 @@ import * as styles from './dashboard.css'
 import * as layout from '@/shared/ui/layout/layout.css'
 
 const tasks = [
-  { count: '2건', href: '/admin/schedules', label: '신청 마감 필요', tone: 'warning' },
-  { count: '8명', href: '/admin/assignments', label: '미배정 신청자', tone: 'accent' },
-  { count: '4건', href: '/admin/attendance', label: '출석 미확정', tone: 'neutral' },
+  { count: '1개월', href: '/admin/schedules', label: '월 신청 마감 예정', tone: 'warning' },
+  { count: '2일', href: '/admin/schedules', label: '스케줄 등록 필요', tone: 'accent' },
 ] as const
 
+const scheduleDateFormatter = new Intl.DateTimeFormat('ko-KR', {
+  day: 'numeric',
+  month: 'long',
+  weekday: 'long',
+})
+
 export function AdminDashboardView() {
+  const thisWeekSchedules = getRegisteredSchedulesForWeek(registeredSchedules)
+
   return (
     <div className={layout.page}>
       <PageHeader
         eyebrow="관리자"
         title="오늘의 운영 현황"
-        description="마감과 출석 확정이 필요한 항목부터 확인하세요."
+        description="월 마감과 스케줄 등록이 필요한 항목을 확인하세요."
       />
 
       <section className={layout.stack} aria-labelledby="task-title">
@@ -47,15 +59,26 @@ export function AdminDashboardView() {
             일정 관리
           </Link>
         </div>
-        <ContentCard>
-          <div className={layout.row}>
-            <div className={styles.metric}>
-              <strong className={styles.metricValue}>36명</strong>
-              <span className={styles.meta}>토·일 확정 배정 인원</span>
-            </div>
-            <StatusBadge tone="positive">배정 완료</StatusBadge>
-          </div>
-        </ContentCard>
+        {thisWeekSchedules.length > 0 ? (
+          <ul className={layout.list}>
+            {thisWeekSchedules.map((schedule) => (
+              <li key={schedule.date}>
+                <RegisteredScheduleCard
+                  assignedCount={schedule.assignedCount}
+                  ceremonyCount={schedule.ceremonyCount}
+                  date={schedule.date}
+                  dateLabel={scheduleDateFormatter.format(new Date(`${schedule.date}T00:00:00`))}
+                  time={schedule.time}
+                  variant="summary"
+                />
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <ContentCard>
+            <p className={layout.subdued}>이번 주에 등록된 일정이 없습니다.</p>
+          </ContentCard>
+        )}
       </section>
     </div>
   )

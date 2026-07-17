@@ -9,6 +9,6 @@ description: Implement or revise Lavi Crew scheduling, assignment, attendance, a
 2. Convert confirmed behavior into a decision table with normal, boundary, invalid, and correction cases.
 3. Separate policy decisions from date/time parsing, persistence, and UI formatting.
 4. Implement deterministic pure functions with explicit units for timestamps, durations, and money.
-5. Add tests for boundaries relevant to the change, including exact cutoffs, values immediately above and below them, status transitions, replacements, and corrections.
+5. Add tests for boundaries relevant to the change, including exact cutoffs, values immediately above and below them, status transitions, and corrections.
 6. Keep Controllers responsible for orchestration and Repositories responsible for persistence; do not move those concerns into Domain code.
 7. Run the related tests and `npm run lint`, then report covered cases and unresolved policy questions.

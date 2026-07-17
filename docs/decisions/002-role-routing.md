@@ -11,7 +11,7 @@
 ## 결정
 
 - 하나의 Next.js 애플리케이션을 유지한다.
-- 알바 화면은 `/`, 관리자 화면은 `/admin` 아래에 둔다.
+- 공통 로그인 화면은 `/`, 알바 화면은 `/home`, 관리자 화면은 `/admin` 아래에 둔다.
 - Route Group과 Layout으로 화면 구성을 분리한다.
 - 서버 Layout과 Controller에서 역할을 확인하고, 데이터 접근의 최종 경계는 Supabase RLS로 강제한다.
 

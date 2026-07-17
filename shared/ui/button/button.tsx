@@ -7,5 +7,8 @@ type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
 }
 
 export function Button({ variant = 'primary', ...props }: ButtonProps) {
-  return <button className={styles.button[variant]} type="button" {...props} />
+  const { className, ...buttonProps } = props
+  const mergedClassName = [styles.button[variant], className].filter(Boolean).join(' ')
+
+  return <button className={mergedClassName} type="button" {...buttonProps} />
 }

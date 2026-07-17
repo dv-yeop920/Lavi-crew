@@ -22,7 +22,13 @@ const requiredFiles = [
   'docs/conventions/next-server-boundaries.md',
   'docs/domain/glossary.md',
   'docs/failures/README.md',
+  '.agents/skills/lavi-feature-delivery/SKILL.md',
+  '.agents/skills/lavi-feature-delivery/agents/openai.yaml',
   '.codex/config.toml',
+  '.codex/agents/lavi-architect.toml',
+  '.codex/agents/lavi-builder.toml',
+  '.codex/agents/lavi-product-planner.toml',
+  '.codex/agents/lavi-reviewer.toml',
   '.codex/hooks.json',
   '.codex/hooks/check-verification.mjs',
   '.github/workflows/ci.yml',
@@ -131,14 +137,36 @@ const customAgentsRoot = resolve(repositoryRoot, '.codex/agents')
 const customAgents = existsSync(customAgentsRoot)
   ? readdirSync(customAgentsRoot).filter((file) => file.endsWith('.toml'))
   : []
+const expectedAgentSandboxModes = {
+  'lavi-architect.toml': 'read-only',
+  'lavi-builder.toml': 'workspace-write',
+  'lavi-product-planner.toml': 'read-only',
+  'lavi-reviewer.toml': 'read-only',
+}
 
 for (const customAgent of customAgents) {
   const path = resolve(customAgentsRoot, customAgent)
   const content = readFileSync(path, 'utf8')
-  for (const field of ['name', 'description', 'developer_instructions']) {
+  for (const field of ['name', 'description', 'sandbox_mode', 'developer_instructions']) {
     if (!new RegExp(`^${field}\\s*=`, 'm').test(content)) {
       errors.push(`${projectPath(path)}에 ${field} 필드가 없습니다.`)
     }
+  }
+
+  const agentName = content.match(/^name\s*=\s*["']([^"']+)["']/m)?.[1]
+  const expectedAgentName = customAgent.replace(/\.toml$/, '')
+  if (agentName !== expectedAgentName) {
+    errors.push(
+      `${projectPath(path)}의 name은 파일명과 같은 ${expectedAgentName}이어야 합니다. 현재: ${agentName ?? '없음'}`,
+    )
+  }
+
+  const sandboxMode = content.match(/^sandbox_mode\s*=\s*["']([^"']+)["']/m)?.[1]
+  const expectedSandboxMode = expectedAgentSandboxModes[customAgent]
+  if (expectedSandboxMode && sandboxMode !== expectedSandboxMode) {
+    errors.push(
+      `${projectPath(path)}의 sandbox_mode는 ${expectedSandboxMode}여야 합니다. 현재: ${sandboxMode ?? '없음'}`,
+    )
   }
 }
 

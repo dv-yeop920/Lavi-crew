@@ -8,16 +8,20 @@ export const metric = style({
 })
 
 export const metricValue = style({
-  fontSize: '1.75rem',
-  fontWeight: 800,
+  fontSize: semanticVars.font.size.numberMedium,
+  fontWeight: semanticVars.font.weight.extraBold,
+  letterSpacing: semanticVars.font.letterSpacing.tight,
+  lineHeight: semanticVars.font.lineHeight.tight,
 })
 
 export const meta = style({
   color: semanticVars.color.labelNeutral,
-  lineHeight: 1.5,
+  fontSize: semanticVars.font.size.bodySmall,
+  lineHeight: semanticVars.font.lineHeight.normal,
 })
 
 export const link = style({
   color: semanticVars.color.primaryStrong,
-  fontWeight: 700,
+  fontSize: semanticVars.font.size.labelMedium,
+  fontWeight: semanticVars.font.weight.bold,
 })

@@ -1,19 +1,21 @@
 import type { ReactNode } from 'react'
 
+import { AuthGuard } from '@/shared/auth/auth-guard'
+import { LogoutButton } from '@/shared/auth/logout-button'
 import { AppShell } from '@/shared/ui/app-shell/app-shell'
 
 const navigationItems = [
-  { href: '/admin', label: '홈', match: 'exact' as const },
-  { href: '/admin/schedules', label: '일정' },
-  { href: '/admin/assignments', label: '배정' },
-  { href: '/admin/attendance', label: '출석' },
-  { href: '/admin/more', label: '관리' },
+  { href: '/admin', icon: 'home' as const, label: '홈', match: 'exact' as const },
+  { href: '/admin/schedules', icon: 'schedule' as const, label: '일정' },
+  { href: '/admin/more', icon: 'management' as const, label: '관리' },
 ]
 
 export default function AdminLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
-    <AppShell navigationItems={navigationItems} roleLabel="관리자">
-      {children}
-    </AppShell>
+    <AuthGuard role="admin">
+      <AppShell headerAction={<LogoutButton />} navigationItems={navigationItems}>
+        {children}
+      </AppShell>
+    </AuthGuard>
   )
 }

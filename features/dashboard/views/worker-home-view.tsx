@@ -29,9 +29,8 @@ export function WorkerHomeView() {
               <strong className={styles.metricValue}>7월 19일</strong>
               <span className={styles.meta}>토요일 · 09:00–18:00</span>
             </div>
-            <StatusBadge tone="accent">연회장</StatusBadge>
+            <StatusBadge tone="accent">메인</StatusBadge>
           </div>
-          <p className={styles.meta}>교육 근무 · 출근 10분 전까지 직원 통로로 와주세요.</p>
         </ContentCard>
       </section>
 

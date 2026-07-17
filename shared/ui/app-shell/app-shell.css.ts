@@ -1,4 +1,4 @@
-import { style } from '@vanilla-extract/css'
+import { globalStyle, style, styleVariants } from '@vanilla-extract/css'
 
 import { semanticVars } from '@/shared/styles/theme.css'
 
@@ -11,7 +11,6 @@ export const shell = style({
   width: 'min(100%, 48rem)',
   minHeight: '100dvh',
   marginInline: 'auto',
-  borderInline: `1px solid ${semanticVars.color.lineNormal}`,
   background: semanticVars.color.background,
 })
 
@@ -30,12 +29,21 @@ export const topNavigation = style({
 })
 
 export const brand = style({
-  fontWeight: 800,
-  letterSpacing: '-0.02em',
+  color: semanticVars.color.primaryNormal,
+  fontSize: semanticVars.font.size.headingSmall,
+  fontWeight: semanticVars.font.weight.extraBold,
+  letterSpacing: semanticVars.font.letterSpacing.tight,
 })
 
-export const role = style({
-  color: semanticVars.color.labelNeutral,
+export const headerActions = style({
+  display: 'flex',
+  alignItems: 'center',
+  gap: '0.5rem',
+})
+
+globalStyle(`${headerActions} > button`, {
+  minHeight: '2.25rem',
+  paddingInline: '0.75rem',
 })
 
 export const content = style({
@@ -56,12 +64,15 @@ export const bottomNavigation = style({
 export const bottomNavigationInner = style({
   display: 'grid',
   width: 'min(100%, 48rem)',
-  gridTemplateColumns: 'repeat(5, minmax(0, 1fr))',
   paddingBottom: 'env(safe-area-inset-bottom)',
   borderTop: `1px solid ${semanticVars.color.lineNormal}`,
-  borderInline: `1px solid ${semanticVars.color.lineNormal}`,
   background: semanticVars.color.surface,
   pointerEvents: 'auto',
+})
+
+export const bottomNavigationColumns = styleVariants({
+  three: { gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' },
+  five: { gridTemplateColumns: 'repeat(5, minmax(0, 1fr))' },
 })
 
 export const navigationItem = style({
@@ -70,25 +81,19 @@ export const navigationItem = style({
   minHeight: '3.75rem',
   placeItems: 'center',
   alignContent: 'center',
-  gap: '0.125rem',
+  gap: '0.1875rem',
   color: semanticVars.color.labelNeutral,
-  fontSize: '0.75rem',
+  fontSize: semanticVars.font.size.labelSmall,
   selectors: {
     '&[aria-current="page"]': {
       color: semanticVars.color.primaryStrong,
-      fontWeight: 800,
+      fontWeight: semanticVars.font.weight.extraBold,
     },
   },
 })
 
-export const navigationMark = style({
-  width: '1.25rem',
-  height: '0.25rem',
-  borderRadius: '999px',
-  background: 'transparent',
-  selectors: {
-    '[aria-current="page"] &': {
-      background: semanticVars.color.primaryNormal,
-    },
-  },
+export const navigationIcon = style({
+  width: '1.375rem',
+  height: '1.375rem',
+  strokeWidth: 1.8,
 })

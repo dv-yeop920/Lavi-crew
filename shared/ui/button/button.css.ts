@@ -7,12 +7,17 @@ const base = style({
   border: `1px solid ${semanticVars.color.lineNormal}`,
   borderRadius: '0.75rem',
   paddingInline: '1rem',
-  fontWeight: 700,
+  fontSize: semanticVars.font.size.labelMedium,
+  fontWeight: semanticVars.font.weight.bold,
+  lineHeight: semanticVars.font.lineHeight.normal,
   cursor: 'pointer',
   selectors: {
     '&:disabled': {
       cursor: 'not-allowed',
       opacity: 0.55,
+    },
+    '&:not(:disabled):active': {
+      transform: 'translateY(1px)',
     },
   },
 })
@@ -23,6 +28,11 @@ export const button = styleVariants({
     {
       background: semanticVars.color.primaryNormal,
       color: semanticVars.color.onPrimary,
+      selectors: {
+        '&:hover': {
+          background: semanticVars.color.primaryStrong,
+        },
+      },
     },
   ],
   secondary: [
@@ -30,6 +40,12 @@ export const button = styleVariants({
     {
       background: semanticVars.color.surface,
       color: semanticVars.color.labelNormal,
+      selectors: {
+        '&:hover': {
+          background: semanticVars.color.primarySubtle,
+          borderColor: semanticVars.color.primarySoft,
+        },
+      },
     },
   ],
 })

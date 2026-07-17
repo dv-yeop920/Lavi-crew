@@ -6,17 +6,17 @@ import * as styles from './app-shell.css'
 
 type AppShellProps = {
   children: ReactNode
+  headerAction?: ReactNode
   navigationItems: NavigationItem[]
-  roleLabel: string
 }
 
-export function AppShell({ children, navigationItems, roleLabel }: AppShellProps) {
+export function AppShell({ children, headerAction, navigationItems }: AppShellProps) {
   return (
     <div className={styles.viewport}>
       <div className={styles.shell}>
         <header className={styles.topNavigation}>
           <strong className={styles.brand}>라비크루</strong>
-          <span className={styles.role}>{roleLabel}</span>
+          <div className={styles.headerActions}>{headerAction}</div>
         </header>
         <main className={styles.content}>{children}</main>
         <BottomNavigation items={navigationItems} />

@@ -9,4 +9,5 @@ export const card = style({
   border: `1px solid ${semanticVars.color.lineNormal}`,
   borderRadius: '1rem',
   background: semanticVars.color.surface,
+  boxShadow: `0 0.25rem 1rem ${semanticVars.color.primarySubtle}`,
 })
