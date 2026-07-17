@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
+    "bootstrap:admin": "node scripts/bootstrap-admin.mjs",
     "check:architecture": "node scripts/check-architecture.mjs",
     "check:harness": "node scripts/check-harness.mjs",
     "format": "prettier . --write --ignore-unknown",

@@ -1,57 +1,33 @@
 'use client'
 
-import Link from 'next/link'
 import { useActionState } from 'react'
 
-import { signupAction } from '@/features/auth/actions/auth-actions'
+import { onboardingAction } from '@/features/auth/actions/auth-actions'
 import { Button } from '@/shared/ui/button/button'
 import { TextField } from '@/shared/ui/text-field/text-field'
 
 import * as styles from './auth-view.css'
 
-export function SignupView() {
-  const [state, formAction, isPending] = useActionState(signupAction, null)
+export function OnboardingView() {
+  const [state, formAction, isPending] = useActionState(onboardingAction, null)
   return (
     <main className={styles.viewport}>
       <div className={styles.shell}>
         <header className={styles.header}>
           <span className={styles.brand}>라비크루</span>
-          <h1>크루로 시작하기</h1>
+          <h1>크루 정보 등록</h1>
           <p className={styles.description}>
-            라비에벨 구성원만 가입할 수 있어요. 전달받은 전용 코드를 준비해 주세요.
+            운영 초대 코드와 연락처를 등록하면 일정을 이용할 수 있어요.
           </p>
         </header>
-        <form className={styles.form} action={formAction}>
+        <form action={formAction} className={styles.form}>
           <TextField autoComplete="name" label="이름" name="name" required />
-          <TextField
-            autoComplete="email"
-            inputMode="email"
-            label="이메일"
-            name="email"
-            required
-            type="email"
-          />
           <TextField
             autoComplete="tel"
             inputMode="numeric"
             label="휴대폰 번호"
             name="phone"
             required
-          />
-          <TextField
-            autoComplete="new-password"
-            hint="8자 이상 입력해 주세요."
-            label="비밀번호"
-            name="password"
-            required
-            type="password"
-          />
-          <TextField
-            autoComplete="new-password"
-            label="비밀번호 확인"
-            name="passwordConfirm"
-            required
-            type="password"
           />
           <TextField
             autoCapitalize="characters"
@@ -69,15 +45,9 @@ export function SignupView() {
             </p>
           ) : null}
           <Button className={styles.fullButton} disabled={isPending} type="submit">
-            {isPending ? '가입 요청 중...' : '회원가입'}
+            {isPending ? '등록 중...' : '등록 완료'}
           </Button>
         </form>
-        <p className={styles.footer}>
-          이미 계정이 있나요?
-          <Link className={styles.link} href="/">
-            로그인
-          </Link>
-        </p>
       </div>
     </main>
   )

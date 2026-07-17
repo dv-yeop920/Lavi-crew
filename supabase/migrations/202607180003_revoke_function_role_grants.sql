@@ -1,0 +1,7 @@
+-- Supabase grants EXECUTE to API roles by default. Restrict every function first.
+revoke execute on all functions in schema public from anon, authenticated;
+
+grant execute on function public.is_admin() to authenticated;
+grant execute on function public.close_application_period(uuid) to authenticated;
+grant execute on function public.confirm_attendance_and_payroll(uuid, public.attendance_status, text) to authenticated;
+grant execute on function public.complete_worker_onboarding(text, text, text, boolean) to authenticated;
