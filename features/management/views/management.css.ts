@@ -107,8 +107,24 @@ export const saveMessage = style({
   fontWeight: semanticVars.font.weight.semibold,
 })
 
+export const errorMessage = style({
+  padding: '0.75rem',
+  borderRadius: '0.75rem',
+  background: semanticVars.color.warningSoft,
+  color: semanticVars.color.warning,
+  fontSize: semanticVars.font.size.bodySmall,
+  fontWeight: semanticVars.font.weight.semibold,
+})
+
 export const wage = style({
   color: semanticVars.color.labelStrong,
   fontSize: semanticVars.font.size.numberSmall,
   fontWeight: semanticVars.font.weight.bold,
+})
+
+export const inviteCode = style({
+  color: semanticVars.color.primaryStrong,
+  fontSize: semanticVars.font.size.numberSmall,
+  fontWeight: semanticVars.font.weight.bold,
+  overflowWrap: 'anywhere',
 })

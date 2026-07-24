@@ -24,3 +24,12 @@ export const message = style({
   fontSize: semanticVars.font.size.bodySmall,
   fontWeight: semanticVars.font.weight.semibold,
 })
+
+export const errorMessage = style({
+  padding: '0.75rem',
+  borderRadius: '0.75rem',
+  background: semanticVars.color.warningSoft,
+  color: semanticVars.color.warning,
+  fontSize: semanticVars.font.size.bodySmall,
+  fontWeight: semanticVars.font.weight.semibold,
+})

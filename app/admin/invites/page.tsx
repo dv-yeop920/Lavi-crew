@@ -1,5 +1,5 @@
-import { InviteManagementView } from '@/features/management/views/invite-management-view'
+import { InviteManagementPageView } from '@/features/management/views/invite-management-page-view'
 
 export default function AdminInvitesPage() {
-  return <InviteManagementView />
+  return <InviteManagementPageView />
 }

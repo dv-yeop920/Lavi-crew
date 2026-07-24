@@ -13,14 +13,15 @@ type Tenure = {
 }
 
 function toUtcDate(dateValue: string | Date) {
-  if (typeof dateValue === 'string') {
+  if (typeof dateValue === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(dateValue)) {
     const [year, month, day] = dateValue.split('-').map(Number)
 
     return new Date(Date.UTC(year, month - 1, day))
   }
 
+  const parsedDate = typeof dateValue === 'string' ? new Date(dateValue) : dateValue
   const dateParts = Object.fromEntries(
-    KOREA_DATE_FORMATTER.formatToParts(dateValue).map((part) => [part.type, part.value]),
+    KOREA_DATE_FORMATTER.formatToParts(parsedDate).map((part) => [part.type, part.value]),
   )
 
   return new Date(
@@ -85,5 +86,11 @@ export function formatTenure(joinedAt: string, asOf = new Date()) {
 }
 
 export function formatJoinedAt(joinedAt: string) {
-  return joinedAt.replaceAll('-', '.')
+  const joinedDate = toUtcDate(joinedAt)
+
+  return [
+    joinedDate.getUTCFullYear(),
+    String(joinedDate.getUTCMonth() + 1).padStart(2, '0'),
+    String(joinedDate.getUTCDate()).padStart(2, '0'),
+  ].join('.')
 }

@@ -1,7 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useActionState, useState } from 'react'
 
+import {
+  createInviteAction,
+  deactivateInviteAction,
+} from '@/features/management/actions/management-actions'
+import type { InviteStatus } from '@/features/management/domain/invite-status'
 import { Button } from '@/shared/ui/button/button'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
@@ -11,57 +16,65 @@ import { TextField } from '@/shared/ui/text-field/text-field'
 import * as styles from './management.css'
 import * as layout from '@/shared/ui/layout/layout.css'
 
-type InviteCode = {
+export type InviteViewModel = {
+  code: string
   expiresAt: string
   id: string
-  isActive: boolean
   label: string
-  limit: number
-  used: number
+  maxUses: number
+  status: InviteStatus
+  usedCount: number
 }
 
-const initialInviteCodes: InviteCode[] = [
-  {
-    expiresAt: '2026-08-31',
-    id: 'july-crew',
-    isActive: true,
-    label: '7월 신규 크루 코드',
-    limit: 30,
-    used: 7,
-  },
-]
+const inviteStatusLabel: Record<InviteStatus, string> = {
+  active: '사용 중',
+  disabled: '사용 중지',
+  exhausted: '사용 완료',
+  expired: '기간 만료',
+}
 
-export function InviteManagementView() {
-  const [inviteCodes, setInviteCodes] = useState(initialInviteCodes)
+function InviteItem({ invite }: { invite: InviteViewModel }) {
+  const action = deactivateInviteAction.bind(null, invite.id)
+  const [state, formAction, isPending] = useActionState(action, null)
+  const expiresAt = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium' }).format(
+    new Date(invite.expiresAt),
+  )
+  return (
+    <ContentCard>
+      <div className={layout.row}>
+        <strong>{invite.label}</strong>
+        <StatusBadge tone={invite.status === 'active' ? 'positive' : 'neutral'}>
+          {inviteStatusLabel[invite.status]}
+        </StatusBadge>
+      </div>
+      <p className={styles.inviteCode}>{invite.code}</p>
+      <p>
+        {expiresAt} 만료 · {invite.usedCount} / {invite.maxUses}회 사용
+      </p>
+      <form action={formAction}>
+        <Button
+          disabled={invite.status !== 'active' || isPending}
+          type="submit"
+          variant="secondary"
+        >
+          {isPending ? '처리 중...' : '사용 중지'}
+        </Button>
+      </form>
+      {state?.message ? (
+        <p
+          className={state.ok ? styles.saveMessage : styles.errorMessage}
+          role={state.ok ? 'status' : 'alert'}
+        >
+          {state.message}
+        </p>
+      ) : null}
+    </ContentCard>
+  )
+}
+
+export function InviteManagementView({ invites }: { invites: InviteViewModel[] }) {
   const [isCreating, setIsCreating] = useState(false)
-  const [label, setLabel] = useState('')
-  const [expiresAt, setExpiresAt] = useState('2026-09-30')
-  const [limit, setLimit] = useState('30')
-
-  function createInviteCode() {
-    const nextId = `invite-${inviteCodes.length + 1}`
-    setInviteCodes((current) => [
-      ...current,
-      {
-        expiresAt,
-        id: nextId,
-        isActive: true,
-        label: label || '신규 크루 코드',
-        limit: Number(limit) || 1,
-        used: 0,
-      },
-    ])
-    setLabel('')
-    setIsCreating(false)
-  }
-
-  function deactivateInviteCode(inviteId: string) {
-    setInviteCodes((current) =>
-      current.map((inviteCode) =>
-        inviteCode.id === inviteId ? { ...inviteCode, isActive: false } : inviteCode,
-      ),
-    )
-  }
+  const [state, formAction, isPending] = useActionState(createInviteAction, null)
 
   return (
     <div className={layout.page}>
@@ -78,50 +91,45 @@ export function InviteManagementView() {
 
       {isCreating ? (
         <ContentCard>
-          <div className={styles.form}>
-            <TextField label="코드 설명" value={label} onChange={(e) => setLabel(e.target.value)} />
+          <form action={formAction} className={styles.form}>
+            <TextField label="코드 설명" maxLength={60} name="label" required />
+            <TextField label="만료일" name="expiresAt" required type="date" />
             <TextField
-              label="만료일"
-              type="date"
-              value={expiresAt}
-              onChange={(e) => setExpiresAt(e.target.value)}
-            />
-            <TextField
+              inputMode="numeric"
               label="사용 가능 횟수"
               min="1"
+              name="maxUses"
+              required
               type="number"
-              value={limit}
-              onChange={(e) => setLimit(e.target.value)}
             />
-            <Button onClick={createInviteCode}>코드 생성</Button>
-          </div>
+            <Button disabled={isPending} type="submit">
+              {isPending ? '생성 중...' : '코드 생성'}
+            </Button>
+            {state?.message ? (
+              <p
+                className={state.ok ? styles.saveMessage : styles.errorMessage}
+                role={state.ok ? 'status' : 'alert'}
+              >
+                {state.message}
+              </p>
+            ) : null}
+          </form>
         </ContentCard>
       ) : null}
 
-      <ul className={layout.list}>
-        {inviteCodes.map((inviteCode) => (
-          <li key={inviteCode.id}>
-            <ContentCard>
-              <div className={layout.row}>
-                <strong>{inviteCode.label}</strong>
-                <StatusBadge tone={inviteCode.isActive ? 'positive' : 'neutral'}>
-                  {inviteCode.isActive ? '사용 중' : '사용 중지'}
-                </StatusBadge>
-              </div>
-              <p>
-                {inviteCode.expiresAt} 만료 · {inviteCode.used} / {inviteCode.limit}회 사용
-              </p>
-              <Button
-                disabled={!inviteCode.isActive}
-                variant="secondary"
-                onClick={() => deactivateInviteCode(inviteCode.id)}
-              >
-                사용 중지
-              </Button>
-            </ContentCard>
-          </li>
-        ))}
-      </ul>
+      {invites.length > 0 ? (
+        <ul className={layout.list}>
+          {invites.map((invite) => (
+            <li key={invite.id}>
+              <InviteItem invite={invite} />
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <ContentCard>
+          <p className={styles.contactList}>등록된 초대 코드가 없습니다.</p>
+        </ContentCard>
+      )}
     </div>
   )
 }

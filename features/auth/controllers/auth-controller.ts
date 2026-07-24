@@ -30,9 +30,13 @@ export async function loginController(
       ok: false,
     }
   const profile = await getAuthenticatedProfile()
-  return profile
-    ? { ok: true, role: profile.role }
-    : { code: 'EMAIL_UNVERIFIED', message: '이메일 확인을 완료한 뒤 로그인해 주세요.', ok: false }
+  if (profile) return { ok: true, role: profile.role }
+  await signOut()
+  return {
+    code: 'ACCOUNT_UNAVAILABLE',
+    message: '이메일 확인 또는 계정 활성 상태를 관리자에게 확인해 주세요.',
+    ok: false,
+  }
 }
 export async function signupController(input: SignupInput): Promise<AuthResult> {
   const { error } = await signUpWorker(

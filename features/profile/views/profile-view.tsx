@@ -1,7 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useActionState, useRef, useState } from 'react'
 
+import {
+  deactivateOwnProfileAction,
+  updateOwnProfileAction,
+} from '@/features/profile/actions/profile-actions'
+import type { ProfileActionResult } from '@/features/profile/schemas/profile-input'
 import { Button } from '@/shared/ui/button/button'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
@@ -11,111 +16,144 @@ import { TextField } from '@/shared/ui/text-field/text-field'
 import * as styles from './profile.css'
 import * as layout from '@/shared/ui/layout/layout.css'
 
-export function ProfileView() {
+export type ProfileViewModel = {
+  email: string
+  hourlyWage: number
+  isActive: boolean
+  kakaoConsent: boolean
+  name: string
+  phone: string
+}
+
+const currencyFormatter = new Intl.NumberFormat('ko-KR')
+
+export function ProfileView({ profile }: { profile: ProfileViewModel }) {
+  const formRef = useRef<HTMLFormElement>(null)
   const [isEditing, setIsEditing] = useState(false)
   const [isWithdrawing, setIsWithdrawing] = useState(false)
-  const [isWithdrawn, setIsWithdrawn] = useState(false)
-  const [name, setName] = useState('홍길동')
-  const [phone, setPhone] = useState('010-****-9200')
-  const [isKakaoConsented, setIsKakaoConsented] = useState(true)
-  const [message, setMessage] = useState('')
+  const [updateState, updateFormAction, isUpdating] = useActionState(
+    async (previousState: ProfileActionResult | null, formData: FormData) => {
+      const result = await updateOwnProfileAction(previousState, formData)
+      if (result.ok) {
+        formRef.current?.reset()
+        setIsEditing(false)
+      }
+      return result
+    },
+    null,
+  )
+  const [withdrawState, withdrawFormAction, isWithdrawingPending] = useActionState(
+    deactivateOwnProfileAction,
+    null,
+  )
 
-  function saveProfile() {
+  function cancelEditing() {
+    formRef.current?.reset()
     setIsEditing(false)
-    setMessage('내 정보를 저장했습니다. 현재는 클라이언트 데모입니다.')
-  }
-
-  function withdrawAccount() {
-    setIsWithdrawn(true)
-    setIsWithdrawing(false)
-    setIsEditing(false)
-    setMessage('회원 탈퇴를 신청했습니다. 기존 근무 및 급여 이력은 보존됩니다.')
   }
 
   return (
     <div className={layout.page}>
-      <PageHeader eyebrow="MY" title={name} description="내 정보와 알림 수신 상태를 확인합니다." />
+      <PageHeader
+        eyebrow="MY"
+        title={profile.name}
+        description="내 정보와 알림 수신 상태를 확인합니다."
+      />
       <ContentCard>
         <div className={layout.row}>
           <strong>계정 상태</strong>
-          <StatusBadge tone={isWithdrawn ? 'neutral' : 'positive'}>
-            {isWithdrawn ? '탈퇴 신청' : '활성'}
+          <StatusBadge tone={profile.isActive ? 'positive' : 'neutral'}>
+            {profile.isActive ? '활성' : '탈퇴'}
           </StatusBadge>
         </div>
         <div className={layout.row}>
           <strong>이메일</strong>
-          <span>wo***@example.com</span>
+          <span>{profile.email}</span>
         </div>
         <div className={layout.row}>
           <strong>현재 적용 시급</strong>
-          <span>13,000원</span>
+          <span>{currencyFormatter.format(profile.hourlyWage)}원</span>
         </div>
       </ContentCard>
 
       <ContentCard>
-        <div className={styles.form}>
+        <form action={updateFormAction} className={styles.form} ref={formRef}>
           <TextField
-            disabled={!isEditing || isWithdrawn}
+            defaultValue={profile.name}
+            disabled={!isEditing || isUpdating}
             label="이름"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
+            name="name"
+            required
           />
           <TextField
-            disabled={!isEditing || isWithdrawn}
+            autoComplete="tel"
+            defaultValue={profile.phone}
+            disabled={!isEditing || isUpdating}
+            inputMode="tel"
             label="휴대폰 번호"
-            value={phone}
-            onChange={(event) => setPhone(event.target.value)}
+            name="phone"
+            required
           />
           <label>
             <input
-              checked={isKakaoConsented}
-              disabled={!isEditing || isWithdrawn}
+              defaultChecked={profile.kakaoConsent}
+              disabled={!isEditing || isUpdating}
+              name="kakaoConsent"
               type="checkbox"
-              onChange={(event) => setIsKakaoConsented(event.target.checked)}
             />{' '}
             카카오 알림 수신 동의
           </label>
           <div className={layout.wrap}>
             {isEditing ? (
               <>
-                <Button onClick={saveProfile}>변경 저장</Button>
-                <Button variant="secondary" onClick={() => setIsEditing(false)}>
+                <Button disabled={isUpdating} type="submit">
+                  {isUpdating ? '저장 중...' : '변경 저장'}
+                </Button>
+                <Button variant="secondary" onClick={cancelEditing}>
                   취소
                 </Button>
               </>
             ) : (
-              <Button disabled={isWithdrawn} variant="secondary" onClick={() => setIsEditing(true)}>
+              <Button variant="secondary" onClick={() => setIsEditing(true)}>
                 내 정보 수정
               </Button>
             )}
-            <Button
-              disabled={isWithdrawn}
-              variant="secondary"
-              onClick={() => setIsWithdrawing(true)}
-            >
+            <Button variant="secondary" onClick={() => setIsWithdrawing(true)}>
               회원 탈퇴 신청
             </Button>
           </div>
-        </div>
+          {updateState?.message ? (
+            <p
+              className={updateState.ok ? styles.message : styles.errorMessage}
+              role={updateState.ok ? 'status' : 'alert'}
+            >
+              {updateState.message}
+            </p>
+          ) : null}
+        </form>
       </ContentCard>
 
       {isWithdrawing ? (
         <section className={styles.confirmation} aria-labelledby="withdraw-title">
           <strong id="withdraw-title">회원 탈퇴를 신청할까요?</strong>
           <p>로그인과 새 신청은 중단되며 기존 근무·출석·급여 이력은 보존됩니다.</p>
-          <div className={layout.wrap}>
-            <Button onClick={withdrawAccount}>탈퇴 신청 확인</Button>
+          <form action={withdrawFormAction} className={layout.wrap}>
+            <Button disabled={isWithdrawingPending} type="submit">
+              {isWithdrawingPending ? '처리 중...' : '탈퇴 신청 확인'}
+            </Button>
             <Button variant="secondary" onClick={() => setIsWithdrawing(false)}>
               취소
             </Button>
-          </div>
+          </form>
+          {withdrawState?.message ? (
+            <p
+              className={withdrawState.ok ? styles.message : styles.errorMessage}
+              role={withdrawState.ok ? 'status' : 'alert'}
+            >
+              {withdrawState.message}
+            </p>
+          ) : null}
         </section>
-      ) : null}
-
-      {message ? (
-        <p className={styles.message} aria-live="polite">
-          {message}
-        </p>
       ) : null}
     </div>
   )

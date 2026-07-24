@@ -52,51 +52,6 @@ export const message = style({
   fontWeight: semanticVars.font.weight.semibold,
 })
 
-export const demoSection = style({
-  display: 'grid',
-  gap: '0.75rem',
-  paddingTop: '0.5rem',
-  borderTop: `1px solid ${semanticVars.color.lineNormal}`,
-})
-
-export const demoTitle = style({
-  color: semanticVars.color.labelNeutral,
-  fontSize: semanticVars.font.size.labelMedium,
-})
-
-export const demoGrid = style({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  gap: '0.625rem',
-})
-
-export const demoButton = style({
-  display: 'grid',
-  minWidth: 0,
-  minHeight: '4.5rem',
-  padding: '0.75rem',
-  border: `1px solid ${semanticVars.color.primarySoft}`,
-  borderRadius: '0.875rem',
-  background: semanticVars.color.primarySubtle,
-  color: semanticVars.color.primaryStrong,
-  textAlign: 'left',
-  cursor: 'pointer',
-  selectors: {
-    '&:hover': {
-      borderColor: semanticVars.color.primaryNormal,
-    },
-  },
-})
-
-export const demoMeta = style({
-  overflow: 'hidden',
-  color: semanticVars.color.labelNeutral,
-  fontSize: semanticVars.font.size.captionSmall,
-  fontWeight: semanticVars.font.weight.regular,
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-})
-
 export const footer = style({
   display: 'flex',
   justifyContent: 'center',

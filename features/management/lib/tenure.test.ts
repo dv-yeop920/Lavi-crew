@@ -31,4 +31,11 @@ describe('worker tenure', () => {
   it('formats the signup date for Korean UI', () => {
     expect(formatJoinedAt('2024-08-10')).toBe('2024.08.10')
   })
+
+  it('parses Supabase timestamptz values in the Korean calendar date', () => {
+    const joinedAt = '2024-08-09T15:30:00.000Z'
+
+    expect(formatJoinedAt(joinedAt)).toBe('2024.08.10')
+    expect(formatTenure(joinedAt, new Date('2026-07-17T12:00:00+09:00'))).toBe('1년 11개월 7일')
+  })
 })

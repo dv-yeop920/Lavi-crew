@@ -1,4 +1,4 @@
-import { WorkerDetailView } from '@/features/management/views/worker-detail-view'
+import { WorkerDetailPageView } from '@/features/management/views/worker-detail-page-view'
 
 type AdminWorkerDetailPageProps = {
   params: Promise<{ workerId: string }>
@@ -6,6 +6,5 @@ type AdminWorkerDetailPageProps = {
 
 export default async function AdminWorkerDetailPage({ params }: AdminWorkerDetailPageProps) {
   const { workerId } = await params
-
-  return <WorkerDetailView workerId={workerId} />
+  return <WorkerDetailPageView workerId={workerId} />
 }

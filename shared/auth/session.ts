@@ -2,6 +2,7 @@ import 'server-only'
 
 import { redirect } from 'next/navigation'
 
+import { getVerifiedUserId } from '@/shared/auth/claims'
 import { createServerSupabaseClient } from '@/shared/supabase/server'
 
 export type AuthRole = 'admin' | 'worker'
@@ -10,8 +11,8 @@ export type AuthenticatedProfile = { id: string; isActive: boolean; name: string
 export async function getAuthenticatedProfile(): Promise<AuthenticatedProfile | null> {
   const supabase = await createServerSupabaseClient()
   const { data: claimsData } = await supabase.auth.getClaims()
-  const userId = claimsData?.claims.sub
-  if (typeof userId !== 'string' || !claimsData?.claims.email_confirmed_at) return null
+  const userId = getVerifiedUserId(claimsData?.claims)
+  if (!userId) return null
   const { data } = await supabase
     .from('profiles')
     .select('id, name, role, is_active')
