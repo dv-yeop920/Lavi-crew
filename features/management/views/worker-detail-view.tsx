@@ -8,6 +8,8 @@ import {
   updateManagedWorkerAction,
 } from '@/features/management/actions/management-actions'
 import { POSITION_CATALOG, type PositionId } from '@/shared/domain/positions'
+import { getFirstFieldError } from '@/shared/forms/form-result'
+import { useSelectiveFormRecovery } from '@/shared/forms/use-selective-form-recovery'
 import { Button } from '@/shared/ui/button/button'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
@@ -42,6 +44,7 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
     deactivateAction,
     null,
   )
+  const { captureSubmission, formRef } = useSelectiveFormRecovery(updateState)
   const [isDeleteConfirming, setIsDeleteConfirming] = useState(false)
 
   return (
@@ -73,10 +76,17 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
       </ContentCard>
 
       <ContentCard>
-        <form action={updateFormAction} className={styles.form}>
+        <form
+          action={updateFormAction}
+          className={styles.form}
+          noValidate
+          onSubmitCapture={captureSubmission}
+          ref={formRef}
+        >
           <TextField
             defaultValue={worker.name}
             disabled={!worker.isActive || isUpdating}
+            error={getFirstFieldError(updateState?.fieldErrors, 'name')}
             label="이름"
             name="name"
             required
@@ -84,6 +94,7 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
           <TextField
             defaultValue={worker.hourlyWage}
             disabled={!worker.isActive || isUpdating}
+            error={getFirstFieldError(updateState?.fieldErrors, 'hourlyWage')}
             hint="이 인원의 모든 포지션 근무에 공통으로 적용됩니다."
             inputMode="numeric"
             label="개인 시급"
@@ -117,6 +128,11 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
               ))}
             </div>
           </fieldset>
+          {getFirstFieldError(updateState?.fieldErrors, 'positionIds') ? (
+            <p aria-live="polite" className={styles.fieldError}>
+              {getFirstFieldError(updateState?.fieldErrors, 'positionIds')}
+            </p>
+          ) : null}
 
           <div className={layout.wrap}>
             <Button disabled={!worker.isActive || isUpdating} type="submit">
@@ -137,7 +153,7 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
               회원 삭제
             </Button>
           </div>
-          {updateState?.message ? (
+          {updateState?.message && !updateState.fieldErrors ? (
             <p
               className={updateState.ok ? styles.saveMessage : styles.errorMessage}
               role={updateState.ok ? 'status' : 'alert'}

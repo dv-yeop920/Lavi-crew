@@ -46,9 +46,24 @@ export const fullButton = style({
 export const message = style({
   padding: '0.75rem',
   borderRadius: '0.75rem',
-  background: semanticVars.color.warningSoft,
-  color: semanticVars.color.warning,
+  background: semanticVars.color.positiveSoft,
+  color: semanticVars.color.positive,
   fontSize: semanticVars.font.size.bodySmall,
+  fontWeight: semanticVars.font.weight.semibold,
+})
+
+export const errorMessage = style({
+  padding: '0.75rem',
+  borderRadius: '0.75rem',
+  background: semanticVars.color.negativeSoft,
+  color: semanticVars.color.negative,
+  fontSize: semanticVars.font.size.bodySmall,
+  fontWeight: semanticVars.font.weight.semibold,
+})
+
+export const fieldError = style({
+  color: semanticVars.color.negative,
+  fontSize: semanticVars.font.size.captionLarge,
   fontWeight: semanticVars.font.weight.semibold,
 })
 
@@ -79,6 +94,11 @@ export const checkbox = style({
   color: semanticVars.color.labelNeutral,
   fontSize: semanticVars.font.size.bodySmall,
   cursor: 'pointer',
+})
+
+export const checkboxField = style({
+  display: 'grid',
+  gap: '0.5rem',
 })
 
 export const checkboxInput = style({

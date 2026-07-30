@@ -1,0 +1,281 @@
+'use client'
+
+import { useRouter } from 'next/navigation'
+import { useActionState, useEffect, useState } from 'react'
+
+import {
+  saveScheduleApplicationPeriodAction,
+  setScheduleApplicationPeriodStatusAction,
+} from '@/features/schedule/actions/schedule-actions'
+import type { MonthRegistrationViewModel } from '@/features/schedule/schemas/schedule-view-model'
+import { Button } from '@/shared/ui/button/button'
+import { ContentCard } from '@/shared/ui/content-card/content-card'
+import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
+
+import * as styles from './schedule.css'
+import * as layout from '@/shared/ui/layout/layout.css'
+
+type ScheduleApplicationPeriodCardProps = {
+  hasScheduleHistory: boolean
+  month: string
+  period: MonthRegistrationViewModel['period']
+  requestId: string
+}
+
+function getDeadlineInputs(month: string, value: string | null) {
+  if (value) {
+    const parts = new Intl.DateTimeFormat('en-CA', {
+      day: '2-digit',
+      hour: '2-digit',
+      hour12: false,
+      minute: '2-digit',
+      month: '2-digit',
+      timeZone: 'Asia/Seoul',
+      year: 'numeric',
+    })
+      .formatToParts(new Date(value))
+      .reduce<Record<string, string>>((result, part) => {
+        result[part.type] = part.value
+        return result
+      }, {})
+    return {
+      date: `${parts.year}-${parts.month}-${parts.day}`,
+      time: `${parts.hour}:${parts.minute}`,
+    }
+  }
+
+  const [year, monthNumber] = month.split('-').map(Number)
+  const candidate = new Date(Date.UTC(year, monthNumber - 2, 25))
+  return {
+    date: candidate.toISOString().slice(0, 10),
+    time: '18:00',
+  }
+}
+
+function toDeadlineIso(date: string, time: string) {
+  const deadline = new Date(`${date}T${time}:00+09:00`)
+  return Number.isNaN(deadline.valueOf()) ? '' : deadline.toISOString()
+}
+
+export function ScheduleApplicationPeriodCard({
+  hasScheduleHistory,
+  month,
+  period,
+  requestId: initialRequestId,
+}: ScheduleApplicationPeriodCardProps) {
+  const router = useRouter()
+  const initialDeadline = getDeadlineInputs(month, period.applicationDeadline)
+  const [deadlineDate, setDeadlineDate] = useState(initialDeadline.date)
+  const [deadlineTime, setDeadlineTime] = useState(initialDeadline.time)
+  const [deadlineRequestId, setDeadlineRequestId] = useState(initialRequestId)
+  const [statusRequestId, setStatusRequestId] = useState(initialRequestId)
+  const [isConfirmingClose, setIsConfirmingClose] = useState(false)
+  const [periodState, periodAction, isSavingPeriod] = useActionState(
+    saveScheduleApplicationPeriodAction,
+    null,
+  )
+  const [statusState, statusAction, isSavingStatus] = useActionState(
+    setScheduleApplicationPeriodStatusAction,
+    null,
+  )
+  const isBusy = isSavingPeriod || isSavingStatus
+
+  useEffect(() => {
+    if (!periodState?.ok && !statusState?.ok) return
+    router.refresh()
+  }, [periodState?.ok, router, statusState?.ok])
+
+  useEffect(() => {
+    queueMicrotask(() => {
+      setDeadlineRequestId(initialRequestId)
+      setStatusRequestId(initialRequestId)
+    })
+  }, [initialRequestId])
+
+  function updateDeadline(update: () => void) {
+    update()
+    setDeadlineRequestId(crypto.randomUUID())
+  }
+
+  function prepareStatusMutation() {
+    setStatusRequestId(crypto.randomUUID())
+  }
+
+  const periodPayload = JSON.stringify({
+    applicationDeadline: toDeadlineIso(deadlineDate, deadlineTime),
+    expectedPeriodUpdatedAt: period.updatedAt,
+    month,
+    periodId: period.id,
+    requestId: deadlineRequestId,
+  })
+  const statusLabel = !period.id
+    ? '미설정'
+    : period.status === 'open'
+      ? '신청 중'
+      : period.closedReason === 'manual'
+        ? '관리자 마감'
+        : '기한 만료'
+
+  return (
+    <ContentCard aria-labelledby="application-period-title">
+      <div className={layout.row}>
+        <h2 id="application-period-title">신청 기간 운영</h2>
+        <StatusBadge tone={period.status === 'open' && period.id ? 'positive' : 'neutral'}>
+          {statusLabel}
+        </StatusBadge>
+      </div>
+      <p className={styles.meta}>
+        마감 시각 전까지 구성원이 월별 주말 가능일을 신청할 수 있습니다.
+      </p>
+
+      {hasScheduleHistory ? (
+        <div className={layout.stack}>
+          <p>
+            <strong>신청 마감</strong> {initialDeadline.date} {initialDeadline.time}
+          </p>
+          <p className={styles.meta}>
+            일정이 등록된 월입니다. 신청 마감 시각은 더 이상 변경할 수 없습니다.
+          </p>
+        </div>
+      ) : (
+        <form action={periodAction} aria-busy={isSavingPeriod}>
+          <input name="payload" type="hidden" value={periodPayload} />
+          <div className={styles.deadlineGrid}>
+            <label className={styles.fieldLabel}>
+              <span>마감 날짜</span>
+              <input
+                required
+                className={styles.compactInput}
+                disabled={isBusy}
+                type="date"
+                value={deadlineDate}
+                onChange={(event) => updateDeadline(() => setDeadlineDate(event.target.value))}
+              />
+            </label>
+            <label className={styles.fieldLabel}>
+              <span>마감 시간</span>
+              <input
+                required
+                className={styles.compactInput}
+                disabled={isBusy}
+                type="time"
+                value={deadlineTime}
+                onChange={(event) => updateDeadline(() => setDeadlineTime(event.target.value))}
+              />
+            </label>
+            <Button disabled={isBusy} type="submit">
+              {isSavingPeriod ? '저장 중…' : period.id ? '마감 시각 변경' : '신청 기간 열기'}
+            </Button>
+          </div>
+        </form>
+      )}
+
+      {periodState ? (
+        <div
+          className={periodState.ok ? styles.saveMessage : styles.errorMessage}
+          role={periodState.ok ? 'status' : 'alert'}
+        >
+          <p>{periodState.message}</p>
+          {!periodState.ok && periodState.code === 'STALE_PERIOD' ? (
+            <Button variant="secondary" onClick={() => router.refresh()}>
+              최신 상태 다시 불러오기
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+
+      {period.id && period.updatedAt ? (
+        <div className={layout.stack}>
+          {period.status === 'open' ? (
+            isConfirmingClose ? (
+              <section className={styles.confirmation} aria-labelledby="close-period-title">
+                <h3 id="close-period-title">지금 신청을 마감할까요?</h3>
+                <p className={styles.meta}>
+                  저장하지 않은 구성원 신청은 반영되지 않으며, 게시 일정이 생기면 다시 열 수
+                  없습니다.
+                </p>
+                <form action={statusAction}>
+                  <input
+                    name="payload"
+                    type="hidden"
+                    value={JSON.stringify({
+                      expectedPeriodUpdatedAt: period.updatedAt,
+                      nextStatus: 'closed',
+                      periodId: period.id,
+                      requestId: statusRequestId,
+                    })}
+                  />
+                  <div className={layout.wrap}>
+                    <Button disabled={isBusy} type="submit">
+                      {isSavingStatus ? '마감 중…' : '신청 마감 확정'}
+                    </Button>
+                    <Button
+                      disabled={isBusy}
+                      variant="secondary"
+                      onClick={() => setIsConfirmingClose(false)}
+                    >
+                      계속 신청 받기
+                    </Button>
+                  </div>
+                </form>
+              </section>
+            ) : (
+              <Button
+                disabled={isBusy}
+                variant="secondary"
+                onClick={() => {
+                  prepareStatusMutation()
+                  setIsConfirmingClose(true)
+                }}
+              >
+                신청 수동 마감
+              </Button>
+            )
+          ) : period.canReopen ? (
+            <form action={statusAction}>
+              <input
+                name="payload"
+                type="hidden"
+                value={JSON.stringify({
+                  expectedPeriodUpdatedAt: period.updatedAt,
+                  nextStatus: 'open',
+                  periodId: period.id,
+                  requestId: statusRequestId,
+                })}
+              />
+              <Button disabled={isBusy} variant="secondary" type="submit">
+                {isSavingStatus ? '다시 여는 중…' : '신청 다시 열기'}
+              </Button>
+            </form>
+          ) : period.closedReason === 'manual' ? (
+            <p className={styles.meta}>
+              마감 시각이 지났거나 이 기간의 일정이 게시되어 다시 열 수 없습니다.
+            </p>
+          ) : hasScheduleHistory ? (
+            <p className={styles.meta}>게시 이력이 있어 신청 기간을 다시 열 수 없습니다.</p>
+          ) : (
+            <p className={styles.meta}>
+              새 미래 마감 시각을 저장하면 신청 기간이 다시 활성화됩니다.
+            </p>
+          )}
+
+          {statusState ? (
+            <div
+              className={statusState.ok ? styles.saveMessage : styles.errorMessage}
+              role={statusState.ok ? 'status' : 'alert'}
+            >
+              <p>{statusState.message}</p>
+              {!statusState.ok &&
+              (statusState.code === 'STALE_PERIOD' ||
+                statusState.code === 'PERIOD_CANNOT_BE_REOPENED') ? (
+                <Button variant="secondary" onClick={() => router.refresh()}>
+                  최신 상태 다시 불러오기
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </ContentCard>
+  )
+}

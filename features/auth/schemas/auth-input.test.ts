@@ -1,0 +1,85 @@
+import { describe, expect, it } from 'vitest'
+import { z } from 'zod'
+
+import {
+  parseLoginInput,
+  parseNewPassword,
+  parseOnboardingInput,
+  parseSignupInput,
+} from './auth-input'
+
+function validSignupForm() {
+  const formData = new FormData()
+  formData.set('name', '홍길동')
+  formData.set('email', 'CREW@example.com')
+  formData.set('phone', '010-1234-5678')
+  formData.set('password', 'password123!')
+  formData.set('passwordConfirm', 'password123!')
+  formData.set('inviteCode', 'lavi-crew')
+  formData.set('kakaoConsent', 'on')
+  return formData
+}
+
+describe('auth Zod schemas', () => {
+  it('normalizes valid signup input without trimming passwords', () => {
+    const formData = validSignupForm()
+    formData.set('password', ' password123! ')
+    formData.set('passwordConfirm', ' password123! ')
+    const parsed = parseSignupInput(formData)
+
+    expect(parsed.success).toBe(true)
+    if (!parsed.success) return
+    expect(parsed.data).toMatchObject({
+      email: 'crew@example.com',
+      inviteCode: 'LAVI-CREW',
+      password: ' password123! ',
+      phone: '01012345678',
+    })
+  })
+
+  it('returns detailed field errors for omitted signup values', () => {
+    const parsed = parseSignupInput(new FormData())
+
+    expect(parsed.success).toBe(false)
+    if (parsed.success) return
+    const errors = z.flattenError(parsed.error).fieldErrors
+    expect(errors.name?.[0]).toBe('이름을 입력해 주세요.')
+    expect(errors.email?.[0]).toBe('이메일을 입력해 주세요.')
+    expect(errors.phone?.[0]).toBe('휴대폰 번호를 입력해 주세요.')
+    expect(errors.password?.[0]).toBe('비밀번호를 입력해 주세요.')
+    expect(errors.passwordConfirm?.[0]).toBe('비밀번호 확인을 입력해 주세요.')
+    expect(errors.inviteCode?.[0]).toBe('라비에벨 전용 코드를 입력해 주세요.')
+    expect(errors.kakaoConsent?.[0]).toBe('카카오 알림톡 수신에 동의해 주세요.')
+  })
+
+  it('reports mismatched password confirmation', () => {
+    const formData = validSignupForm()
+    formData.set('passwordConfirm', 'different-password')
+    const parsed = parseSignupInput(formData)
+
+    expect(parsed.success).toBe(false)
+    if (parsed.success) return
+    expect(z.flattenError(parsed.error).fieldErrors.passwordConfirm?.[0]).toBe(
+      '비밀번호와 비밀번호 확인이 일치하지 않습니다.',
+    )
+  })
+
+  it('validates login, onboarding, and password reset inputs', () => {
+    const login = new FormData()
+    login.set('email', 'invalid')
+    login.set('password', 'short')
+    expect(parseLoginInput(login).success).toBe(false)
+
+    const onboarding = new FormData()
+    onboarding.set('name', '홍길동')
+    onboarding.set('phone', '01012345678')
+    onboarding.set('inviteCode', 'LAVI-CREW')
+    onboarding.set('kakaoConsent', 'on')
+    expect(parseOnboardingInput(onboarding).success).toBe(true)
+
+    const password = new FormData()
+    password.set('password', 'new-password')
+    password.set('passwordConfirm', 'new-password')
+    expect(parseNewPassword(password).success).toBe(true)
+  })
+})

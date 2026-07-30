@@ -28,6 +28,13 @@ flowchart LR
 - 사용자가 발생시키는 내부 변경은 Server Action을 기본 경계로 사용한다.
 - Route Handler는 웹훅이나 외부 시스템이 호출할 HTTP 엔드포인트에만 사용한다.
 - Action은 입력 검증, Controller 호출, 필요한 캐시 갱신만 담당한다.
+- 입력값이 있는 폼은 기능 `schemas`의 Zod 스키마와 `safeParse`를 사용한다. 검증 실패는 공통
+  `FormActionResult.fieldErrors`로 반환하며 View는 각 입력과 오류를 접근성 속성으로 연결한다.
+- HTML의 `required`, `type`, `min`은 입력 힌트와 기본 접근성을 위해 유지하되 서버 신뢰 경계가
+  아니다. View에서 브라우저 기본 문구 대신 제품 문구를 보여줘야 하는 폼은 `noValidate`로
+  제출하고 같은 Zod 서버 검증 결과를 표시한다.
+- Auth·DB 오류는 Controller에서 허용된 사용자 문구로 매핑한다. 원본 오류, 제약조건명, 계정
+  존재 여부처럼 민감하거나 내부적인 정보는 그대로 노출하지 않는다.
 - Client Component는 Server Action의 공개 입력 타입만 알고 Controller·Repository·Supabase 서버 모듈을 import하지 않는다.
 
 ## 클라이언트 경계

@@ -1,5 +1,5 @@
-import { AdminDashboardView } from '@/features/dashboard/views/admin-dashboard-view'
+import { AdminDashboardPageView } from '@/features/dashboard/views/admin-dashboard-page-view'
 
-export default function AdminDashboardPage() {
-  return <AdminDashboardView />
+export default async function AdminDashboardPage() {
+  return <AdminDashboardPageView />
 }

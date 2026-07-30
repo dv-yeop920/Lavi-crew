@@ -1,4 +1,4 @@
-import { AdminDailyScheduleView } from '@/features/schedule/views/admin-daily-schedule-view'
+import { AdminDailySchedulePageView } from '@/features/schedule/views/admin-daily-schedule-page-view'
 
 type AdminDailySchedulePageProps = {
   params: Promise<{ date: string }>
@@ -6,7 +6,5 @@ type AdminDailySchedulePageProps = {
 
 export default async function AdminDailySchedulePage({ params }: AdminDailySchedulePageProps) {
   const { date } = await params
-  const safeDate = /^\d{4}-\d{2}-\d{2}$/.test(date) ? date : '2026-07-19'
-
-  return <AdminDailyScheduleView date={safeDate} />
+  return <AdminDailySchedulePageView date={date} />
 }

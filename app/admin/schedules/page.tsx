@@ -1,5 +1,10 @@
-import { AdminScheduleView } from '@/features/schedule/views/admin-schedule-view'
+import { AdminSchedulePageView } from '@/features/schedule/views/admin-schedule-page-view'
 
-export default function AdminSchedulesPage() {
-  return <AdminScheduleView />
+type AdminSchedulesPageProps = {
+  searchParams: Promise<{ month?: string }>
+}
+
+export default async function AdminSchedulesPage({ searchParams }: AdminSchedulesPageProps) {
+  const { month: monthQuery } = await searchParams
+  return <AdminSchedulePageView monthQuery={monthQuery} />
 }

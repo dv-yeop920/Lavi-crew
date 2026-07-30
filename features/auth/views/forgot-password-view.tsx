@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useActionState } from 'react'
 
 import { passwordResetAction } from '@/features/auth/actions/auth-actions'
+import { getFirstFieldError } from '@/shared/forms/form-result'
+import { useSelectiveFormRecovery } from '@/shared/forms/use-selective-form-recovery'
 import { Button } from '@/shared/ui/button/button'
 import { TextField } from '@/shared/ui/text-field/text-field'
 
@@ -11,6 +13,7 @@ import * as styles from './auth-view.css'
 
 export function ForgotPasswordView() {
   const [state, formAction, isPending] = useActionState(passwordResetAction, null)
+  const { captureSubmission, formRef } = useSelectiveFormRecovery(state)
   return (
     <main className={styles.viewport}>
       <div className={styles.shell}>
@@ -19,17 +22,27 @@ export function ForgotPasswordView() {
           <h1>비밀번호 재설정</h1>
           <p className={styles.description}>가입 이메일로 비밀번호 재설정 링크를 보내드려요.</p>
         </header>
-        <form className={styles.form} action={formAction}>
+        <form
+          action={formAction}
+          className={styles.form}
+          noValidate
+          onSubmitCapture={captureSubmission}
+          ref={formRef}
+        >
           <TextField
             autoComplete="email"
+            error={getFirstFieldError(state?.fieldErrors, 'email')}
             inputMode="email"
             label="이메일"
             name="email"
             required
             type="email"
           />
-          {state?.message ? (
-            <p className={styles.message} role={state.ok ? 'status' : 'alert'}>
+          {state?.message && !state.fieldErrors ? (
+            <p
+              className={state.ok ? styles.message : styles.errorMessage}
+              role={state.ok ? 'status' : 'alert'}
+            >
               {state.message}
             </p>
           ) : null}

@@ -1,5 +1,5 @@
-import { WorkerHomeView } from '@/features/dashboard/views/worker-home-view'
+import { WorkerHomePageView } from '@/features/dashboard/views/worker-home-page-view'
 
-export default function WorkerHomePage() {
-  return <WorkerHomeView />
+export default async function WorkerHomePage() {
+  return <WorkerHomePageView />
 }

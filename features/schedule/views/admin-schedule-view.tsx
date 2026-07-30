@@ -1,15 +1,16 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useState } from 'react'
 
+import type { MonthRegistrationViewModel } from '@/features/schedule/schemas/schedule-view-model'
 import { Button } from '@/shared/ui/button/button'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 
 import { RegisteredScheduleCard } from '../components/registered-schedule-card'
 import { getDaysInMonth, getLeadingBlankCount, getWeekendType } from '../lib/calendar'
-import { registeredSchedules } from '../lib/schedule-fixtures'
+
+import { ScheduleApplicationPeriodCard } from './schedule-application-period-card'
 
 import * as styles from './schedule.css'
 import * as layout from '@/shared/ui/layout/layout.css'
@@ -28,22 +29,28 @@ function formatDateLabel(date: string) {
   }).format(new Date(`${date}T00:00:00`))
 }
 
-export function AdminScheduleView() {
+export function AdminScheduleView({
+  requestId,
+  viewModel,
+}: {
+  requestId: string
+  viewModel: MonthRegistrationViewModel
+}) {
   const router = useRouter()
-  const [visibleMonth, setVisibleMonth] = useState({ monthIndex: 6, year: 2026 })
-  const { monthIndex, year } = visibleMonth
-  const monthValue = formatMonthValue(year, monthIndex)
+  const [year, monthNumber] = viewModel.month.split('-').map(Number)
+  const monthIndex = monthNumber - 1
+  const monthValue = viewModel.month
   const monthLabel = `${year}년 ${monthIndex + 1}월`
   const days = Array.from({ length: getDaysInMonth(year, monthIndex) }, (_, index) => index + 1)
   const firstWeekday = getLeadingBlankCount(year, monthIndex)
-  const monthSchedules = registeredSchedules.filter((schedule) =>
-    schedule.date.startsWith(monthValue),
-  )
+  const monthSchedules = viewModel.registeredSchedules
   const registeredDays = new Set(monthSchedules.map((schedule) => Number(schedule.date.slice(-2))))
 
   function moveMonth(offset: number) {
     const nextMonth = new Date(year, monthIndex + offset, 1)
-    setVisibleMonth({ monthIndex: nextMonth.getMonth(), year: nextMonth.getFullYear() })
+    router.push(
+      `/admin/schedules?month=${formatMonthValue(nextMonth.getFullYear(), nextMonth.getMonth())}`,
+    )
   }
 
   return (
@@ -52,6 +59,14 @@ export function AdminScheduleView() {
         eyebrow="일정 관리"
         title="일정 달력"
         description="월별 일정을 확인하고 해당 월의 스케줄 등록 화면으로 이동하세요."
+      />
+
+      <ScheduleApplicationPeriodCard
+        hasScheduleHistory={viewModel.hasScheduleHistory}
+        key={viewModel.month}
+        month={viewModel.month}
+        period={viewModel.period}
+        requestId={requestId}
       />
 
       <ContentCard>

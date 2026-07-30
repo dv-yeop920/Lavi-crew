@@ -1,33 +1,22 @@
-export type ManagementActionResult = {
-  code?: string
-  message: string
-  ok: boolean
-}
+import { z } from 'zod'
 
-function text(value: FormDataEntryValue | null) {
-  return typeof value === 'string' ? value.trim() : ''
-}
+import type { FormActionResult } from '@/shared/forms/form-result'
 
-export function parseWorkerUpdate(formData: FormData) {
-  const name = text(formData.get('name'))
-  const hourlyWage = Number(text(formData.get('hourlyWage')))
-  const selectedPositionIds = formData
-    .getAll('positionIds')
-    .filter((value): value is string => typeof value === 'string')
-  if (
-    name.length < 2 ||
-    !Number.isSafeInteger(hourlyWage) ||
-    hourlyWage <= 0 ||
-    selectedPositionIds.some((positionId) => !/^[a-z-]{3,24}$/.test(positionId))
-  ) {
-    return null
-  }
-  return {
-    hourlyWage,
-    name,
-    positionIds: [...new Set(selectedPositionIds)],
-  }
-}
+export type ManagementActionResult = FormActionResult
+
+const positionIdSchema = z.string().regex(/^[a-z-]{3,24}$/, '가능한 포지션 값이 올바르지 않습니다.')
+
+export const workerUpdateSchema = z.object({
+  hourlyWage: z.preprocess(
+    (value) => (typeof value === 'string' && value.trim() !== '' ? Number(value) : Number.NaN),
+    z
+      .number({ error: '개인 시급을 숫자로 입력해 주세요.' })
+      .int('개인 시급은 원 단위의 정수로 입력해 주세요.')
+      .positive('개인 시급은 0원보다 커야 합니다.'),
+  ),
+  name: z.string().trim().min(1, '이름을 입력해 주세요.').min(2, '이름은 2자 이상 입력해 주세요.'),
+  positionIds: z.array(positionIdSchema).transform((values) => [...new Set(values)]),
+})
 
 function getKoreanDate(asOf: Date) {
   return new Intl.DateTimeFormat('en-CA', {
@@ -46,27 +35,63 @@ function isCalendarDate(value: string) {
   )
 }
 
+function inviteCreateSchema(asOf: Date) {
+  return z
+    .object({
+      expiresAt: z
+        .string()
+        .trim()
+        .min(1, '만료일을 선택해 주세요.')
+        .regex(/^\d{4}-\d{2}-\d{2}$/, '만료일 형식이 올바르지 않습니다.')
+        .refine(isCalendarDate, '존재하는 날짜를 선택해 주세요.')
+        .refine(
+          (value) => value >= getKoreanDate(asOf),
+          '만료일은 오늘 또는 이후 날짜여야 합니다.',
+        ),
+      label: z
+        .string()
+        .trim()
+        .min(1, '코드 설명을 입력해 주세요.')
+        .max(60, '코드 설명은 60자 이하로 입력해 주세요.'),
+      maxUses: z.preprocess(
+        (value) => (typeof value === 'string' && value.trim() !== '' ? Number(value) : Number.NaN),
+        z
+          .number({ error: '사용 가능 횟수를 숫자로 입력해 주세요.' })
+          .int('사용 가능 횟수는 정수로 입력해 주세요.')
+          .positive('사용 가능 횟수는 1회 이상이어야 합니다.'),
+      ),
+    })
+    .transform((value) => ({
+      ...value,
+      expiresAt: `${value.expiresAt}T23:59:59+09:00`,
+    }))
+}
+
+const uuidSchema = z.string().uuid()
+
+function stringValue(formData: FormData, name: string) {
+  const value = formData.get(name)
+  return typeof value === 'string' ? value : ''
+}
+
+export function parseWorkerUpdate(formData: FormData) {
+  return workerUpdateSchema.safeParse({
+    hourlyWage: stringValue(formData, 'hourlyWage'),
+    name: stringValue(formData, 'name'),
+    positionIds: formData
+      .getAll('positionIds')
+      .filter((value): value is string => typeof value === 'string'),
+  })
+}
+
 export function parseInviteCreate(formData: FormData, asOf = new Date()) {
-  const label = text(formData.get('label'))
-  const expiresAt = text(formData.get('expiresAt'))
-  const maxUses = Number(text(formData.get('maxUses')))
-  if (
-    label.length < 1 ||
-    label.length > 60 ||
-    !/^\d{4}-\d{2}-\d{2}$/.test(expiresAt) ||
-    !isCalendarDate(expiresAt) ||
-    expiresAt < getKoreanDate(asOf) ||
-    !Number.isSafeInteger(maxUses) ||
-    maxUses <= 0
-  ) {
-    return null
-  }
-  return { expiresAt: `${expiresAt}T23:59:59+09:00`, label, maxUses }
+  return inviteCreateSchema(asOf).safeParse({
+    expiresAt: stringValue(formData, 'expiresAt'),
+    label: stringValue(formData, 'label'),
+    maxUses: stringValue(formData, 'maxUses'),
+  })
 }
 
 export function parseUuid(value: unknown) {
-  return typeof value === 'string' &&
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
-    ? value
-    : null
+  return uuidSchema.safeParse(value)
 }

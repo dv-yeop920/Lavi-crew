@@ -26,6 +26,7 @@ const atomicVars = createGlobalThemeContract(
       amber50: null,
       blue700: null,
       red700: null,
+      red50: null,
     },
   },
   (_, path) => `color-atomic-${path.join('-')}`,
@@ -56,6 +57,7 @@ createGlobalTheme(':root', atomicVars, {
     amber50: '#FFF6DF',
     blue700: '#1D4ED8',
     red700: '#B42318',
+    red50: '#FEF3F2',
   },
 })
 
@@ -83,6 +85,8 @@ export const semanticVars = createGlobalThemeContract(
       positiveSoft: null,
       warning: null,
       warningSoft: null,
+      negative: null,
+      negativeSoft: null,
       weekendSaturday: null,
       weekendSunday: null,
     },
@@ -155,6 +159,8 @@ createGlobalTheme(':root', semanticVars, {
     positiveSoft: atomicVars.color.green50,
     warning: atomicVars.color.amber800,
     warningSoft: atomicVars.color.amber50,
+    negative: atomicVars.color.red700,
+    negativeSoft: atomicVars.color.red50,
     weekendSaturday: atomicVars.color.blue700,
     weekendSunday: atomicVars.color.red700,
   },

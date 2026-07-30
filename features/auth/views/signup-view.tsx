@@ -4,6 +4,8 @@ import Link from 'next/link'
 import { useActionState } from 'react'
 
 import { signupAction } from '@/features/auth/actions/auth-actions'
+import { getFirstFieldError } from '@/shared/forms/form-result'
+import { useSelectiveFormRecovery } from '@/shared/forms/use-selective-form-recovery'
 import { Button } from '@/shared/ui/button/button'
 import { TextField } from '@/shared/ui/text-field/text-field'
 
@@ -11,6 +13,7 @@ import * as styles from './auth-view.css'
 
 export function SignupView() {
   const [state, formAction, isPending] = useActionState(signupAction, null)
+  const { captureSubmission, formRef } = useSelectiveFormRecovery(state)
   return (
     <main className={styles.viewport}>
       <div className={styles.shell}>
@@ -21,10 +24,23 @@ export function SignupView() {
             라비에벨 구성원만 가입할 수 있어요. 전달받은 전용 코드를 준비해 주세요.
           </p>
         </header>
-        <form className={styles.form} action={formAction}>
-          <TextField autoComplete="name" label="이름" name="name" required />
+        <form
+          action={formAction}
+          className={styles.form}
+          noValidate
+          onSubmitCapture={captureSubmission}
+          ref={formRef}
+        >
+          <TextField
+            autoComplete="name"
+            error={getFirstFieldError(state?.fieldErrors, 'name')}
+            label="이름"
+            name="name"
+            required
+          />
           <TextField
             autoComplete="email"
+            error={getFirstFieldError(state?.fieldErrors, 'email')}
             inputMode="email"
             label="이메일"
             name="email"
@@ -33,6 +49,7 @@ export function SignupView() {
           />
           <TextField
             autoComplete="tel"
+            error={getFirstFieldError(state?.fieldErrors, 'phone')}
             inputMode="numeric"
             label="휴대폰 번호"
             name="phone"
@@ -40,6 +57,7 @@ export function SignupView() {
           />
           <TextField
             autoComplete="new-password"
+            error={getFirstFieldError(state?.fieldErrors, 'password')}
             hint="8자 이상 입력해 주세요."
             label="비밀번호"
             name="password"
@@ -48,6 +66,7 @@ export function SignupView() {
           />
           <TextField
             autoComplete="new-password"
+            error={getFirstFieldError(state?.fieldErrors, 'passwordConfirm')}
             label="비밀번호 확인"
             name="passwordConfirm"
             required
@@ -55,16 +74,42 @@ export function SignupView() {
           />
           <TextField
             autoCapitalize="characters"
+            error={getFirstFieldError(state?.fieldErrors, 'inviteCode')}
             label="라비에벨 전용 코드"
             name="inviteCode"
             required
           />
-          <label className={styles.checkbox}>
-            <input className={styles.checkboxInput} name="kakaoConsent" required type="checkbox" />
-            <span>[필수] 스케줄 확정·변경 알림을 위한 카카오 알림톡 수신에 동의합니다.</span>
-          </label>
-          {state?.message ? (
-            <p className={styles.message} role={state.ok ? 'status' : 'alert'}>
+          <div className={styles.checkboxField}>
+            <label className={styles.checkbox}>
+              <input
+                aria-describedby={
+                  getFirstFieldError(state?.fieldErrors, 'kakaoConsent')
+                    ? 'signup-kakao-consent-error'
+                    : undefined
+                }
+                aria-invalid={Boolean(getFirstFieldError(state?.fieldErrors, 'kakaoConsent'))}
+                className={styles.checkboxInput}
+                name="kakaoConsent"
+                required
+                type="checkbox"
+              />
+              <span>[필수] 스케줄 확정·변경 알림을 위한 카카오 알림톡 수신에 동의합니다.</span>
+            </label>
+            {getFirstFieldError(state?.fieldErrors, 'kakaoConsent') ? (
+              <span
+                aria-live="polite"
+                className={styles.fieldError}
+                id="signup-kakao-consent-error"
+              >
+                {getFirstFieldError(state?.fieldErrors, 'kakaoConsent')}
+              </span>
+            ) : null}
+          </div>
+          {state?.message && !state.fieldErrors ? (
+            <p
+              className={state.ok ? styles.message : styles.errorMessage}
+              role={state.ok ? 'status' : 'alert'}
+            >
               {state.message}
             </p>
           ) : null}

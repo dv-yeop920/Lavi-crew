@@ -5,6 +5,8 @@ import { useActionState, useState } from 'react'
 
 import { loginAction } from '@/features/auth/actions/auth-actions'
 import { startKakaoOAuth } from '@/features/auth/client/kakao-oauth'
+import { getFirstFieldError } from '@/shared/forms/form-result'
+import { useSelectiveFormRecovery } from '@/shared/forms/use-selective-form-recovery'
 import { Button } from '@/shared/ui/button/button'
 import { TextField } from '@/shared/ui/text-field/text-field'
 
@@ -12,6 +14,7 @@ import * as styles from './auth-view.css'
 
 export function LoginView() {
   const [state, formAction, isPending] = useActionState(loginAction, null)
+  const { captureSubmission, formRef } = useSelectiveFormRecovery(state)
   const [oauthError, setOauthError] = useState('')
   async function loginWithKakao() {
     setOauthError('')
@@ -28,12 +31,19 @@ export function LoginView() {
           <h1>반가워요</h1>
           <p className={styles.description}>근무 일정과 급여를 확인하려면 로그인해 주세요.</p>
         </header>
-        <form className={styles.form} action={formAction}>
+        <form
+          action={formAction}
+          className={styles.form}
+          noValidate
+          onSubmitCapture={captureSubmission}
+          ref={formRef}
+        >
           <TextField
             autoComplete="email"
             inputMode="email"
             label="이메일"
             name="email"
+            error={getFirstFieldError(state?.fieldErrors, 'email')}
             placeholder="crew@example.com"
             required
             type="email"
@@ -42,11 +52,12 @@ export function LoginView() {
             autoComplete="current-password"
             label="비밀번호"
             name="password"
+            error={getFirstFieldError(state?.fieldErrors, 'password')}
             required
             type="password"
           />
-          {state?.message ? (
-            <p className={styles.message} role="alert">
+          {state?.message && !state.fieldErrors ? (
+            <p className={state.ok ? styles.message : styles.errorMessage} role="alert">
               {state.message}
             </p>
           ) : null}

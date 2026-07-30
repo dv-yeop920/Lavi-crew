@@ -1,0 +1,2 @@
+create index schedule_registration_requests_requested_by_idx
+  on private.schedule_registration_requests (requested_by);

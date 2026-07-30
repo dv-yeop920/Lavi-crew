@@ -1,7 +1,7 @@
-'use client'
+import Link from 'next/link'
 
-import { useState } from 'react'
-
+import { moveWorkerScheduleAnchor } from '@/features/schedule/lib/worker-schedule-navigation'
+import type { WorkerScheduleViewModel } from '@/features/schedule/schemas/worker-schedule-view-model'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
@@ -9,50 +9,36 @@ import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
 import * as styles from './schedule.css'
 import * as layout from '@/shared/ui/layout/layout.css'
 
-const shifts = [
-  {
-    date: '2026-07-19',
-    dateLabel: '7월 19일 일요일',
-    education: true,
-    position: '메인',
-    time: '09:00–18:00',
-  },
-  {
-    date: '2026-07-25',
-    dateLabel: '7월 25일 토요일',
-    education: false,
-    position: '대기실',
-    time: '10:00–19:30',
-  },
-  {
-    date: '2026-07-26',
-    dateLabel: '7월 26일 일요일',
-    education: false,
-    position: '메인',
-    time: '09:00–18:00',
-  },
-]
-
-type ViewMode = 'month' | 'week' | 'day'
-
-const viewOptions: { label: string; mode: ViewMode }[] = [
+type ReadyWorkerSchedule = WorkerScheduleViewModel & { state: 'ready' }
+const viewOptions = [
   { label: '월', mode: 'month' },
   { label: '주', mode: 'week' },
   { label: '일', mode: 'day' },
-]
+] as const
 
-const periods: Record<ViewMode, { end: string; label: string; start: string }> = {
-  month: { end: '2026-07-31', label: '2026년 7월', start: '2026-07-01' },
-  week: { end: '2026-07-26', label: '7월 20일–26일', start: '2026-07-20' },
-  day: { end: '2026-07-25', label: '2026년 7월 25일', start: '2026-07-25' },
+function formatDate(value: string, options?: Intl.DateTimeFormatOptions) {
+  return new Intl.DateTimeFormat('ko-KR', {
+    day: 'numeric',
+    month: 'long',
+    timeZone: 'UTC',
+    ...options,
+  }).format(new Date(`${value}T00:00:00Z`))
 }
 
-export function WorkerScheduleView() {
-  const [viewMode, setViewMode] = useState<ViewMode>('month')
-  const period = periods[viewMode]
-  const visibleShifts = shifts.filter(
-    (shift) => shift.date >= period.start && shift.date <= period.end,
-  )
+function getRangeLabel(viewModel: ReadyWorkerSchedule) {
+  if (viewModel.mode === 'month') {
+    return formatDate(viewModel.range.start, { year: 'numeric' }).replace(' 1일', '')
+  }
+  if (viewModel.mode === 'day') {
+    return formatDate(viewModel.range.start, { weekday: 'long', year: 'numeric' })
+  }
+  return `${formatDate(viewModel.range.start)}–${formatDate(viewModel.range.end)}`
+}
+
+export function WorkerScheduleView({ viewModel }: { viewModel: ReadyWorkerSchedule }) {
+  const rangeLabel = getRangeLabel(viewModel)
+  const previousAnchor = moveWorkerScheduleAnchor(viewModel.mode, viewModel.anchor, -1)
+  const nextAnchor = moveWorkerScheduleAnchor(viewModel.mode, viewModel.anchor, 1)
 
   return (
     <div className={layout.page}>
@@ -61,42 +47,50 @@ export function WorkerScheduleView() {
         title="내 스케줄"
         description="관리자가 확정한 포지션과 근무시간입니다."
       />
-      <div className={styles.tabList} role="tablist" aria-label="일정 보기 단위">
+      <nav className={styles.tabList} aria-label="일정 보기 단위">
         {viewOptions.map((option) => (
-          <button
-            aria-controls="worker-schedule-panel"
-            aria-selected={viewMode === option.mode}
+          <Link
+            aria-current={viewModel.mode === option.mode ? 'page' : undefined}
             className={styles.tab}
-            id={`worker-schedule-${option.mode}-tab`}
+            href={`/schedule?mode=${option.mode}&anchor=${viewModel.anchor}`}
             key={option.mode}
-            role="tab"
-            type="button"
-            onClick={() => setViewMode(option.mode)}
           >
             {option.label}
-          </button>
+          </Link>
         ))}
+      </nav>
+      <div className={styles.periodNavigator}>
+        <Link
+          aria-label="이전 기간 보기"
+          className={styles.monthArrowButton}
+          href={`/schedule?mode=${viewModel.mode}&anchor=${previousAnchor}`}
+        >
+          ←
+        </Link>
+        <strong>{rangeLabel}</strong>
+        <Link
+          aria-label="다음 기간 보기"
+          className={styles.monthArrowButton}
+          href={`/schedule?mode=${viewModel.mode}&anchor=${nextAnchor}`}
+        >
+          →
+        </Link>
       </div>
-      <section
-        aria-labelledby={`worker-schedule-${viewMode}-tab`}
-        className={layout.stack}
-        id="worker-schedule-panel"
-        role="tabpanel"
-      >
-        <h2>
-          {period.label} · {visibleShifts.length}회
-        </h2>
-        {visibleShifts.length > 0 ? (
+      <section className={layout.stack} aria-labelledby="worker-schedule-title">
+        <h2 id="worker-schedule-title">{viewModel.shifts.length}회 확정</h2>
+        {viewModel.shifts.length > 0 ? (
           <ul className={layout.list}>
-            {visibleShifts.map((shift) => (
-              <li key={shift.date}>
+            {viewModel.shifts.map((shift) => (
+              <li key={shift.assignmentId}>
                 <ContentCard>
-                  <div className={layout.row}>
-                    <strong>{shift.dateLabel}</strong>
-                    <StatusBadge tone="accent">{shift.position}</StatusBadge>
+                  <div className={styles.responsiveRow}>
+                    <strong>{formatDate(shift.date, { weekday: 'long' })}</strong>
+                    <StatusBadge tone="accent">{shift.positionName}</StatusBadge>
                   </div>
-                  <p className={styles.meta}>{shift.time}</p>
-                  {shift.education ? <StatusBadge tone="warning">교육 근무</StatusBadge> : null}
+                  <p className={styles.meta}>
+                    {shift.startTime}–{shift.endTime}
+                  </p>
+                  {shift.isTraining ? <StatusBadge tone="warning">교육 근무</StatusBadge> : null}
                 </ContentCard>
               </li>
             ))}

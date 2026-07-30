@@ -7,6 +7,8 @@ import {
   updateOwnProfileAction,
 } from '@/features/profile/actions/profile-actions'
 import type { ProfileActionResult } from '@/features/profile/schemas/profile-input'
+import { getFirstFieldError } from '@/shared/forms/form-result'
+import { useSelectiveFormRecovery } from '@/shared/forms/use-selective-form-recovery'
 import { Button } from '@/shared/ui/button/button'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
@@ -46,6 +48,7 @@ export function ProfileView({ profile }: { profile: ProfileViewModel }) {
     deactivateOwnProfileAction,
     null,
   )
+  const { captureSubmission } = useSelectiveFormRecovery(updateState, formRef)
 
   function cancelEditing() {
     formRef.current?.reset()
@@ -77,10 +80,17 @@ export function ProfileView({ profile }: { profile: ProfileViewModel }) {
       </ContentCard>
 
       <ContentCard>
-        <form action={updateFormAction} className={styles.form} ref={formRef}>
+        <form
+          action={updateFormAction}
+          className={styles.form}
+          noValidate
+          onSubmitCapture={captureSubmission}
+          ref={formRef}
+        >
           <TextField
             defaultValue={profile.name}
             disabled={!isEditing || isUpdating}
+            error={getFirstFieldError(updateState?.fieldErrors, 'name')}
             label="이름"
             name="name"
             required
@@ -89,6 +99,7 @@ export function ProfileView({ profile }: { profile: ProfileViewModel }) {
             autoComplete="tel"
             defaultValue={profile.phone}
             disabled={!isEditing || isUpdating}
+            error={getFirstFieldError(updateState?.fieldErrors, 'phone')}
             inputMode="tel"
             label="휴대폰 번호"
             name="phone"
@@ -122,7 +133,7 @@ export function ProfileView({ profile }: { profile: ProfileViewModel }) {
               회원 탈퇴 신청
             </Button>
           </div>
-          {updateState?.message ? (
+          {updateState?.message && !updateState.fieldErrors ? (
             <p
               className={updateState.ok ? styles.message : styles.errorMessage}
               role={updateState.ok ? 'status' : 'alert'}

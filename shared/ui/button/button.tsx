@@ -1,8 +1,8 @@
-import type { ButtonHTMLAttributes } from 'react'
+import type { ComponentPropsWithRef } from 'react'
 
 import * as styles from './button.css'
 
-type ButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
+type ButtonProps = ComponentPropsWithRef<'button'> & {
   variant?: keyof typeof styles.button
 }
 

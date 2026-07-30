@@ -110,9 +110,15 @@ export const saveMessage = style({
 export const errorMessage = style({
   padding: '0.75rem',
   borderRadius: '0.75rem',
-  background: semanticVars.color.warningSoft,
-  color: semanticVars.color.warning,
+  background: semanticVars.color.negativeSoft,
+  color: semanticVars.color.negative,
   fontSize: semanticVars.font.size.bodySmall,
+  fontWeight: semanticVars.font.weight.semibold,
+})
+
+export const fieldError = style({
+  color: semanticVars.color.negative,
+  fontSize: semanticVars.font.size.captionLarge,
   fontWeight: semanticVars.font.weight.semibold,
 })
 

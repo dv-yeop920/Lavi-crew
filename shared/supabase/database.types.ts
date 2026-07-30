@@ -196,6 +196,7 @@ export type Database = {
           content: string
           created_at: string
           deleted_at: string | null
+          deleted_by: string | null
           id: string
           is_pinned: boolean
           status: Database['public']['Enums']['notice_status']
@@ -207,6 +208,7 @@ export type Database = {
           content: string
           created_at?: string
           deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           is_pinned?: boolean
           status?: Database['public']['Enums']['notice_status']
@@ -218,6 +220,7 @@ export type Database = {
           content?: string
           created_at?: string
           deleted_at?: string | null
+          deleted_by?: string | null
           id?: string
           is_pinned?: boolean
           status?: Database['public']['Enums']['notice_status']
@@ -232,16 +235,31 @@ export type Database = {
             referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
+          {
+            foreignKeyName: 'notices_deleted_by_fkey'
+            columns: ['deleted_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
         ]
       }
       notification_logs: {
         Row: {
           assignment_id: string | null
+          attempt_count: number
           channel: string
+          correlation_id: string | null
           created_at: string
           delivery_status: Database['public']['Enums']['notification_delivery_status']
+          error_code: string | null
           failure_reason: string | null
           id: string
+          last_attempt_at: string | null
+          lease_token: string | null
+          locked_at: string | null
+          locked_until: string | null
+          next_attempt_at: string
           provider_message_id: string | null
           recipient_id: string
           sent_at: string | null
@@ -250,11 +268,19 @@ export type Database = {
         }
         Insert: {
           assignment_id?: string | null
+          attempt_count?: number
           channel?: string
+          correlation_id?: string | null
           created_at?: string
           delivery_status?: Database['public']['Enums']['notification_delivery_status']
+          error_code?: string | null
           failure_reason?: string | null
           id?: string
+          last_attempt_at?: string | null
+          lease_token?: string | null
+          locked_at?: string | null
+          locked_until?: string | null
+          next_attempt_at?: string
           provider_message_id?: string | null
           recipient_id: string
           sent_at?: string | null
@@ -263,11 +289,19 @@ export type Database = {
         }
         Update: {
           assignment_id?: string | null
+          attempt_count?: number
           channel?: string
+          correlation_id?: string | null
           created_at?: string
           delivery_status?: Database['public']['Enums']['notification_delivery_status']
+          error_code?: string | null
           failure_reason?: string | null
           id?: string
+          last_attempt_at?: string | null
+          lease_token?: string | null
+          locked_at?: string | null
+          locked_until?: string | null
+          next_attempt_at?: string
           provider_message_id?: string | null
           recipient_id?: string
           sent_at?: string | null
@@ -469,38 +503,41 @@ export type Database = {
       }
       schedule_applications: {
         Row: {
+          application_period_id: string
           cancelled_at: string | null
           created_at: string
           id: string
-          shift_id: string
           status: Database['public']['Enums']['application_status']
           updated_at: string
           worker_id: string
+          work_date: string
         }
         Insert: {
+          application_period_id: string
           cancelled_at?: string | null
           created_at?: string
           id?: string
-          shift_id: string
           status?: Database['public']['Enums']['application_status']
           updated_at?: string
           worker_id: string
+          work_date: string
         }
         Update: {
+          application_period_id?: string
           cancelled_at?: string | null
           created_at?: string
           id?: string
-          shift_id?: string
           status?: Database['public']['Enums']['application_status']
           updated_at?: string
           worker_id?: string
+          work_date?: string
         }
         Relationships: [
           {
-            foreignKeyName: 'schedule_applications_shift_id_fkey'
-            columns: ['shift_id']
+            foreignKeyName: 'schedule_applications_application_period_id_fkey'
+            columns: ['application_period_id']
             isOneToOne: false
-            referencedRelation: 'shifts'
+            referencedRelation: 'schedule_application_periods'
             referencedColumns: ['id']
           },
           {
@@ -516,6 +553,7 @@ export type Database = {
         Row: {
           assigned_by: string
           cancelled_at: string | null
+          cancelled_by: string | null
           confirmed_at: string | null
           created_at: string
           hourly_wage_snapshot: number
@@ -523,6 +561,7 @@ export type Database = {
           is_training: boolean
           position_id: string
           shift_id: string
+          slot_index: number
           status: Database['public']['Enums']['assignment_status']
           updated_at: string
           worker_id: string
@@ -530,6 +569,7 @@ export type Database = {
         Insert: {
           assigned_by: string
           cancelled_at?: string | null
+          cancelled_by?: string | null
           confirmed_at?: string | null
           created_at?: string
           hourly_wage_snapshot: number
@@ -537,6 +577,7 @@ export type Database = {
           is_training?: boolean
           position_id: string
           shift_id: string
+          slot_index: number
           status?: Database['public']['Enums']['assignment_status']
           updated_at?: string
           worker_id: string
@@ -544,6 +585,7 @@ export type Database = {
         Update: {
           assigned_by?: string
           cancelled_at?: string | null
+          cancelled_by?: string | null
           confirmed_at?: string | null
           created_at?: string
           hourly_wage_snapshot?: number
@@ -551,11 +593,19 @@ export type Database = {
           is_training?: boolean
           position_id?: string
           shift_id?: string
+          slot_index?: number
           status?: Database['public']['Enums']['assignment_status']
           updated_at?: string
           worker_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: 'shift_assignments_cancelled_by_fkey'
+            columns: ['cancelled_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'shift_assignments_assigned_by_fkey'
             columns: ['assigned_by']
@@ -589,6 +639,9 @@ export type Database = {
       shifts: {
         Row: {
           application_period_id: string
+          cancellation_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
           ceremony_count: number
           created_at: string
           created_by: string
@@ -601,6 +654,9 @@ export type Database = {
         }
         Insert: {
           application_period_id: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           ceremony_count: number
           created_at?: string
           created_by: string
@@ -613,6 +669,9 @@ export type Database = {
         }
         Update: {
           application_period_id?: string
+          cancellation_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
           ceremony_count?: number
           created_at?: string
           created_by?: string
@@ -624,6 +683,13 @@ export type Database = {
           work_date?: string
         }
         Relationships: [
+          {
+            foreignKeyName: 'shifts_cancelled_by_fkey'
+            columns: ['cancelled_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
           {
             foreignKeyName: 'shifts_application_period_id_fkey'
             columns: ['application_period_id']
@@ -701,17 +767,16 @@ export type Database = {
         }
         Returns: undefined
       }
-      cancel_own_schedule_application: {
-        Args: { application_id: string }
-        Returns: undefined
-      }
       claim_invite_code: {
         Args: { candidate_code: string }
         Returns: undefined
       }
-      close_application_period: {
-        Args: { period_id: string }
-        Returns: undefined
+      claim_pending_notifications: {
+        Args: {
+          p_batch_size?: number
+          p_lease_seconds?: number
+        }
+        Returns: Json
       }
       complete_worker_onboarding: {
         Args: {
@@ -722,18 +787,109 @@ export type Database = {
         }
         Returns: undefined
       }
+      complete_notification: {
+        Args: {
+          p_lease_token: string
+          p_notification_id: string
+          p_provider_message_id: string
+        }
+        Returns: Json
+      }
+      create_notice: {
+        Args: {
+          p_content: string
+          p_is_pinned: boolean
+          p_request_id: string
+          p_title: string
+        }
+        Returns: Json
+      }
       confirm_attendance_and_payroll: {
         Args: {
-          actual_end?: string
-          actual_start?: string
-          correction_note?: string
-          next_status: Database['public']['Enums']['attendance_status']
-          record_id: string
+          p_actual_end?: string
+          p_actual_start?: string
+          p_correction_note?: string
+          p_expected_attendance_updated_at: string
+          p_next_status: Database['public']['Enums']['attendance_status']
+          p_record_id: string
+          p_request_id: string
         }
-        Returns: undefined
+        Returns: Json
+      }
+      cancel_daily_schedule: {
+        Args: {
+          p_expected_shift_updated_at: string
+          p_reason: string
+          p_request_id: string
+          p_shift_id: string
+        }
+        Returns: Json
       }
       deactivate_own_profile: { Args: never; Returns: undefined }
+      delete_notice: {
+        Args: {
+          p_expected_updated_at: string
+          p_notice_id: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
       is_admin: { Args: never; Returns: boolean }
+      mark_notice_read: {
+        Args: {
+          p_notice_id: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
+      retry_or_fail_notification: {
+        Args: {
+          p_error_code: string
+          p_failure_reason: string
+          p_is_transient: boolean
+          p_lease_token: string
+          p_notification_id: string
+        }
+        Returns: Json
+      }
+      save_monthly_schedule_registration: {
+        Args: {
+          p_application_deadline: string
+          p_expected_period_updated_at: string | null
+          p_request_id: string
+          p_schedules: Json
+          p_year_month: string
+        }
+        Returns: Json
+      }
+      save_own_monthly_schedule_applications: {
+        Args: {
+          p_expected_period_updated_at: string
+          p_period_id: string
+          p_request_id: string
+          p_selected_dates: string[]
+        }
+        Returns: Json
+      }
+      save_schedule_application_period: {
+        Args: {
+          p_application_deadline: string
+          p_expected_updated_at: string | null
+          p_period_id: string | null
+          p_request_id: string
+          p_year_month: string
+        }
+        Returns: Json
+      }
+      set_schedule_application_period_status: {
+        Args: {
+          p_expected_updated_at: string
+          p_next_status: Database['public']['Enums']['application_period_status']
+          p_period_id: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
       update_own_profile: {
         Args: {
           candidate_name: string
@@ -741,6 +897,29 @@ export type Database = {
           consent: boolean
         }
         Returns: undefined
+      }
+      update_daily_schedule: {
+        Args: {
+          p_assignments: Json
+          p_ceremony_count: number
+          p_end_time: string
+          p_expected_shift_updated_at: string
+          p_request_id: string
+          p_shift_id: string
+          p_start_time: string
+        }
+        Returns: Json
+      }
+      update_notice: {
+        Args: {
+          p_content: string
+          p_expected_updated_at: string
+          p_is_pinned: boolean
+          p_notice_id: string
+          p_request_id: string
+          p_title: string
+        }
+        Returns: Json
       }
       validate_invite_code: {
         Args: { candidate_code: string }

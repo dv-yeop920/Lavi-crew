@@ -1,20 +1,32 @@
 'use client'
 
-import { useState } from 'react'
+import { useRouter } from 'next/navigation'
+import { useActionState, useCallback, useEffect, useState } from 'react'
 
+import {
+  cancelDailyScheduleAction,
+  updateDailyScheduleAction,
+} from '@/features/schedule/actions/daily-schedule-actions'
+import { useDirtyNavigationGuard } from '@/features/schedule/hooks/use-dirty-navigation-guard'
+import { createDailyPositionDrafts } from '@/features/schedule/lib/daily-schedule-view'
+import type { DailyScheduleViewModel } from '@/features/schedule/schemas/daily-schedule-view-model'
+import { getFirstFieldError } from '@/shared/forms/form-result'
 import { Button } from '@/shared/ui/button/button'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
 
 import {
-  createDefaultPositionAssignments,
   type PositionAssignment,
   ScheduleAssignmentTable,
 } from '../components/schedule-assignment-table'
 
+import { AttendanceConfirmationCard } from './attendance-confirmation-card'
+
 import * as styles from './schedule.css'
 import * as layout from '@/shared/ui/layout/layout.css'
+
+type ReadyDailySchedule = Extract<DailyScheduleViewModel, { state: 'ready' }>
 
 type DailyScheduleDraft = {
   ceremonyCount: number
@@ -23,69 +35,131 @@ type DailyScheduleDraft = {
   startTime: string
 }
 
-function createDailyScheduleDraft(date: string): DailyScheduleDraft {
-  return {
-    ceremonyCount: 5,
-    endTime: '18:00',
-    positions: createDefaultPositionAssignments(date),
-    startTime: '09:00',
-  }
-}
-
 function formatDate(date: string) {
   return new Intl.DateTimeFormat('ko-KR', {
     day: 'numeric',
     month: 'long',
+    timeZone: 'UTC',
     weekday: 'long',
     year: 'numeric',
-  }).format(new Date(`${date}T00:00:00`))
+  }).format(new Date(`${date}T00:00:00Z`))
 }
 
-export function AdminDailyScheduleView({ date }: { date: string }) {
-  const [schedule, setSchedule] = useState(() => createDailyScheduleDraft(date))
-  const [isEditingSchedule, setIsEditingSchedule] = useState(false)
-  const [isCancellingSchedule, setIsCancellingSchedule] = useState(false)
-  const [isScheduleCancelled, setIsScheduleCancelled] = useState(false)
-  const [scheduleMessage, setScheduleMessage] = useState('')
+function createDraft(viewModel: ReadyDailySchedule): DailyScheduleDraft {
+  return {
+    ceremonyCount: viewModel.shift.ceremonyCount,
+    endTime: viewModel.shift.endTime,
+    positions: createDailyPositionDrafts(viewModel.assignments),
+    startTime: viewModel.shift.startTime,
+  }
+}
 
-  function updateSchedule(changes: Partial<DailyScheduleDraft>) {
-    setSchedule((current) => ({ ...current, ...changes }))
-    setScheduleMessage('')
+function isSameDraft(first: DailyScheduleDraft, second: DailyScheduleDraft) {
+  return JSON.stringify(first) === JSON.stringify(second)
+}
+
+export function AdminDailyScheduleView({
+  requestId: initialRequestId,
+  viewModel,
+}: {
+  requestId: string
+  viewModel: ReadyDailySchedule
+}) {
+  const router = useRouter()
+  const initialDraft = createDraft(viewModel)
+  const [draft, setDraft] = useState(initialDraft)
+  const [isEditing, setIsEditing] = useState(false)
+  const [isCancelling, setIsCancelling] = useState(false)
+  const [cancellationReason, setCancellationReason] = useState('')
+  const [updateRequestId, setUpdateRequestId] = useState(initialRequestId)
+  const [cancelRequestId, setCancelRequestId] = useState(initialRequestId)
+  const [attendanceDirtyIds, setAttendanceDirtyIds] = useState(() => new Set<string>())
+  const [updateState, updateAction, isUpdating] = useActionState(updateDailyScheduleAction, null)
+  const [cancelState, cancelAction, isCancelPending] = useActionState(
+    cancelDailyScheduleAction,
+    null,
+  )
+  const structureDirty = isEditing && !isSameDraft(draft, initialDraft)
+  const cancellationDirty = isCancelling && cancellationReason.trim().length > 0
+  const isDirty =
+    (structureDirty && !updateState?.ok) ||
+    (cancellationDirty && !cancelState?.ok) ||
+    attendanceDirtyIds.size > 0
+  useDirtyNavigationGuard({
+    confirmationMessage: '저장하지 않은 일정 또는 출석 변경이 있습니다. 이동할까요?',
+    isDirty,
+  })
+
+  const handleAttendanceDirtyChange = useCallback((assignmentId: string, nextDirty: boolean) => {
+    setAttendanceDirtyIds((current) => {
+      const next = new Set(current)
+      if (nextDirty) next.add(assignmentId)
+      else next.delete(assignmentId)
+      if (next.size === current.size && [...next].every((currentId) => current.has(currentId))) {
+        return current
+      }
+      return next
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!updateState?.ok) return
+    queueMicrotask(() => {
+      setIsEditing(false)
+      setUpdateRequestId(crypto.randomUUID())
+      router.refresh()
+    })
+  }, [router, updateState?.ok])
+
+  useEffect(() => {
+    if (!cancelState?.ok) return
+    queueMicrotask(() => {
+      setIsCancelling(false)
+      setCancellationReason('')
+      setCancelRequestId(crypto.randomUUID())
+      router.refresh()
+    })
+  }, [cancelState?.ok, router])
+
+  function updateDraft(changes: Partial<DailyScheduleDraft>) {
+    setDraft((current) => ({ ...current, ...changes }))
+    setUpdateRequestId(crypto.randomUUID())
+  }
+
+  function updatePositions(update: (positions: PositionAssignment[]) => PositionAssignment[]) {
+    setDraft((current) => ({ ...current, positions: update(current.positions) }))
+    setUpdateRequestId(crypto.randomUUID())
   }
 
   function updateWorker(positionId: string, personIndex: number, workerId: string) {
-    setSchedule((current) => ({
-      ...current,
-      positions: current.positions.map((position) => {
+    updatePositions((positions) =>
+      positions.map((position) => {
         if (position.id !== positionId) return position
         const assignedWorkerIds = [...position.assignedWorkerIds]
         assignedWorkerIds[personIndex] = workerId
         return { ...position, assignedWorkerIds }
       }),
-    }))
-    setScheduleMessage('')
+    )
   }
 
   function addPerson(positionId: string) {
-    setSchedule((current) => ({
-      ...current,
-      positions: current.positions.map((position) =>
-        position.id === positionId && position.assignedWorkerIds.length < 3
+    updatePositions((positions) =>
+      positions.map((position) =>
+        position.id === positionId &&
+        position.assignedWorkerIds.length < position.minimumAssigneeCount + 1
           ? {
               ...position,
               assignedWorkerIds: [...position.assignedWorkerIds, ''],
-              trainingFlags: [...position.trainingFlags, false],
+              trainingFlags: [...position.trainingFlags, true],
             }
           : position,
       ),
-    }))
-    setScheduleMessage('')
+    )
   }
 
   function removePerson(positionId: string, personIndex: number) {
-    setSchedule((current) => ({
-      ...current,
-      positions: current.positions.map((position) =>
+    updatePositions((positions) =>
+      positions.map((position) =>
         position.id === positionId && personIndex >= position.minimumAssigneeCount
           ? {
               ...position,
@@ -96,48 +170,68 @@ export function AdminDailyScheduleView({ date }: { date: string }) {
             }
           : position,
       ),
-    }))
-    setScheduleMessage('')
+    )
   }
 
   function toggleTraining(positionId: string, personIndex: number, isTraining: boolean) {
-    setSchedule((current) => ({
-      ...current,
-      positions: current.positions.map((position) => {
+    updatePositions((positions) =>
+      positions.map((position) => {
         if (position.id !== positionId) return position
         const trainingFlags = [...position.trainingFlags]
         trainingFlags[personIndex] = isTraining
         return { ...position, trainingFlags }
       }),
-    }))
-    setScheduleMessage('')
-  }
-
-  function saveSchedule() {
-    const hasEmptyAssignment = schedule.positions.some((position) =>
-      position.assignedWorkerIds.some((workerId) => !workerId),
     )
-
-    if (hasEmptyAssignment) {
-      setScheduleMessage('선택되지 않은 배정 인원이 있습니다.')
-      return
-    }
-
-    setIsEditingSchedule(false)
-    setScheduleMessage('일정과 인원 배정을 수정했습니다.')
   }
 
-  function cancelScheduleEdit() {
-    setSchedule(createDailyScheduleDraft(date))
-    setIsEditingSchedule(false)
-    setScheduleMessage('')
+  const updatePayload = {
+    assignments: draft.positions.flatMap((position) =>
+      position.assignedWorkerIds.map((workerId, slotIndex) => ({
+        isTraining: position.trainingFlags[slotIndex] ?? false,
+        positionId: position.id,
+        slotIndex,
+        slotKind:
+          slotIndex < position.minimumAssigneeCount
+            ? ('base' as const)
+            : ('extra-training' as const),
+        workerId,
+      })),
+    ),
+    ceremonyCount: draft.ceremonyCount,
+    endTime: draft.endTime,
+    expectedShiftUpdatedAt: viewModel.shift.updatedAt,
+    requestId: updateRequestId,
+    shiftId: viewModel.shift.id,
+    startTime: draft.startTime,
   }
-
-  function cancelSchedule() {
-    setIsScheduleCancelled(true)
-    setIsCancellingSchedule(false)
-    setScheduleMessage('일정을 취소했습니다. 현재는 클라이언트 데모입니다.')
+  const cancelPayload = {
+    expectedShiftUpdatedAt: viewModel.shift.updatedAt,
+    reason: cancellationReason,
+    requestId: cancelRequestId,
+    shiftId: viewModel.shift.id,
   }
+  const activeAssignments = viewModel.assignments.filter(
+    (assignment) => assignment.status === 'confirmed',
+  )
+  const scheduleCancelled = viewModel.shift.status === 'cancelled'
+  const workers = viewModel.workers.map((worker) => ({
+    id: worker.id,
+    isActive: worker.isActive,
+    isSelectable: worker.isSelectable,
+    name: worker.name,
+    summary: worker.summary,
+  }))
+  const structureReason = scheduleCancelled
+    ? '취소된 일정은 구조를 변경할 수 없습니다.'
+    : viewModel.shift.status !== 'published'
+      ? '게시된 일정만 구조를 변경하거나 취소할 수 있습니다.'
+      : '출석이 확정된 배정이 있어 일정 구조 수정과 취소가 잠겼습니다.'
+  const updateError =
+    getFirstFieldError(updateState?.fieldErrors, 'ceremonyCount') ??
+    getFirstFieldError(updateState?.fieldErrors, 'startTime') ??
+    getFirstFieldError(updateState?.fieldErrors, 'endTime') ??
+    getFirstFieldError(updateState?.fieldErrors, 'assignments')
+  const cancellationError = getFirstFieldError(cancelState?.fieldErrors, 'reason')
 
   return (
     <div className={layout.page}>
@@ -145,102 +239,233 @@ export function AdminDailyScheduleView({ date }: { date: string }) {
         backHref="/admin/schedules"
         backLabel="일정으로 돌아가기"
         eyebrow="일별 일정 관리"
-        title={formatDate(date)}
-        description="등록한 스케줄과 배정 내용을 조회하고 수정합니다."
+        title={formatDate(viewModel.date)}
+        description="일정 구조와 배정을 관리하고 같은 화면에서 출석 또는 결근을 확정합니다."
       />
 
       <ContentCard>
         <div className={layout.row}>
           <div className={styles.detail}>
-            <strong>등록 스케줄</strong>
-            <span className={styles.meta}>배정된 포지션과 인원을 확인하세요.</span>
+            <h2>등록 스케줄</h2>
+            <span className={styles.meta}>예식, 근무시간과 포지션 배정</span>
           </div>
-          {isScheduleCancelled ? (
+          {scheduleCancelled ? (
             <StatusBadge tone="neutral">취소됨</StatusBadge>
-          ) : isEditingSchedule ? (
+          ) : isEditing ? (
             <StatusBadge tone="warning">수정 중</StatusBadge>
-          ) : (
-            <Button variant="secondary" onClick={() => setIsEditingSchedule(true)}>
+          ) : viewModel.canEditStructure ? (
+            <Button variant="secondary" onClick={() => setIsEditing(true)}>
               수정
             </Button>
+          ) : (
+            <StatusBadge tone="neutral">구조 잠김</StatusBadge>
           )}
         </div>
 
-        <div className={styles.scheduleInfoGrid}>
-          <label className={styles.fieldLabel}>
-            <span>예식 개수</span>
-            <input
-              className={styles.compactInput}
-              min="0"
-              readOnly={!isEditingSchedule}
-              type="number"
-              value={schedule.ceremonyCount}
-              onChange={(event) => updateSchedule({ ceremonyCount: Number(event.target.value) })}
-            />
-          </label>
-          <label className={styles.fieldLabel}>
-            <span>근무 시작</span>
-            <input
-              className={styles.compactInput}
-              readOnly={!isEditingSchedule}
-              type="time"
-              value={schedule.startTime}
-              onChange={(event) => updateSchedule({ startTime: event.target.value })}
-            />
-          </label>
-          <label className={styles.fieldLabel}>
-            <span>근무 종료</span>
-            <input
-              className={styles.compactInput}
-              readOnly={!isEditingSchedule}
-              type="time"
-              value={schedule.endTime}
-              onChange={(event) => updateSchedule({ endTime: event.target.value })}
-            />
-          </label>
-        </div>
-
-        <ScheduleAssignmentTable
-          isEditing={isEditingSchedule}
-          positions={schedule.positions}
-          onAddPerson={addPerson}
-          onRemovePerson={removePerson}
-          onToggleTraining={toggleTraining}
-          onUpdateWorker={updateWorker}
-        />
-
-        {isScheduleCancelled ? null : isEditingSchedule ? (
-          <div className={layout.wrap}>
-            <Button onClick={saveSchedule}>수정 저장</Button>
-            <Button variant="secondary" onClick={cancelScheduleEdit}>
-              취소
-            </Button>
+        {scheduleCancelled ? (
+          <div className={styles.errorMessage} role="status">
+            <p>{structureReason}</p>
+            {viewModel.shift.cancellationReason ? (
+              <p>취소 사유 · {viewModel.shift.cancellationReason}</p>
+            ) : null}
           </div>
-        ) : (
-          <div className={layout.wrap}>
-            <Button variant="secondary" onClick={() => setIsCancellingSchedule(true)}>
-              일정 취소
-            </Button>
-          </div>
-        )}
-        {scheduleMessage ? (
+        ) : !viewModel.canEditStructure ? (
           <p className={styles.saveMessage} role="status">
-            {scheduleMessage}
+            {structureReason}
           </p>
         ) : null}
-      </ContentCard>
-      {isCancellingSchedule ? (
-        <section className={styles.confirmation} aria-labelledby="cancel-schedule-title">
-          <strong id="cancel-schedule-title">이 일정을 취소할까요?</strong>
-          <p>확정 배정은 삭제하지 않고 취소 상태로 보존되며 대상 알바에게 알림이 필요합니다.</p>
-          <div className={layout.wrap}>
-            <Button onClick={cancelSchedule}>일정 취소 확인</Button>
-            <Button variant="secondary" onClick={() => setIsCancellingSchedule(false)}>
-              돌아가기
-            </Button>
+
+        <form action={updateAction} aria-busy={isUpdating}>
+          <input name="payload" type="hidden" value={JSON.stringify(updatePayload)} />
+          <div className={styles.scheduleInfoGrid}>
+            <label className={styles.fieldLabel}>
+              <span>예식 개수</span>
+              <input
+                className={styles.compactInput}
+                disabled={isUpdating}
+                min="1"
+                readOnly={!isEditing}
+                type="number"
+                value={draft.ceremonyCount}
+                onChange={(event) => updateDraft({ ceremonyCount: Number(event.target.value) })}
+              />
+            </label>
+            <label className={styles.fieldLabel}>
+              <span>근무 시작</span>
+              <input
+                className={styles.compactInput}
+                disabled={isUpdating}
+                readOnly={!isEditing}
+                type="time"
+                value={draft.startTime}
+                onChange={(event) => updateDraft({ startTime: event.target.value })}
+              />
+            </label>
+            <label className={styles.fieldLabel}>
+              <span>근무 종료</span>
+              <input
+                className={styles.compactInput}
+                disabled={isUpdating}
+                readOnly={!isEditing}
+                type="time"
+                value={draft.endTime}
+                onChange={(event) => updateDraft({ endTime: event.target.value })}
+              />
+            </label>
           </div>
-        </section>
+
+          <ScheduleAssignmentTable
+            isEditing={isEditing}
+            positions={draft.positions}
+            selectedDate={viewModel.date}
+            workers={workers}
+            onAddPerson={addPerson}
+            onRemovePerson={removePerson}
+            onToggleTraining={toggleTraining}
+            onUpdateWorker={updateWorker}
+          />
+
+          {updateError ? (
+            <p className={styles.fieldError} role="alert">
+              {updateError}
+            </p>
+          ) : null}
+          {updateState ? (
+            <div
+              className={updateState.ok ? styles.saveMessage : styles.errorMessage}
+              role={updateState.ok ? 'status' : 'alert'}
+            >
+              <p>{updateState.message}</p>
+              {!updateState.ok &&
+              (updateState.code === 'STALE_SHIFT' ||
+                updateState.code === 'ATTENDANCE_ALREADY_CONFIRMED') ? (
+                <Button variant="secondary" onClick={() => router.refresh()}>
+                  최신 상태 다시 불러오기
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {isEditing ? (
+            <div className={layout.wrap}>
+              <Button disabled={!structureDirty || isUpdating} type="submit">
+                {isUpdating ? '저장 중…' : '수정 저장'}
+              </Button>
+              <Button
+                disabled={isUpdating}
+                variant="secondary"
+                onClick={() => {
+                  setDraft(initialDraft)
+                  setIsEditing(false)
+                  setUpdateRequestId(crypto.randomUUID())
+                }}
+              >
+                수정 취소
+              </Button>
+            </div>
+          ) : null}
+        </form>
+
+        {!scheduleCancelled && viewModel.canEditStructure && !isEditing ? (
+          <Button variant="secondary" onClick={() => setIsCancelling(true)}>
+            일정 취소
+          </Button>
+        ) : null}
+      </ContentCard>
+
+      {isCancelling ? (
+        <ContentCard>
+          <form action={cancelAction} className={layout.stack} aria-busy={isCancelPending}>
+            <input name="payload" type="hidden" value={JSON.stringify(cancelPayload)} />
+            <h2>이 일정을 취소할까요?</h2>
+            <p className={styles.meta}>일정과 배정은 삭제하지 않고 취소 이력으로 보존됩니다.</p>
+            <label className={styles.fieldLabel}>
+              <span>취소 사유</span>
+              <textarea
+                required
+                aria-invalid={cancellationError ? true : undefined}
+                className={styles.textArea}
+                disabled={isCancelPending}
+                maxLength={500}
+                value={cancellationReason}
+                onChange={(event) => {
+                  setCancellationReason(event.target.value)
+                  setCancelRequestId(crypto.randomUUID())
+                }}
+              />
+            </label>
+            {cancellationError ? (
+              <p className={styles.fieldError} role="alert">
+                {cancellationError}
+              </p>
+            ) : null}
+            {cancelState ? (
+              <div
+                className={cancelState.ok ? styles.saveMessage : styles.errorMessage}
+                role={cancelState.ok ? 'status' : 'alert'}
+              >
+                <p>{cancelState.message}</p>
+                {!cancelState.ok &&
+                (cancelState.code === 'STALE_SHIFT' ||
+                  cancelState.code === 'ATTENDANCE_ALREADY_CONFIRMED') ? (
+                  <Button variant="secondary" onClick={() => router.refresh()}>
+                    최신 상태 다시 불러오기
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
+            <div className={layout.wrap}>
+              <Button
+                disabled={cancellationReason.trim().length < 2 || isCancelPending}
+                type="submit"
+              >
+                {isCancelPending ? '취소 중…' : '일정 취소 확정'}
+              </Button>
+              <Button
+                disabled={isCancelPending}
+                variant="secondary"
+                onClick={() => {
+                  setIsCancelling(false)
+                  setCancellationReason('')
+                }}
+              >
+                돌아가기
+              </Button>
+            </div>
+          </form>
+        </ContentCard>
       ) : null}
+
+      <section className={layout.stack} aria-labelledby="attendance-title">
+        <div className={layout.row}>
+          <h2 id="attendance-title">배정자 출석</h2>
+          <StatusBadge tone="neutral">{activeAssignments.length}명</StatusBadge>
+        </div>
+        {activeAssignments.length > 0 ? (
+          <ul className={styles.attendanceList}>
+            {activeAssignments.map((assignment) => (
+              <AttendanceConfirmationCard
+                assignment={assignment}
+                date={viewModel.date}
+                initialRequestId={initialRequestId}
+                isScheduleActive={viewModel.shift.status === 'published'}
+                key={assignment.id}
+                shiftEndTime={viewModel.shift.endTime}
+                shiftStartTime={viewModel.shift.startTime}
+                workerName={
+                  viewModel.workers.find((worker) => worker.id === assignment.workerId)?.name ??
+                  '알 수 없는 구성원'
+                }
+                onDirtyChange={handleAttendanceDirtyChange}
+              />
+            ))}
+          </ul>
+        ) : (
+          <ContentCard>
+            <p className={styles.emptyState}>배정된 인원이 없습니다.</p>
+          </ContentCard>
+        )}
+      </section>
     </div>
   )
 }

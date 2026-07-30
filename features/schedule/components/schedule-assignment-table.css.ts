@@ -120,6 +120,13 @@ export const personSelectList = style({
   gap: '0.625rem',
 })
 
+export const positionFieldset = style({
+  minWidth: 0,
+  margin: 0,
+  padding: 0,
+  border: 0,
+})
+
 export const personSelectField = style({
   display: 'grid',
   gap: '0.25rem',
@@ -157,6 +164,12 @@ export const personSummary = style({
   fontSize: semanticVars.font.size.captionSmall,
   lineHeight: semanticVars.font.lineHeight.normal,
   overflowWrap: 'anywhere',
+})
+
+export const fieldError = style({
+  color: semanticVars.color.negative,
+  fontSize: semanticVars.font.size.captionSmall,
+  lineHeight: semanticVars.font.lineHeight.normal,
 })
 
 export const assignedPerson = style({

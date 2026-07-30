@@ -7,6 +7,8 @@ import {
   deactivateInviteAction,
 } from '@/features/management/actions/management-actions'
 import type { InviteStatus } from '@/features/management/domain/invite-status'
+import { getFirstFieldError } from '@/shared/forms/form-result'
+import { useSelectiveFormRecovery } from '@/shared/forms/use-selective-form-recovery'
 import { Button } from '@/shared/ui/button/button'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
@@ -75,6 +77,7 @@ function InviteItem({ invite }: { invite: InviteViewModel }) {
 export function InviteManagementView({ invites }: { invites: InviteViewModel[] }) {
   const [isCreating, setIsCreating] = useState(false)
   const [state, formAction, isPending] = useActionState(createInviteAction, null)
+  const { captureSubmission, formRef } = useSelectiveFormRecovery(state)
 
   return (
     <div className={layout.page}>
@@ -91,10 +94,29 @@ export function InviteManagementView({ invites }: { invites: InviteViewModel[] }
 
       {isCreating ? (
         <ContentCard>
-          <form action={formAction} className={styles.form}>
-            <TextField label="코드 설명" maxLength={60} name="label" required />
-            <TextField label="만료일" name="expiresAt" required type="date" />
+          <form
+            action={formAction}
+            className={styles.form}
+            noValidate
+            onSubmitCapture={captureSubmission}
+            ref={formRef}
+          >
             <TextField
+              error={getFirstFieldError(state?.fieldErrors, 'label')}
+              label="코드 설명"
+              maxLength={60}
+              name="label"
+              required
+            />
+            <TextField
+              error={getFirstFieldError(state?.fieldErrors, 'expiresAt')}
+              label="만료일"
+              name="expiresAt"
+              required
+              type="date"
+            />
+            <TextField
+              error={getFirstFieldError(state?.fieldErrors, 'maxUses')}
               inputMode="numeric"
               label="사용 가능 횟수"
               min="1"
@@ -105,7 +127,7 @@ export function InviteManagementView({ invites }: { invites: InviteViewModel[] }
             <Button disabled={isPending} type="submit">
               {isPending ? '생성 중...' : '코드 생성'}
             </Button>
-            {state?.message ? (
+            {state?.message && !state.fieldErrors ? (
               <p
                 className={state.ok ? styles.saveMessage : styles.errorMessage}
                 role={state.ok ? 'status' : 'alert'}

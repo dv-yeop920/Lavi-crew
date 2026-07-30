@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
 import { requireRole } from '@/shared/auth/session'
+import { getZodFieldErrors } from '@/shared/forms/zod-errors'
 
 import {
   deactivateOwnProfileController,
@@ -16,10 +17,15 @@ export async function updateOwnProfileAction(
   formData: FormData,
 ): Promise<ProfileActionResult> {
   await requireRole('worker')
-  const input = parseProfileUpdate(formData)
-  if (!input)
-    return { code: 'INVALID_INPUT', message: '이름과 휴대폰 번호를 확인해 주세요.', ok: false }
-  const result = await updateOwnProfileController(input)
+  const parsed = parseProfileUpdate(formData)
+  if (!parsed.success)
+    return {
+      code: 'INVALID_INPUT',
+      fieldErrors: getZodFieldErrors(parsed.error),
+      message: '입력 항목별 안내를 확인해 주세요.',
+      ok: false,
+    }
+  const result = await updateOwnProfileController(parsed.data)
   if (result.ok) {
     revalidatePath('/profile')
     revalidatePath('/home')

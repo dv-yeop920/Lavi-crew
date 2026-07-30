@@ -5,6 +5,11 @@ import { headers } from 'next/headers'
 import { getAuthenticatedProfile } from '@/shared/auth/session'
 
 import {
+  mapPasswordUpdateFailure,
+  mapSignupFailure,
+  repeatedSignupFailure,
+} from '../domain/auth-error'
+import {
   completeWorkerOnboarding,
   sendPasswordReset,
   signInWithPassword,
@@ -30,7 +35,7 @@ export async function loginController(
       ok: false,
     }
   const profile = await getAuthenticatedProfile()
-  if (profile) return { ok: true, role: profile.role }
+  if (profile) return { message: '로그인했습니다.', ok: true, role: profile.role }
   await signOut()
   return {
     code: 'ACCOUNT_UNAVAILABLE',
@@ -39,17 +44,13 @@ export async function loginController(
   }
 }
 export async function signupController(input: SignupInput): Promise<AuthResult> {
-  const { error } = await signUpWorker(
+  const { data, error } = await signUpWorker(
     input,
     `${await appOrigin()}/auth/callback?next=/verify-email`,
   )
-  return error
-    ? {
-        code: 'SIGNUP_FAILED',
-        message: '가입 정보를 확인하거나 관리자에게 초대 코드를 문의해 주세요.',
-        ok: false,
-      }
-    : { message: '가입 이메일로 확인 링크를 보냈습니다.', ok: true }
+  if (error) return mapSignupFailure(error)
+  if (data.user?.identities?.length === 0) return repeatedSignupFailure()
+  return { message: '가입 이메일로 확인 링크를 보냈습니다.', ok: true }
 }
 export async function passwordResetController(email: string): Promise<AuthResult> {
   const { error } = await sendPasswordReset(
@@ -76,10 +77,6 @@ export async function onboardingController(input: OnboardingInput): Promise<Auth
 export async function updatePasswordController(password: string): Promise<AuthResult> {
   const { error } = await updatePassword(password)
   return error
-    ? {
-        code: 'PASSWORD_UPDATE_FAILED',
-        message: '비밀번호를 변경할 수 없습니다. 재설정 링크를 다시 요청해 주세요.',
-        ok: false,
-      }
+    ? mapPasswordUpdateFailure(error)
     : { message: '비밀번호를 변경했습니다. 새 비밀번호로 로그인해 주세요.', ok: true }
 }

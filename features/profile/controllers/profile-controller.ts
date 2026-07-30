@@ -24,6 +24,14 @@ export async function updateOwnProfileController(input: {
 }): Promise<ProfileActionResult> {
   await requireRole('worker')
   const { error } = await updateOwnProfileRecord(input)
+  if (error?.code === '23505') {
+    return {
+      code: 'PHONE_ALREADY_EXISTS',
+      fieldErrors: { phone: ['이미 다른 회원이 사용 중인 휴대폰 번호입니다.'] },
+      message: '휴대폰 번호를 확인해 주세요.',
+      ok: false,
+    }
+  }
   return error
     ? { code: 'PROFILE_UPDATE_FAILED', message: '내 정보를 저장하지 못했습니다.', ok: false }
     : { message: '내 정보를 저장했습니다.', ok: true }

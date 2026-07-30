@@ -2,6 +2,8 @@
 
 import { redirect } from 'next/navigation'
 
+import { getZodFieldErrors } from '@/shared/forms/zod-errors'
+
 import {
   loginController,
   logoutController,
@@ -15,41 +17,47 @@ import {
   parseLoginInput,
   parseNewPassword,
   parseOnboardingInput,
+  parsePasswordResetRequest,
   parseSignupInput,
 } from '../schemas/auth-input'
 
 export async function loginAction(_: AuthResult | null, formData: FormData): Promise<AuthResult> {
-  const input = parseLoginInput(Object.fromEntries(formData))
-  if (!input)
+  const parsed = parseLoginInput(formData)
+  if (!parsed.success)
     return {
       code: 'INVALID_INPUT',
-      message: '이메일과 8자 이상 비밀번호를 확인해 주세요.',
+      fieldErrors: getZodFieldErrors(parsed.error),
+      message: '로그인 정보를 확인해 주세요.',
       ok: false,
     }
-  const result = await loginController(input)
+  const result = await loginController(parsed.data)
   if (result.ok) redirect(result.role === 'admin' ? '/admin' : '/home')
   return result
 }
 export async function signupAction(_: AuthResult | null, formData: FormData): Promise<AuthResult> {
-  const input = parseSignupInput({
-    ...Object.fromEntries(formData),
-    kakaoConsent: formData.get('kakaoConsent') === 'on',
-  })
-  return input
-    ? signupController(input)
-    : { code: 'INVALID_INPUT', message: '입력한 가입 정보를 다시 확인해 주세요.', ok: false }
+  const parsed = parseSignupInput(formData)
+  return parsed.success
+    ? signupController(parsed.data)
+    : {
+        code: 'INVALID_INPUT',
+        fieldErrors: getZodFieldErrors(parsed.error),
+        message: '입력 항목별 안내를 확인해 주세요.',
+        ok: false,
+      }
 }
 export async function passwordResetAction(
   _: AuthResult | null,
   formData: FormData,
 ): Promise<AuthResult> {
-  const email =
-    typeof formData.get('email') === 'string'
-      ? String(formData.get('email')).trim().toLowerCase()
-      : ''
-  return /^\S+@\S+\.\S+$/.test(email)
-    ? passwordResetController(email)
-    : { code: 'INVALID_EMAIL', message: '이메일 주소를 확인해 주세요.', ok: false }
+  const parsed = parsePasswordResetRequest(formData)
+  return parsed.success
+    ? passwordResetController(parsed.data.email)
+    : {
+        code: 'INVALID_EMAIL',
+        fieldErrors: getZodFieldErrors(parsed.error),
+        message: '이메일 주소를 확인해 주세요.',
+        ok: false,
+      }
 }
 export async function logoutAction() {
   await logoutController()
@@ -59,13 +67,15 @@ export async function onboardingAction(
   _: AuthResult | null,
   formData: FormData,
 ): Promise<AuthResult> {
-  const input = parseOnboardingInput({
-    ...Object.fromEntries(formData),
-    kakaoConsent: formData.get('kakaoConsent') === 'on',
-  })
-  const result = input
-    ? await onboardingController(input)
-    : { code: 'INVALID_INPUT', message: '입력한 정보를 다시 확인해 주세요.', ok: false }
+  const parsed = parseOnboardingInput(formData)
+  const result = parsed.success
+    ? await onboardingController(parsed.data)
+    : {
+        code: 'INVALID_INPUT',
+        fieldErrors: getZodFieldErrors(parsed.error),
+        message: '입력 항목별 안내를 확인해 주세요.',
+        ok: false,
+      }
   if (result.ok) redirect('/home')
   return result
 }
@@ -73,12 +83,13 @@ export async function updatePasswordAction(
   _: AuthResult | null,
   formData: FormData,
 ): Promise<AuthResult> {
-  const password = parseNewPassword(Object.fromEntries(formData))
-  return password
-    ? updatePasswordController(password)
+  const parsed = parseNewPassword(formData)
+  return parsed.success
+    ? updatePasswordController(parsed.data.password)
     : {
         code: 'INVALID_PASSWORD',
-        message: '비밀번호와 확인 값이 일치하는지 확인해 주세요.',
+        fieldErrors: getZodFieldErrors(parsed.error),
+        message: '새 비밀번호 입력 항목을 확인해 주세요.',
         ok: false,
       }
 }

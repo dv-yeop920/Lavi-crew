@@ -117,7 +117,11 @@ View → Action → Controller → Domain / Repository → Supabase
 - `any`를 새로 추가하지 않는다. 외부 입력은 `unknown`으로 받고 검증 후 좁힌다.
 - 서버 모듈을 Client Component에서 import하지 않는다.
 - React Compiler를 사용하므로 습관적으로 `useMemo`, `useCallback`, `memo`를 추가하지 않는다. 외부 라이브러리의 참조 동일성 요구나 측정된 병목이 있을 때만 사용한다.
-- 입력은 Action 경계의 `schemas`에서 검증한다. 검증 전 값을 Controller나 Repository로 전달하지 않는다.
+- 입력값이 있는 폼은 기능별 `schemas`의 Zod 스키마로 검증한다. Action은 `safeParse` 실패 시
+  필드별 오류를 반환하고, 검증 전 값을 Controller나 Repository로 전달하지 않는다.
+- 폼 오류는 공통 `FormActionResult` 계약을 사용한다. 사용자가 수정할 수 있는 오류는 해당 입력과
+  `aria-describedby`로 연결하고 Semantic `negative` 색상으로 표시한다. 원본 DB·Auth 오류 문구나
+  개인정보는 브라우저에 그대로 반환하지 않는다.
 
 ## 8. 보안과 데이터 규칙
 

@@ -1,5 +1,12 @@
-import { ScheduleApplicationView } from '@/features/schedule/views/schedule-application-view'
+import { ScheduleApplicationPageView } from '@/features/schedule/views/schedule-application-page-view'
 
-export default function ScheduleApplicationPage() {
-  return <ScheduleApplicationView />
+type ScheduleApplicationPageProps = {
+  searchParams: Promise<{ month?: string }>
+}
+
+export default async function ScheduleApplicationPage({
+  searchParams,
+}: ScheduleApplicationPageProps) {
+  const { month: monthQuery } = await searchParams
+  return <ScheduleApplicationPageView monthQuery={monthQuery} />
 }

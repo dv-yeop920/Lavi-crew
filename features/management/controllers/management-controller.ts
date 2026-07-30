@@ -70,10 +70,10 @@ export async function getManagedWorkersController(asOf = new Date()) {
       ...history,
       averageMonthlyApplicationDays: calculateAverageMonthlyApplicationDays(
         records.applications
-          .filter((application) => application.worker_id === profile.id && application.shifts)
+          .filter((application) => application.worker_id === profile.id)
           .map((application) => ({
             status: application.status,
-            workDate: application.shifts!.work_date,
+            workDate: application.work_date,
           })),
       ),
       email: maskEmail(profile.email),
@@ -106,10 +106,10 @@ export async function getManagedWorkerController(workerId: string, asOf = new Da
     ...history,
     averageMonthlyApplicationDays: calculateAverageMonthlyApplicationDays(
       records.applications
-        .filter((application) => application.worker_id === profile.id && application.shifts)
+        .filter((application) => application.worker_id === profile.id)
         .map((application) => ({
           status: application.status,
-          workDate: application.shifts!.work_date,
+          workDate: application.work_date,
         })),
     ),
     email: maskEmail(profile.email),
@@ -132,7 +132,12 @@ export async function updateManagedWorkerController(input: {
 }): Promise<ManagementActionResult> {
   await requireRole('admin')
   if (input.positionIds.some((positionId) => !positionIds.has(positionId))) {
-    return { code: 'INVALID_POSITION', message: '가능한 포지션을 확인해 주세요.', ok: false }
+    return {
+      code: 'INVALID_POSITION',
+      fieldErrors: { positionIds: ['선택할 수 없는 포지션이 포함되어 있습니다.'] },
+      message: '가능한 포지션을 확인해 주세요.',
+      ok: false,
+    }
   }
   const { error } = await updateWorkerProfileRecord(input)
   return error

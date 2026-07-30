@@ -24,7 +24,7 @@ export function TextField({ error, hint, label, ...inputProps }: TextFieldProps)
         aria-invalid={Boolean(error)}
       />
       {error ? (
-        <span className={styles.error} id={descriptionId}>
+        <span aria-live="polite" className={styles.error} id={descriptionId}>
           {error}
         </span>
       ) : hint ? (

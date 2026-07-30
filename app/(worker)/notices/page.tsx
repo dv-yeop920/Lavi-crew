@@ -1,5 +1,5 @@
-import { NoticeListView } from '@/features/notice/views/notice-list-view'
+import { WorkerNoticesPageView } from '@/features/notice/views/worker-notices-page-view'
 
-export default function NoticeListPage() {
-  return <NoticeListView />
+export default async function NoticeListPage() {
+  return <WorkerNoticesPageView />
 }

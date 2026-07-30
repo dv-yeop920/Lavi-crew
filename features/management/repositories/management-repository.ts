@@ -12,7 +12,7 @@ export async function getWorkerManagementRecords() {
     supabase.from('worker_position_skills').select('worker_id, position_id'),
     supabase
       .from('schedule_applications')
-      .select('worker_id, status, shifts(work_date)')
+      .select('worker_id, status, work_date')
       .order('created_at'),
     supabase
       .from('shift_assignments')
@@ -58,7 +58,7 @@ export async function getWorkerHistoryRecords(workerId: string) {
   const [applicationsResult, assignmentsResult] = await Promise.all([
     supabase
       .from('schedule_applications')
-      .select('worker_id, status, shifts(work_date)')
+      .select('worker_id, status, work_date')
       .eq('worker_id', workerId)
       .order('created_at'),
     supabase

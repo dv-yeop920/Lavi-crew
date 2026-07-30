@@ -1,5 +1,10 @@
-import { WorkerScheduleView } from '@/features/schedule/views/worker-schedule-view'
+import { WorkerSchedulePageView } from '@/features/schedule/views/worker-schedule-page-view'
 
-export default function WorkerSchedulePage() {
-  return <WorkerScheduleView />
+type WorkerSchedulePageProps = {
+  searchParams: Promise<{ anchor?: string; mode?: string }>
+}
+
+export default async function WorkerSchedulePage({ searchParams }: WorkerSchedulePageProps) {
+  const { anchor, mode } = await searchParams
+  return <WorkerSchedulePageView anchorQuery={anchor} modeQuery={mode} />
 }

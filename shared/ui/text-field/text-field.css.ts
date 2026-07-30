@@ -33,7 +33,7 @@ export const input = style({
       borderColor: semanticVars.color.primaryNormal,
     },
     '&[aria-invalid="true"]': {
-      borderColor: semanticVars.color.warning,
+      borderColor: semanticVars.color.negative,
     },
   },
 })
@@ -44,7 +44,7 @@ export const hint = style({
 })
 
 export const error = style({
-  color: semanticVars.color.warning,
+  color: semanticVars.color.negative,
   fontSize: semanticVars.font.size.captionLarge,
   fontWeight: semanticVars.font.weight.semibold,
 })

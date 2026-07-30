@@ -4,6 +4,7 @@
 
 - Next.js App Router + React 19 + TypeScript
 - vanilla-extract
+- Zod 폼 입력 검증
 - Supabase Auth, PostgreSQL, Row Level Security(RLS)
 - 카카오 알림톡 API
 
@@ -14,7 +15,7 @@
 ```mermaid
 flowchart LR
   V["View<br/>페이지 · UI 컴포넌트"] --> A["Action<br/>Server Action · Route Handler"]
-  A --> C["Controller<br/>유스케이스 · 검증 · 권한 확인"]
+  A --> C["Controller<br/>유스케이스 · 권한 확인"]
   C --> D["Domain<br/>급여 계산 · 스케줄 규칙"]
   C --> R["Repository<br/>Supabase 쿼리"]
   R --> S["Supabase<br/>Auth · PostgreSQL · RLS"]
@@ -27,7 +28,7 @@ flowchart LR
 | --- | --- | --- |
 | View | 화면 표시, 입력, 로컬 UI 상태 | Supabase 쓰기 호출, 업무 규칙 구현 |
 | Action | 입력 수신, 스키마 검증, Controller 호출, 화면 갱신 | DB 쿼리와 업무 규칙 혼합 |
-| Controller | 유스케이스 조합, 역할 확인, 업무 규칙 실행 | UI 상태와 SQL 세부 구현 |
+| Controller | 유스케이스 조합, 역할 확인, 업무 규칙 실행 | 폼 형식 검증, UI 상태와 SQL 세부 구현 |
 | Domain | 급여 계산, 마감·배정 규칙 같은 순수 로직 | 외부 API, DB 접근 |
 | Repository | Supabase 데이터 조회·저장 | 권한 정책과 업무 규칙 판단 |
 | Adapter | 카카오 알림톡 등 외부 API 연동 | 도메인 규칙 판단 |
@@ -71,7 +72,8 @@ shared/
 - Supabase RLS는 최종 데이터 접근 권한을 강제한다.
 - 브라우저에는 Supabase 익명 키만 사용한다.
 - `service_role` 키와 카카오 API 키는 서버 환경 변수에서만 사용한다.
-- 일정 마감, 출석 확정, 급여 마감처럼 여러 데이터가 함께 변하는 작업은 Postgres RPC로 원자 처리한다.
+- 신청 기간 생성·수정·마감·재개, 월별 신청 저장, 월별 일정 등록·배정 확정, 일별 일정 변경·취소, 출석 확정처럼 여러 데이터가 함께 변하는 작업은 Postgres RPC로 원자 처리한다.
+- 신청 기간은 `save_schedule_application_period`와 `set_schedule_application_period_status`로 일정 등록과 분리해 운영한다. `save_monthly_schedule_registration`은 이미 마감된 신청 기간만 사용하며 마감일이나 기간 상태를 변경하지 않고, 게시 일정·확정 배정·출석 대기·알림 발송 대기·멱등 결과를 한 번에 저장한다.
 
 ### Supabase 스키마와 타입
 
@@ -87,7 +89,8 @@ shared/
 - 관리자는 프로필의 시급·활성 상태와 운영 데이터를 변경할 수 있지만, 신청·배정·출석·급여·공지 이력은 상태 변경과 정정 기록으로 보존한다.
 - 정책 안의 `auth.uid()`와 고정된 관리자 검사는 `(select ...)` 형태로 한 요청당 한 번 평가한다.
 - 여러 역할이 같은 동작을 수행할 때는 가능한 한 하나의 정책에 조건을 합쳐 중복 permissive policy를 만들지 않는다.
-- 공개 `SECURITY DEFINER` RPC는 원자성이 필요한 온보딩·신청 마감/취소·출석/급여 확정과 인원·프로필 변경에만 둔다. 인원 관리의 프로필·가능 포지션 동시 수정, 관리자/본인 비활성화, 본인 연락처 수정도 각 함수 내부에서 호출자 역할과 활성 상태를 다시 확인한다. 모든 공개 RPC는 `PUBLIC`·`anon` 실행 권한을 제거한다.
+- 공개 `SECURITY DEFINER` RPC는 원자성이 필요한 온보딩, 신청 기간 운영, 월별 신청 저장, 월·일별 일정 및 배정 변경, 출석·급여 반영, 공지 변경·읽음, 알림 발송 상태 전이와 인원·프로필 변경에만 둔다. 운영 테이블은 관리자도 직접 변경하지 않고 RPC를 사용한다. 각 함수는 호출자 역할과 활성 상태를 다시 확인하고 모든 공개 RPC의 `PUBLIC`·`anon` 실행 권한을 제거한다. 알림 발송 상태 RPC는 서버의 `service_role`에만 허용한다.
+- 일정이 한 번이라도 생성된 신청 기간은 이후 일정이 취소되더라도 마감 시각을 변경하거나 다시 열 수 없다. UI에서 해당 조작을 숨기고 DB 트리거가 최종 불변식을 강제한다.
 - 출석 확정은 실제 출근·퇴근 시각을 함께 저장하며, 급여는 예정 일정 시간이 아니라 이 확정 시간과 배정 시점의 개인 시급 스냅샷으로 계산한다. 9시간(540분) 초과분에만 1.5배를 적용한다.
 - RLS에서 사용하는 관리자 판별 구현은 노출되지 않는 `private.is_admin()`에 두고, 공개 `is_admin()`은 권한 상승이 없는 `SECURITY INVOKER` 래퍼로 유지한다.
 
