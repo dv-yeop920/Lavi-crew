@@ -3,18 +3,25 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=22.0.0"
+  },
   "scripts": {
     "dev": "next dev --webpack",
     "build": "next build --webpack",
     "bootstrap:admin": "node scripts/bootstrap-admin.mjs",
     "check:architecture": "node scripts/check-architecture.mjs",
     "check:harness": "node scripts/check-harness.mjs",
+    "db:reset": "supabase db reset --local --no-seed",
+    "db:start": "supabase start --exclude realtime,storage-api,imgproxy,studio,edge-runtime,logflare,vector,supavisor,postgres-meta",
+    "db:stop": "supabase stop",
     "format": "prettier . --write --ignore-unknown",
     "format:check": "prettier . --check --ignore-unknown",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
     "start": "next start",
     "test": "vitest run",
+    "test:db": "psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -v ON_ERROR_STOP=1 -f supabase/tests/mvp_e2e.sql",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -37,6 +44,7 @@
     "eslint-config-prettier": "10.1.8",
     "eslint-plugin-simple-import-sort": "13.0.0",
     "prettier": "3.9.5",
+    "supabase": "2.111.0",
     "typescript": "^6.0.3",
     "vitest": "^3.2.7"
   }

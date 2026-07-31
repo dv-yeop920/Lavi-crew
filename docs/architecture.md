@@ -81,6 +81,8 @@ shared/
 - `shared/supabase/database.types.ts`는 연결된 원격 프로젝트에서 생성한 타입이다. 테이블, enum, RPC 시그니처가 바뀌면 같은 변경에서 다시 생성한다.
 - `@supabase/supabase-js`와 `@supabase/ssr`는 정확한 버전을 고정하고 `package-lock.json`을 함께 갱신한다.
 - 2026년 Data API 노출 정책 변경에 대비해 `anon`과 `authenticated`의 테이블 권한을 마이그레이션에서 명시한다. RLS와 테이블 `GRANT`를 서로 다른 보안 계층으로 취급한다.
+- 로컬 검증은 `npm run db:start` → `npm run db:reset` → `npm run test:db` 순서로 실행한다. DB E2E는 clean local 전용이며 fixture를 단일 트랜잭션에서 생성·검증·롤백한다. 연결된 원격 DB에는 이 명령을 실행하지 않는다.
+- CI는 빈 로컬 Supabase에 전체 마이그레이션을 다시 적용해 순서 재현성을 확인하고, 허용 흐름뿐 아니라 RLS/RPC 거부·멱등 키 충돌·stale 요청의 request log rollback도 검증한다.
 
 ### RLS와 데이터 변경 원칙
 

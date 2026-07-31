@@ -87,7 +87,7 @@ flowchart LR
 - `shifts`: a published work date and event/time information.
 - `shift_assignments`: position, slot, worker and hourly-wage snapshot.
 - `attendance_records`: pending/present/absent and actual timestamps.
-- `payroll_details` and `monthly_payrolls`: immutable calculation history and
+- `payroll_items` and `monthly_payrolls`: immutable calculation history and
   current aggregates.
 - `notices` and `notice_reads`: soft-deleted content and idempotent per-worker
   reads.
@@ -121,11 +121,12 @@ view models in schemas. No UI imports raw Supabase generated row types.
   interactive forms and filters.
 - Revalidation targets only affected schedule, home, payroll, notice or admin
   routes.
-- Tests cover domain transitions, Zod boundaries, repository error mapping,
-  RLS/RPC authorization and critical browser journeys.
-- Release checks: formatting, lint, architecture, harness, unit tests,
-  production build, Supabase security/performance advisors and mobile browser
-  smoke tests.
+- Automated tests cover domain transitions, Zod boundaries, repository error
+  mapping and local-database RLS/RPC authorization. Critical authenticated
+  browser journeys remain a separate release check.
+- Release checks require formatting, lint, architecture, harness, unit tests,
+  production build and DB E2E. Supabase security/performance advisors and
+  mobile browser smoke tests must be recorded separately before release.
 
 ## Acceptance boundary
 

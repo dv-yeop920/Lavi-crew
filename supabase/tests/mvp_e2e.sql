@@ -1,18 +1,37 @@
--- Repeatable remote/local MVP verification. The entire fixture is rolled back.
+-- Repeatable clean-local MVP verification. The entire fixture is rolled back.
 begin;
 
+-- Reuse real active identities when this runs against a linked project, but create
+-- transaction-scoped fixtures when a freshly reset local database has no members.
 create temp table e2e_context as
 select
-  (select id from public.profiles where role = 'admin' and is_active limit 1) admin_id,
-  (select id from public.profiles where role = 'worker' and is_active limit 1) worker_id;
+  coalesce(
+    (select id from public.profiles where role = 'admin' and is_active limit 1),
+    gen_random_uuid()
+  ) admin_id,
+  coalesce(
+    (select id from public.profiles where role = 'worker' and is_active limit 1),
+    gen_random_uuid()
+  ) worker_id;
 
-do $$
-begin
-  if exists (select 1 from e2e_context where admin_id is null or worker_id is null) then
-    raise exception 'E2E_REQUIRES_ACTIVE_ADMIN_AND_WORKER';
-  end if;
-end;
-$$;
+insert into auth.users (id)
+select identity_id
+from (
+  select admin_id identity_id from e2e_context
+  union all
+  select worker_id from e2e_context
+) identities
+where not exists (select 1 from auth.users where id = identity_id);
+
+insert into public.profiles (id, name, phone, role, hourly_wage, is_active)
+select admin_id, 'E2E검증관리자', '01790000001', 'admin', 10000, true
+from e2e_context
+where not exists (select 1 from public.profiles where id = admin_id);
+
+insert into public.profiles (id, name, phone, role, hourly_wage, is_active)
+select worker_id, 'E2E검증신청자', '01790000002', 'worker', 10000, true
+from e2e_context
+where not exists (select 1 from public.profiles where id = worker_id);
 
 create temp table e2e_workers (rn integer primary key, id uuid not null unique);
 insert into e2e_workers
@@ -125,6 +144,29 @@ select 'applications_replay', public.save_own_monthly_schedule_applications(
   (select selected_dates from e2e_payloads)
 );
 
+do $$
+begin
+  begin
+    perform public.save_own_monthly_schedule_applications(
+      '40000000-0000-4000-8000-000000000002',
+      (select (value ->> 'periodId')::uuid from e2e_results where key = 'period_created'),
+      (select (value ->> 'updatedAt')::timestamptz from e2e_results where key = 'period_created'),
+      (select selected_dates[1:1] from e2e_payloads)
+    );
+    raise exception 'EXPECTED_IDEMPOTENCY_KEY_REUSED';
+  exception
+    when others then
+      if sqlerrm = 'IDEMPOTENCY_KEY_REUSED' then
+        insert into e2e_results values ('application_idempotency_conflict', 'true'::jsonb);
+      elsif sqlerrm = 'EXPECTED_IDEMPOTENCY_KEY_REUSED' then
+        raise exception 'APPLICATION_IDEMPOTENCY_CONFLICT_NOT_REJECTED';
+      else
+        raise;
+      end if;
+  end;
+end;
+$$;
+
 select set_config('request.jwt.claim.sub', (select admin_id::text from e2e_context), true);
 select set_config('request.jwt.claims', jsonb_build_object(
   'sub', (select admin_id from e2e_context), 'role', 'authenticated'
@@ -172,6 +214,51 @@ select 'daily_updated', public.update_daily_schedule(
   4::smallint, time '08:00', time '18:00',
   (select updated_assignments from e2e_payloads)
 );
+
+do $$
+begin
+  begin
+    perform public.update_daily_schedule(
+      '40000000-0000-4000-8000-000000000015',
+      (select id from e2e_shift_targets where rn = 1),
+      timestamptz '1900-01-01 00:00:00+00',
+      9::smallint, time '07:00', time '19:00',
+      (select updated_assignments from e2e_payloads)
+    );
+    raise exception 'EXPECTED_STALE_SHIFT';
+  exception
+    when others then
+      if sqlerrm = 'STALE_SHIFT' then
+        insert into e2e_results values ('stale_shift_rejected', 'true'::jsonb);
+      elsif sqlerrm = 'EXPECTED_STALE_SHIFT' then
+        raise exception 'STALE_SHIFT_NOT_REJECTED';
+      else
+        raise;
+      end if;
+  end;
+end;
+$$;
+
+reset role;
+insert into e2e_results
+select 'failed_daily_update_rollback', jsonb_build_object(
+  'requestCount', (
+    select count(*) from private.daily_schedule_mutation_requests
+    where request_id = '40000000-0000-4000-8000-000000000015'
+  ),
+  'shiftUnchanged', ceremony_count = 4
+    and start_time = time '08:00'
+    and end_time = time '18:00'
+    and status = 'published'
+)
+from public.shifts
+where id = (select id from e2e_shift_targets where rn = 1);
+
+set local role authenticated;
+select set_config('request.jwt.claim.sub', (select admin_id::text from e2e_context), true);
+select set_config('request.jwt.claims', jsonb_build_object(
+  'sub', (select admin_id from e2e_context), 'role', 'authenticated'
+)::text, true);
 insert into e2e_results
 select 'daily_cancelled', public.cancel_daily_schedule(
   '40000000-0000-4000-8000-000000000006',
@@ -288,17 +375,62 @@ select 'invite_deactivated', public.deactivate_invite_code(
   (select (value ->> 'inviteId')::uuid from e2e_results where key = 'invite_created')
 );
 
+select set_config('request.jwt.claim.sub', (select worker_id::text from e2e_context), true);
+select set_config('request.jwt.claims', jsonb_build_object(
+  'sub', (select worker_id from e2e_context), 'role', 'authenticated'
+)::text, true);
+
+do $$
+begin
+  begin
+    perform public.save_schedule_application_period(
+      '40000000-0000-4000-8000-000000000016',
+      date '2099-02-01', timestamptz '2099-01-15 23:59:59+09', null, null
+    );
+    raise exception 'EXPECTED_FORBIDDEN';
+  exception
+    when others then
+      if sqlerrm = 'FORBIDDEN' then
+        insert into e2e_results values ('worker_admin_rpc_forbidden', 'true'::jsonb);
+      elsif sqlerrm = 'EXPECTED_FORBIDDEN' then
+        raise exception 'WORKER_ADMIN_RPC_NOT_REJECTED';
+      else
+        raise;
+      end if;
+  end;
+end;
+$$;
+
+insert into e2e_results
+select 'worker_isolation', jsonb_build_object(
+  'otherPayrollCount', (
+    select count(*) from public.monthly_payrolls
+    where worker_id = (select id from e2e_workers where rn = 1)
+  ),
+  'unassignedShiftCount', (
+    select count(*) from public.shifts
+    where application_period_id =
+      (select (value ->> 'periodId')::uuid from e2e_results where key = 'period_created')
+  )
+);
+
 select set_config('request.jwt.claim.sub', (select id::text from e2e_workers where rn = 1), true);
 select set_config('request.jwt.claims', jsonb_build_object(
   'sub', (select id from e2e_workers where rn = 1), 'role', 'authenticated'
 )::text, true);
 insert into e2e_results
 select 'worker_rls', jsonb_build_object(
-  'visibleFutureShiftCount', count(*)
-)
-from public.shifts
-where application_period_id =
-  (select (value ->> 'periodId')::uuid from e2e_results where key = 'period_created');
+  'visibleFutureShiftCount', (
+    select count(*) from public.shifts
+    where application_period_id =
+      (select (value ->> 'periodId')::uuid from e2e_results where key = 'period_created')
+  ),
+  'ownPayrollCount', (
+    select count(*) from public.monthly_payrolls
+    where worker_id = (select id from e2e_workers where rn = 1)
+  ),
+  'ownPayrollItemCount', (select count(*) from public.payroll_items)
+);
 reset role;
 
 insert into e2e_results
@@ -310,6 +442,8 @@ select 'assertions', jsonb_build_object(
   'applicationReplayMatches',
     (select value from e2e_results where key = 'applications_first') =
     (select value from e2e_results where key = 'applications_replay'),
+  'applicationIdempotencyConflictRejected',
+    (select value = 'true'::jsonb from e2e_results where key = 'application_idempotency_conflict'),
   'publishReplayMatches',
     (select value from e2e_results where key = 'publish_first') =
     (select value from e2e_results where key = 'publish_replay'),
@@ -327,6 +461,12 @@ select 'assertions', jsonb_build_object(
       and recipient_id = (select id from e2e_workers where rn = 1)
       and type = 'schedule_changed'
       and delivery_status = 'pending'),
+  'staleShiftRejected',
+    (select value = 'true'::jsonb from e2e_results where key = 'stale_shift_rejected'),
+  'failedDailyUpdateRolledBack',
+    (select (value ->> 'requestCount')::integer = 0
+      and (value ->> 'shiftUnchanged')::boolean
+      from e2e_results where key = 'failed_daily_update_rollback'),
   'activePayrollAmount', (select amount from public.payroll_items item
     join public.shift_assignments assignment on assignment.id = item.assignment_id
     join public.shifts shift on shift.id = assignment.shift_id
@@ -342,8 +482,18 @@ select 'assertions', jsonb_build_object(
   'inviteReplayMatches',
     (select value from e2e_results where key = 'invite_created') =
     (select value from e2e_results where key = 'invite_replay'),
+  'workerAdminRpcForbidden',
+    (select value = 'true'::jsonb from e2e_results where key = 'worker_admin_rpc_forbidden'),
+  'workerIsolationEnforced',
+    (select (value ->> 'otherPayrollCount')::integer = 0
+      and (value ->> 'unassignedShiftCount')::integer = 0
+      from e2e_results where key = 'worker_isolation'),
   'workerOwnShiftCount', (select (value ->> 'visibleFutureShiftCount')::integer
-    from e2e_results where key = 'worker_rls')
+    from e2e_results where key = 'worker_rls'),
+  'workerOwnPayrollReadable',
+    (select (value ->> 'ownPayrollCount')::integer = 1
+      and (value ->> 'ownPayrollItemCount')::integer = 2
+      from e2e_results where key = 'worker_rls')
 );
 
 do $$
@@ -352,17 +502,23 @@ begin
   select value into evidence from e2e_results where key = 'assertions';
   if evidence ->> 'signupAccepted' is distinct from 'true'
      or evidence ->> 'applicationReplayMatches' is distinct from 'true'
+     or evidence ->> 'applicationIdempotencyConflictRejected' is distinct from 'true'
      or evidence ->> 'publishReplayMatches' is distinct from 'true'
      or (evidence ->> 'publishedShiftCount')::integer is distinct from 2
      or (evidence ->> 'cancelledShiftCount')::integer is distinct from 1
      or evidence ->> 'assignmentRevisionPreserved' is distinct from 'true'
      or (evidence ->> 'scheduleChangedNotificationCount')::integer is distinct from 1
+     or evidence ->> 'staleShiftRejected' is distinct from 'true'
+     or evidence ->> 'failedDailyUpdateRolledBack' is distinct from 'true'
      or (evidence ->> 'activePayrollAmount')::integer is distinct from 97500
      or (evidence ->> 'voidedPayrollRevisionCount')::integer is distinct from 1
      or evidence ->> 'noticeDeleted' is distinct from 'true'
      or (evidence ->> 'noticeReadCount')::integer is distinct from 1
      or evidence ->> 'inviteReplayMatches' is distinct from 'true'
-     or (evidence ->> 'workerOwnShiftCount')::integer is distinct from 1 then
+     or evidence ->> 'workerAdminRpcForbidden' is distinct from 'true'
+     or evidence ->> 'workerIsolationEnforced' is distinct from 'true'
+     or (evidence ->> 'workerOwnShiftCount')::integer is distinct from 1
+     or evidence ->> 'workerOwnPayrollReadable' is distinct from 'true' then
     raise exception 'MVP_E2E_ASSERTION_FAILED: %', evidence;
   end if;
 end;

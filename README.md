@@ -1,16 +1,52 @@
-# React + Vite
+# Lavi Crew
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+라비에벨 웨딩홀 구성원을 위한 모바일 우선 스케줄·출석·급여 관리 웹입니다. 하나의 Next.js 앱에서 Supabase Auth의 역할에 따라 관리자와 알바 화면을 분리합니다.
 
-Currently, two official plugins are available:
+## 기술 구성
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Next.js 16, React 19, React Compiler
+- TypeScript, vanilla-extract
+- Supabase Auth, PostgreSQL, RLS, RPC
+- Zod, Vitest
 
-## React Compiler
+Node.js 버전은 `.nvmrc`의 22를 사용합니다.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 애플리케이션 실행
 
-## Expanding the Oxlint configuration
+```bash
+nvm use
+npm ci
+cp .env.example .env.local
+npm run dev
+```
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+`.env.local`에는 최소 `NEXT_PUBLIC_SUPABASE_URL`과 `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`가 필요합니다. 서비스 역할 키와 외부 제공자 키는 브라우저에 노출하거나 저장소에 커밋하지 않습니다.
+
+## 로컬 Supabase와 DB E2E
+
+Docker 호환 런타임과 `psql`이 필요합니다.
+
+```bash
+npm run db:start
+npm run db:reset
+npm run test:db
+```
+
+`db:reset`은 `supabase/migrations/`를 처음부터 적용합니다. `test:db`는 관리자·알바 fixture를 트랜잭션 안에서 만들고 신청, 마감, 일정 게시·수정·취소, 출석·급여, 공지, 초대 코드, RLS, 멱등성 충돌과 실패 롤백을 검증한 뒤 모든 데이터를 롤백합니다.
+
+로컬 앱을 Supabase에 연결할 때 사용할 URL과 키는 `npx supabase status -o env`로 확인할 수 있습니다. 종료는 `npm run db:stop`입니다.
+
+## 품질 검증
+
+```bash
+npm run check:harness
+npm run check:architecture
+npm run format:check
+npm run lint
+npm test
+npm run build
+```
+
+CI는 위 애플리케이션 검증과 별도로 빈 로컬 Supabase의 전체 마이그레이션 및 DB E2E를 실행합니다.
+
+설계와 운영 근거는 `docs/architecture.md`, `docs/decisions/`, `docs/operations/mvp-verification.md`를 참고합니다. 카카오 알림톡 실제 발송은 승인된 템플릿과 운영 자격 증명이 준비된 뒤 별도 검증합니다.
