@@ -122,11 +122,13 @@ view models in schemas. No UI imports raw Supabase generated row types.
 - Revalidation targets only affected schedule, home, payroll, notice or admin
   routes.
 - Automated tests cover domain transitions, Zod boundaries, repository error
-  mapping and local-database RLS/RPC authorization. Critical authenticated
-  browser journeys remain a separate release check.
+  mapping and local-database RLS/RPC authorization. Playwright covers actual
+  Auth sessions, cross-role monthly application, closing, registration,
+  assignment correction, worker range views and email confirmation callback.
 - Release checks require formatting, lint, architecture, harness, unit tests,
-  production build and DB E2E. Supabase security/performance advisors and
-  mobile browser smoke tests must be recorded separately before release.
+  production build, DB E2E and authenticated mobile Chromium E2E. Supabase
+  security/performance advisors and live external-provider delivery must be
+  recorded separately before release.
 
 ## Acceptance boundary
 

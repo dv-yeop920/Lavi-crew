@@ -250,7 +250,6 @@ export function ScheduleApplicationView({
               <li className={styles.applicationItem} key={date}>
                 <div className={styles.detail}>
                   <span>{formatSelectedDate(date)}</span>
-                  <span className={styles.meta}>{monthNumber}월 전체 신청에 포함</span>
                 </div>
                 {canEdit ? (
                   <Button

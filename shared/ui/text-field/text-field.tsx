@@ -14,8 +14,10 @@ export function TextField({ error, hint, label, ...inputProps }: TextFieldProps)
   const descriptionId = `${inputId}-description`
 
   return (
-    <label className={styles.field} htmlFor={inputId}>
-      <span className={styles.label}>{label}</span>
+    <div className={styles.field}>
+      <label className={styles.label} htmlFor={inputId}>
+        {label}
+      </label>
       <input
         {...inputProps}
         id={inputId}
@@ -32,6 +34,6 @@ export function TextField({ error, hint, label, ...inputProps }: TextFieldProps)
           {hint}
         </span>
       ) : null}
-    </label>
+    </div>
   )
 }

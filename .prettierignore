@@ -4,6 +4,8 @@ out/
 build/
 coverage/
 supabase/.temp/
+playwright-report/
+test-results/
 package-lock.json
 next-env.d.ts
 

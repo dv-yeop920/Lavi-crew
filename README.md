@@ -7,7 +7,7 @@
 - Next.js 16, React 19, React Compiler
 - TypeScript, vanilla-extract
 - Supabase Auth, PostgreSQL, RLS, RPC
-- Zod, Vitest
+- Zod, Vitest, Playwright
 
 Node.js 버전은 `.nvmrc`의 22를 사용합니다.
 
@@ -36,6 +36,19 @@ npm run test:db
 
 로컬 앱을 Supabase에 연결할 때 사용할 URL과 키는 `npx supabase status -o env`로 확인할 수 있습니다. 종료는 `npm run db:stop`입니다.
 
+## 실제 Auth·브라우저 E2E
+
+Playwright Chromium을 한 번 설치한 뒤, 반드시 clean 로컬 DB에서 실행합니다.
+
+```bash
+npx playwright install chromium
+npm run db:start
+npm run db:reset
+npm run test:e2e
+```
+
+`test:e2e`는 로컬 Supabase API(54321)와 PostgreSQL(54322)만 허용합니다. 임의 비밀번호와 고정 UUID의 관리자·알바 fixture를 만든 뒤 production Next.js 서버에서 실제 이메일·비밀번호 세션, 역할 보호, 신청·취소·월 마감, 일정 등록·배정·수정, 월·주·일 조회와 Mailpit 이메일 확인 callback을 검증합니다. 실행마다 fixture가 남으므로 재실행 전 `npm run db:reset`이 필요합니다.
+
 ## 품질 검증
 
 ```bash
@@ -47,6 +60,6 @@ npm test
 npm run build
 ```
 
-CI는 위 애플리케이션 검증과 별도로 빈 로컬 Supabase의 전체 마이그레이션 및 DB E2E를 실행합니다.
+CI는 위 애플리케이션 검증과 별도로 빈 로컬 Supabase의 전체 마이그레이션·DB E2E와 인증된 모바일 Chromium 브라우저 E2E를 실행합니다.
 
 설계와 운영 근거는 `docs/architecture.md`, `docs/decisions/`, `docs/operations/mvp-verification.md`를 참고합니다. 카카오 알림톡 실제 발송은 승인된 템플릿과 운영 자격 증명이 준비된 뒤 별도 검증합니다.

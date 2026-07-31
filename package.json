@@ -22,6 +22,7 @@
     "start": "next start",
     "test": "vitest run",
     "test:db": "psql postgresql://postgres:postgres@127.0.0.1:54322/postgres -v ON_ERROR_STOP=1 -f supabase/tests/mvp_e2e.sql",
+    "test:e2e": "node scripts/run-browser-e2e.mjs",
     "test:watch": "vitest"
   },
   "dependencies": {
@@ -35,6 +36,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "1.62.1",
     "@types/node": "^26.1.1",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",

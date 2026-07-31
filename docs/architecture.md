@@ -83,6 +83,8 @@ shared/
 - 2026년 Data API 노출 정책 변경에 대비해 `anon`과 `authenticated`의 테이블 권한을 마이그레이션에서 명시한다. RLS와 테이블 `GRANT`를 서로 다른 보안 계층으로 취급한다.
 - 로컬 검증은 `npm run db:start` → `npm run db:reset` → `npm run test:db` 순서로 실행한다. DB E2E는 clean local 전용이며 fixture를 단일 트랜잭션에서 생성·검증·롤백한다. 연결된 원격 DB에는 이 명령을 실행하지 않는다.
 - CI는 빈 로컬 Supabase에 전체 마이그레이션을 다시 적용해 순서 재현성을 확인하고, 허용 흐름뿐 아니라 RLS/RPC 거부·멱등 키 충돌·stale 요청의 request log rollback도 검증한다.
+- 브라우저 E2E fixture는 `scripts/seed-local-browser-e2e.mjs` 한 곳에서만 Auth Admin과 로컬 PostgreSQL 연결을 사용한다. API와 DB 주소를 모두 로컬 포트로 제한하고 clean DB에서만 실행한다. fixture 생성 이후의 업무 변경은 서비스 역할 키나 직접 SQL을 사용하지 않고 실제 로그인 세션의 Server Action·RPC·RLS 경로만 통과한다.
+- Playwright는 기존 개발 서버를 재사용하지 않고 주입된 로컬 Supabase 환경으로 production build를 실행한다. 관리자와 알바의 별도 browser context는 320px 모바일 조건과 실제 쿠키 세션을 유지한다.
 
 ### RLS와 데이터 변경 원칙
 
