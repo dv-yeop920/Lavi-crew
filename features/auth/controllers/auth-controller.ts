@@ -7,17 +7,19 @@ import { getAuthenticatedProfile } from '@/shared/auth/session'
 import {
   mapPasswordUpdateFailure,
   mapSignupFailure,
+  mapSignupIdentityAvailability,
   repeatedSignupFailure,
 } from '../domain/auth-error'
 import {
-  completeWorkerOnboarding,
+  checkSignupIdentity,
+  resendSignupConfirmation,
   sendPasswordReset,
   signInWithPassword,
   signOut,
   signUpWorker,
   updatePassword,
 } from '../repositories/auth-repository'
-import type { AuthResult, LoginInput, OnboardingInput, SignupInput } from '../schemas/auth-input'
+import type { AuthResult, LoginInput, SignupInput } from '../schemas/auth-input'
 
 async function appOrigin() {
   return (
@@ -44,11 +46,31 @@ export async function loginController(
   }
 }
 export async function signupController(input: SignupInput): Promise<AuthResult> {
+  const { data: availability, error: availabilityError } = await checkSignupIdentity(input)
+  if (availabilityError || !availability)
+    return {
+      code: 'SIGNUP_VALIDATION_FAILED',
+      message: '가입 정보를 확인할 수 없습니다. 잠시 후 다시 시도해 주세요.',
+      ok: false,
+    }
+
+  const identityFailure = mapSignupIdentityAvailability(availability)
+  if (identityFailure) return identityFailure
+
   const { data, error } = await signUpWorker(
     input,
     `${await appOrigin()}/auth/callback?next=/verify-email`,
   )
-  if (error) return mapSignupFailure(error)
+  if (error) {
+    if (error.message.includes('Database error saving new user')) {
+      const { data: latestAvailability } = await checkSignupIdentity(input)
+      if (latestAvailability) {
+        const raceFailure = mapSignupIdentityAvailability(latestAvailability)
+        if (raceFailure) return raceFailure
+      }
+    }
+    return mapSignupFailure(error)
+  }
   if (data.user?.identities?.length === 0) return repeatedSignupFailure()
   return { message: '가입 이메일로 확인 링크를 보냈습니다.', ok: true }
 }
@@ -65,14 +87,21 @@ export async function passwordResetController(email: string): Promise<AuthResult
       }
     : { message: '입력한 이메일로 재설정 링크를 보냈습니다.', ok: true }
 }
+export async function resendConfirmationController(email: string): Promise<AuthResult> {
+  const { error } = await resendSignupConfirmation(
+    email,
+    `${await appOrigin()}/auth/callback?next=/verify-email`,
+  )
+  return error
+    ? {
+        code: 'CONFIRMATION_RESEND_FAILED',
+        message: '확인 링크를 보낼 수 없습니다. 잠시 후 다시 시도해 주세요.',
+        ok: false,
+      }
+    : { message: '입력한 이메일로 새 확인 링크를 보냈습니다.', ok: true }
+}
 export async function logoutController() {
   await signOut()
-}
-export async function onboardingController(input: OnboardingInput): Promise<AuthResult> {
-  const { error } = await completeWorkerOnboarding(input)
-  return error
-    ? { code: 'ONBOARDING_FAILED', message: '초대 코드 또는 입력 정보를 확인해 주세요.', ok: false }
-    : { message: '크루 정보를 등록했습니다.', ok: true }
 }
 export async function updatePasswordController(password: string): Promise<AuthResult> {
   const { error } = await updatePassword(password)

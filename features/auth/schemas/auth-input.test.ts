@@ -1,12 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
 
-import {
-  parseLoginInput,
-  parseNewPassword,
-  parseOnboardingInput,
-  parseSignupInput,
-} from './auth-input'
+import { parseLoginInput, parseNewPassword, parseSignupInput } from './auth-input'
 
 function validSignupForm() {
   const formData = new FormData()
@@ -64,18 +59,11 @@ describe('auth Zod schemas', () => {
     )
   })
 
-  it('validates login, onboarding, and password reset inputs', () => {
+  it('validates login and password reset inputs', () => {
     const login = new FormData()
     login.set('email', 'invalid')
     login.set('password', 'short')
     expect(parseLoginInput(login).success).toBe(false)
-
-    const onboarding = new FormData()
-    onboarding.set('name', '홍길동')
-    onboarding.set('phone', '01012345678')
-    onboarding.set('inviteCode', 'LAVI-CREW')
-    onboarding.set('kakaoConsent', 'on')
-    expect(parseOnboardingInput(onboarding).success).toBe(true)
 
     const password = new FormData()
     password.set('password', 'new-password')

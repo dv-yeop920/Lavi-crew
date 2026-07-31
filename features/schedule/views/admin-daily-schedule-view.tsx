@@ -59,10 +59,10 @@ function isSameDraft(first: DailyScheduleDraft, second: DailyScheduleDraft) {
 }
 
 export function AdminDailyScheduleView({
-  requestId: initialRequestId,
+  requestIds,
   viewModel,
 }: {
-  requestId: string
+  requestIds: { attendance: Record<string, string>; cancel: string; update: string }
   viewModel: ReadyDailySchedule
 }) {
   const router = useRouter()
@@ -71,8 +71,8 @@ export function AdminDailyScheduleView({
   const [isEditing, setIsEditing] = useState(false)
   const [isCancelling, setIsCancelling] = useState(false)
   const [cancellationReason, setCancellationReason] = useState('')
-  const [updateRequestId, setUpdateRequestId] = useState(initialRequestId)
-  const [cancelRequestId, setCancelRequestId] = useState(initialRequestId)
+  const [updateRequestId, setUpdateRequestId] = useState(requestIds.update)
+  const [cancelRequestId, setCancelRequestId] = useState(requestIds.cancel)
   const [attendanceDirtyIds, setAttendanceDirtyIds] = useState(() => new Set<string>())
   const [updateState, updateAction, isUpdating] = useActionState(updateDailyScheduleAction, null)
   const [cancelState, cancelAction, isCancelPending] = useActionState(
@@ -215,6 +215,7 @@ export function AdminDailyScheduleView({
   )
   const scheduleCancelled = viewModel.shift.status === 'cancelled'
   const workers = viewModel.workers.map((worker) => ({
+    appliedDates: worker.appliedDates,
     id: worker.id,
     isActive: worker.isActive,
     isSelectable: worker.isSelectable,
@@ -226,11 +227,10 @@ export function AdminDailyScheduleView({
     : viewModel.shift.status !== 'published'
       ? '게시된 일정만 구조를 변경하거나 취소할 수 있습니다.'
       : '출석이 확정된 배정이 있어 일정 구조 수정과 취소가 잠겼습니다.'
-  const updateError =
-    getFirstFieldError(updateState?.fieldErrors, 'ceremonyCount') ??
-    getFirstFieldError(updateState?.fieldErrors, 'startTime') ??
-    getFirstFieldError(updateState?.fieldErrors, 'endTime') ??
-    getFirstFieldError(updateState?.fieldErrors, 'assignments')
+  const ceremonyCountError = getFirstFieldError(updateState?.fieldErrors, 'ceremonyCount')
+  const startTimeError = getFirstFieldError(updateState?.fieldErrors, 'startTime')
+  const endTimeError = getFirstFieldError(updateState?.fieldErrors, 'endTime')
+  const assignmentsError = getFirstFieldError(updateState?.fieldErrors, 'assignments')
   const cancellationError = getFirstFieldError(cancelState?.fieldErrors, 'reason')
 
   return (
@@ -275,12 +275,16 @@ export function AdminDailyScheduleView({
           </p>
         ) : null}
 
-        <form action={updateAction} aria-busy={isUpdating}>
+        <form action={updateAction} aria-busy={isUpdating} noValidate>
           <input name="payload" type="hidden" value={JSON.stringify(updatePayload)} />
           <div className={styles.scheduleInfoGrid}>
             <label className={styles.fieldLabel}>
               <span>예식 개수</span>
               <input
+                aria-describedby={
+                  ceremonyCountError ? 'daily-schedule-ceremony-count-error' : undefined
+                }
+                aria-invalid={ceremonyCountError ? true : undefined}
                 className={styles.compactInput}
                 disabled={isUpdating}
                 min="1"
@@ -293,6 +297,8 @@ export function AdminDailyScheduleView({
             <label className={styles.fieldLabel}>
               <span>근무 시작</span>
               <input
+                aria-describedby={startTimeError ? 'daily-schedule-start-time-error' : undefined}
+                aria-invalid={startTimeError ? true : undefined}
                 className={styles.compactInput}
                 disabled={isUpdating}
                 readOnly={!isEditing}
@@ -304,6 +310,8 @@ export function AdminDailyScheduleView({
             <label className={styles.fieldLabel}>
               <span>근무 종료</span>
               <input
+                aria-describedby={endTimeError ? 'daily-schedule-end-time-error' : undefined}
+                aria-invalid={endTimeError ? true : undefined}
                 className={styles.compactInput}
                 disabled={isUpdating}
                 readOnly={!isEditing}
@@ -314,20 +322,42 @@ export function AdminDailyScheduleView({
             </label>
           </div>
 
-          <ScheduleAssignmentTable
-            isEditing={isEditing}
-            positions={draft.positions}
-            selectedDate={viewModel.date}
-            workers={workers}
-            onAddPerson={addPerson}
-            onRemovePerson={removePerson}
-            onToggleTraining={toggleTraining}
-            onUpdateWorker={updateWorker}
-          />
+          {ceremonyCountError ? (
+            <p className={styles.fieldError} id="daily-schedule-ceremony-count-error" role="alert">
+              {ceremonyCountError}
+            </p>
+          ) : null}
+          {startTimeError ? (
+            <p className={styles.fieldError} id="daily-schedule-start-time-error" role="alert">
+              {startTimeError}
+            </p>
+          ) : null}
+          {endTimeError ? (
+            <p className={styles.fieldError} id="daily-schedule-end-time-error" role="alert">
+              {endTimeError}
+            </p>
+          ) : null}
 
-          {updateError ? (
-            <p className={styles.fieldError} role="alert">
-              {updateError}
+          <div
+            aria-describedby={assignmentsError ? 'daily-schedule-assignments-error' : undefined}
+            aria-label="포지션별 배정"
+            role="group"
+          >
+            <ScheduleAssignmentTable
+              isEditing={isEditing}
+              positions={draft.positions}
+              selectedDate={viewModel.date}
+              workers={workers}
+              onAddPerson={addPerson}
+              onRemovePerson={removePerson}
+              onToggleTraining={toggleTraining}
+              onUpdateWorker={updateWorker}
+            />
+          </div>
+
+          {assignmentsError ? (
+            <p className={styles.fieldError} id="daily-schedule-assignments-error" role="alert">
+              {assignmentsError}
             </p>
           ) : null}
           {updateState ? (
@@ -375,7 +405,12 @@ export function AdminDailyScheduleView({
 
       {isCancelling ? (
         <ContentCard>
-          <form action={cancelAction} className={layout.stack} aria-busy={isCancelPending}>
+          <form
+            action={cancelAction}
+            className={layout.stack}
+            aria-busy={isCancelPending}
+            noValidate
+          >
             <input name="payload" type="hidden" value={JSON.stringify(cancelPayload)} />
             <h2>이 일정을 취소할까요?</h2>
             <p className={styles.meta}>일정과 배정은 삭제하지 않고 취소 이력으로 보존됩니다.</p>
@@ -383,6 +418,7 @@ export function AdminDailyScheduleView({
               <span>취소 사유</span>
               <textarea
                 required
+                aria-describedby={cancellationError ? 'daily-schedule-cancel-error' : undefined}
                 aria-invalid={cancellationError ? true : undefined}
                 className={styles.textArea}
                 disabled={isCancelPending}
@@ -395,7 +431,7 @@ export function AdminDailyScheduleView({
               />
             </label>
             {cancellationError ? (
-              <p className={styles.fieldError} role="alert">
+              <p className={styles.fieldError} id="daily-schedule-cancel-error" role="alert">
                 {cancellationError}
               </p>
             ) : null}
@@ -447,7 +483,7 @@ export function AdminDailyScheduleView({
               <AttendanceConfirmationCard
                 assignment={assignment}
                 date={viewModel.date}
-                initialRequestId={initialRequestId}
+                initialRequestId={requestIds.attendance[assignment.id]}
                 isScheduleActive={viewModel.shift.status === 'published'}
                 key={assignment.id}
                 shiftEndTime={viewModel.shift.endTime}
@@ -462,7 +498,11 @@ export function AdminDailyScheduleView({
           </ul>
         ) : (
           <ContentCard>
-            <p className={styles.emptyState}>배정된 인원이 없습니다.</p>
+            <p className={styles.emptyState}>
+              {viewModel.shift.status === 'cancelled'
+                ? '취소된 일정은 출석을 관리할 수 없습니다.'
+                : '출석 관리 대상 인원이 없습니다.'}
+            </p>
           </ContentCard>
         )}
       </section>

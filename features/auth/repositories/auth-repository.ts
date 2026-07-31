@@ -2,7 +2,17 @@ import 'server-only'
 
 import { createServerSupabaseClient } from '@/shared/supabase/server'
 
-import type { LoginInput, OnboardingInput, SignupInput } from '../schemas/auth-input'
+import type { LoginInput, SignupInput } from '../schemas/auth-input'
+
+export async function checkSignupIdentity(input: SignupInput) {
+  return (await createServerSupabaseClient())
+    .rpc('check_signup_identity', {
+      candidate_invite_code: input.inviteCode,
+      candidate_name: input.name,
+      candidate_phone: input.phone,
+    })
+    .single()
+}
 
 export async function signInWithPassword(input: LoginInput) {
   return (await createServerSupabaseClient()).auth.signInWithPassword(input)
@@ -25,16 +35,15 @@ export async function signUpWorker(input: SignupInput, emailRedirectTo: string) 
 export async function sendPasswordReset(email: string, redirectTo: string) {
   return (await createServerSupabaseClient()).auth.resetPasswordForEmail(email, { redirectTo })
 }
+export async function resendSignupConfirmation(email: string, emailRedirectTo: string) {
+  return (await createServerSupabaseClient()).auth.resend({
+    email,
+    options: { emailRedirectTo },
+    type: 'signup',
+  })
+}
 export async function signOut() {
   return (await createServerSupabaseClient()).auth.signOut()
-}
-export async function completeWorkerOnboarding(input: OnboardingInput) {
-  return (await createServerSupabaseClient()).rpc('complete_worker_onboarding', {
-    candidate_invite_code: input.inviteCode,
-    candidate_name: input.name,
-    candidate_phone: input.phone,
-    consent: input.kakaoConsent,
-  })
 }
 export async function updatePassword(password: string) {
   return (await createServerSupabaseClient()).auth.updateUser({ password })

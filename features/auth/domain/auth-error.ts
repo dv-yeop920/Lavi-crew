@@ -5,6 +5,12 @@ type AuthFailure = {
   message?: string
 }
 
+export type SignupIdentityAvailability = {
+  is_invite_code_valid: boolean
+  is_name_available: boolean
+  is_phone_available: boolean
+}
+
 function failure(
   code: string,
   message: string,
@@ -41,16 +47,31 @@ export function mapSignupFailure(error: AuthFailure): FormActionResult {
   }
 
   if (error.message?.includes('Database error saving new user')) {
-    return failure('PROFILE_CREATE_FAILED', '휴대폰 번호와 라비에벨 전용 코드를 확인해 주세요.', {
-      inviteCode: ['활성 상태이며 만료되지 않은 사용 가능한 전용 코드인지 확인해 주세요.'],
-      phone: ['이미 등록된 번호가 아닌지 확인해 주세요.'],
-    })
+    return failure(
+      'PROFILE_CREATE_FAILED',
+      '가입 정보가 방금 변경되었습니다. 이름, 휴대폰 번호와 전용 코드를 다시 확인해 주세요.',
+    )
   }
 
   return failure(
     'SIGNUP_FAILED',
     '회원가입을 완료하지 못했습니다. 입력 항목을 확인한 뒤 다시 시도해 주세요.',
   )
+}
+
+export function mapSignupIdentityAvailability(
+  availability: SignupIdentityAvailability,
+): FormActionResult | null {
+  const fieldErrors: NonNullable<FormActionResult['fieldErrors']> = {}
+
+  if (!availability.is_name_available) fieldErrors.name = ['이미 등록된 이름입니다.']
+  if (!availability.is_phone_available) fieldErrors.phone = ['이미 등록된 휴대폰 번호입니다.']
+  if (!availability.is_invite_code_valid)
+    fieldErrors.inviteCode = ['라비에벨 전용 코드가 올바르지 않습니다.']
+
+  return Object.keys(fieldErrors).length > 0
+    ? failure('SIGNUP_IDENTITY_UNAVAILABLE', '입력 항목별 안내를 확인해 주세요.', fieldErrors)
+    : null
 }
 
 export function repeatedSignupFailure(): FormActionResult {

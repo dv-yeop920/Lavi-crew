@@ -32,7 +32,9 @@ export const editLink = style({
 
 export const contactList = style({
   display: 'grid',
+  minWidth: 0,
   gap: '0.25rem',
+  overflowWrap: 'anywhere',
   color: semanticVars.color.labelNeutral,
   fontSize: semanticVars.font.size.bodySmall,
 })

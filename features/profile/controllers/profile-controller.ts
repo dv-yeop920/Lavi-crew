@@ -1,6 +1,7 @@
 import 'server-only'
 
 import { requireRole } from '@/shared/auth/session'
+import { getProfileUniqueConflict } from '@/shared/lib/postgres-conflict'
 
 import {
   deactivateOwnProfileRecord,
@@ -24,7 +25,16 @@ export async function updateOwnProfileController(input: {
 }): Promise<ProfileActionResult> {
   await requireRole('worker')
   const { error } = await updateOwnProfileRecord(input)
-  if (error?.code === '23505') {
+  const conflictingField = getProfileUniqueConflict(error)
+  if (conflictingField === 'name') {
+    return {
+      code: 'NAME_ALREADY_EXISTS',
+      fieldErrors: { name: ['이미 다른 회원이 사용 중인 이름입니다.'] },
+      message: '이름을 확인해 주세요.',
+      ok: false,
+    }
+  }
+  if (conflictingField === 'phone') {
     return {
       code: 'PHONE_ALREADY_EXISTS',
       fieldErrors: { phone: ['이미 다른 회원이 사용 중인 휴대폰 번호입니다.'] },

@@ -11,19 +11,38 @@ import type {
 
 export async function getDailyScheduleRecords(workDate: string) {
   const supabase = await createServerSupabaseClient()
-  const [shift, profiles, skills] = await Promise.all([
+  const monthStart = `${workDate.slice(0, 7)}-01`
+  const previousMonthStart = new Date(`${monthStart}T00:00:00Z`)
+  previousMonthStart.setUTCMonth(previousMonthStart.getUTCMonth() - 1)
+  const previousMonthStartValue = previousMonthStart.toISOString().slice(0, 10)
+  const [shift, profiles, skills, applications, previousAssignments] = await Promise.all([
     supabase
       .from('shifts')
       .select(
         'id, work_date, start_time, end_time, ceremony_count, status, updated_at, cancelled_at, cancellation_reason, shift_assignments(id, worker_id, position_id, slot_index, is_training, status, updated_at, attendance_records(id, status, actual_started_at, actual_ended_at, confirmed_at, correction_reason, updated_at))',
       )
       .eq('work_date', workDate)
-      .eq('shift_assignments.status', 'confirmed')
       .maybeSingle(),
     supabase.from('profiles').select('id, name, role, is_active, hourly_wage').order('name'),
     supabase.from('worker_position_skills').select('worker_id, position_id'),
+    supabase
+      .from('schedule_applications')
+      .select('worker_id, status, work_date')
+      .eq('work_date', workDate),
+    supabase
+      .from('shift_assignments')
+      .select('worker_id, position_id, status, shifts!inner(work_date), attendance_records(status)')
+      .eq('status', 'confirmed')
+      .gte('shifts.work_date', previousMonthStartValue)
+      .lt('shifts.work_date', monthStart),
   ])
-  if (shift.error || profiles.error || skills.error)
+  if (
+    shift.error ||
+    profiles.error ||
+    skills.error ||
+    applications.error ||
+    previousAssignments.error
+  )
     throw new Error('일별 일정 데이터를 조회하지 못했습니다.')
   const confirmedAttendance = shift.data
     ? await supabase
@@ -36,6 +55,8 @@ export async function getDailyScheduleRecords(workDate: string) {
   if (confirmedAttendance.error) throw new Error('출석 확정 상태를 조회하지 못했습니다.')
   return {
     hasConfirmedAttendance: (confirmedAttendance.data?.length ?? 0) > 0,
+    applications: applications.data ?? [],
+    previousAssignments: previousAssignments.data ?? [],
     profiles: profiles.data ?? [],
     shift: shift.data,
     skills: skills.data ?? [],

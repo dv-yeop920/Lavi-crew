@@ -66,13 +66,6 @@ export const signupSchema = z
     }
   })
 
-export const onboardingSchema = z.object({
-  inviteCode: inviteCodeSchema,
-  kakaoConsent: kakaoConsentSchema,
-  name: nameSchema,
-  phone: phoneSchema,
-})
-
 export const passwordResetRequestSchema = z.object({ email: emailSchema })
 
 export const newPasswordSchema = z
@@ -93,7 +86,6 @@ export const newPasswordSchema = z
 export type AuthResult = FormActionResult
 export type LoginInput = z.infer<typeof loginSchema>
 export type SignupInput = z.infer<typeof signupSchema>
-export type OnboardingInput = z.infer<typeof onboardingSchema>
 
 function stringValue(formData: FormData, name: string) {
   const value = formData.get(name)
@@ -115,15 +107,6 @@ export function parseSignupInput(formData: FormData) {
     name: stringValue(formData, 'name'),
     password: stringValue(formData, 'password'),
     passwordConfirm: stringValue(formData, 'passwordConfirm'),
-    phone: stringValue(formData, 'phone'),
-  })
-}
-
-export function parseOnboardingInput(formData: FormData) {
-  return onboardingSchema.safeParse({
-    inviteCode: stringValue(formData, 'inviteCode'),
-    kakaoConsent: formData.get('kakaoConsent') === 'on',
-    name: stringValue(formData, 'name'),
     phone: stringValue(formData, 'phone'),
   })
 }

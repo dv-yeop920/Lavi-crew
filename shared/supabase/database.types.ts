@@ -509,8 +509,8 @@ export type Database = {
           id: string
           status: Database['public']['Enums']['application_status']
           updated_at: string
-          worker_id: string
           work_date: string
+          worker_id: string
         }
         Insert: {
           application_period_id: string
@@ -519,8 +519,8 @@ export type Database = {
           id?: string
           status?: Database['public']['Enums']['application_status']
           updated_at?: string
-          worker_id: string
           work_date: string
+          worker_id: string
         }
         Update: {
           application_period_id?: string
@@ -529,8 +529,8 @@ export type Database = {
           id?: string
           status?: Database['public']['Enums']['application_status']
           updated_at?: string
-          worker_id?: string
           work_date?: string
+          worker_id?: string
         }
         Relationships: [
           {
@@ -600,15 +600,15 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'shift_assignments_cancelled_by_fkey'
-            columns: ['cancelled_by']
+            foreignKeyName: 'shift_assignments_assigned_by_fkey'
+            columns: ['assigned_by']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
           {
-            foreignKeyName: 'shift_assignments_assigned_by_fkey'
-            columns: ['assigned_by']
+            foreignKeyName: 'shift_assignments_cancelled_by_fkey'
+            columns: ['cancelled_by']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']
@@ -684,17 +684,17 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: 'shifts_cancelled_by_fkey'
-            columns: ['cancelled_by']
-            isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
-          },
-          {
             foreignKeyName: 'shifts_application_period_id_fkey'
             columns: ['application_period_id']
             isOneToOne: false
             referencedRelation: 'schedule_application_periods'
+            referencedColumns: ['id']
+          },
+          {
+            foreignKeyName: 'shifts_cancelled_by_fkey'
+            columns: ['cancelled_by']
+            isOneToOne: false
+            referencedRelation: 'profiles'
             referencedColumns: ['id']
           },
           {
@@ -767,40 +767,40 @@ export type Database = {
         }
         Returns: undefined
       }
+      cancel_daily_schedule: {
+        Args: {
+          p_expected_shift_updated_at: string
+          p_reason: string
+          p_request_id: string
+          p_shift_id: string
+        }
+        Returns: Json
+      }
+      check_signup_identity: {
+        Args: {
+          candidate_invite_code: string
+          candidate_name: string
+          candidate_phone: string
+        }
+        Returns: {
+          is_invite_code_valid: boolean
+          is_name_available: boolean
+          is_phone_available: boolean
+        }[]
+      }
       claim_invite_code: {
         Args: { candidate_code: string }
         Returns: undefined
       }
       claim_pending_notifications: {
-        Args: {
-          p_batch_size?: number
-          p_lease_seconds?: number
-        }
+        Args: { p_batch_size?: number; p_lease_seconds?: number }
         Returns: Json
-      }
-      complete_worker_onboarding: {
-        Args: {
-          candidate_invite_code: string
-          candidate_name: string
-          candidate_phone: string
-          consent: boolean
-        }
-        Returns: undefined
       }
       complete_notification: {
         Args: {
           p_lease_token: string
           p_notification_id: string
           p_provider_message_id: string
-        }
-        Returns: Json
-      }
-      create_notice: {
-        Args: {
-          p_content: string
-          p_is_pinned: boolean
-          p_request_id: string
-          p_title: string
         }
         Returns: Json
       }
@@ -816,13 +816,27 @@ export type Database = {
         }
         Returns: Json
       }
-      cancel_daily_schedule: {
+      create_invite_code: {
         Args: {
-          p_expected_shift_updated_at: string
-          p_reason: string
+          p_code: string
+          p_expires_at: string
+          p_label: string
+          p_max_uses: number
           p_request_id: string
-          p_shift_id: string
         }
+        Returns: Json
+      }
+      create_notice: {
+        Args: {
+          p_content: string
+          p_is_pinned: boolean
+          p_request_id: string
+          p_title: string
+        }
+        Returns: Json
+      }
+      deactivate_invite_code: {
+        Args: { p_invite_id: string; p_request_id: string }
         Returns: Json
       }
       deactivate_own_profile: { Args: never; Returns: undefined }
@@ -836,10 +850,7 @@ export type Database = {
       }
       is_admin: { Args: never; Returns: boolean }
       mark_notice_read: {
-        Args: {
-          p_notice_id: string
-          p_request_id: string
-        }
+        Args: { p_notice_id: string; p_request_id: string }
         Returns: Json
       }
       retry_or_fail_notification: {
@@ -890,14 +901,6 @@ export type Database = {
         }
         Returns: Json
       }
-      update_own_profile: {
-        Args: {
-          candidate_name: string
-          candidate_phone: string
-          consent: boolean
-        }
-        Returns: undefined
-      }
       update_daily_schedule: {
         Args: {
           p_assignments: Json
@@ -920,6 +923,14 @@ export type Database = {
           p_title: string
         }
         Returns: Json
+      }
+      update_own_profile: {
+        Args: {
+          candidate_name: string
+          candidate_phone: string
+          consent: boolean
+        }
+        Returns: undefined
       }
       validate_invite_code: {
         Args: { candidate_code: string }

@@ -89,7 +89,7 @@ export function AdminScheduleView({
             <span aria-hidden="true">→</span>
           </button>
         </div>
-        <div className={styles.calendar} aria-label={`${monthLabel} 관리자 일정 달력`}>
+        <div aria-label={`${monthLabel} 관리자 일정 달력`} className={styles.calendar} role="group">
           {weekdays.map((weekday, weekdayIndex) => (
             <span
               className={styles.weekday}
@@ -103,12 +103,19 @@ export function AdminScheduleView({
             </span>
           ))}
           {Array.from({ length: firstWeekday }, (_, index) => (
-            <span className={styles.blankDay} key={`blank-${index}`} aria-hidden="true" />
+            <span
+              aria-hidden="true"
+              className={styles.blankDay}
+              key={`blank-${index}`}
+              role="presentation"
+            />
           ))}
           {days.map((day) => (
             <span
               aria-label={
-                registeredDays.has(day) ? `${monthIndex + 1}월 ${day}일 일정 등록됨` : undefined
+                registeredDays.has(day)
+                  ? `${monthIndex + 1}월 ${day}일 일정 등록됨`
+                  : `${monthIndex + 1}월 ${day}일 일정 없음`
               }
               className={styles.adminCalendarDay}
               data-registered={registeredDays.has(day) || undefined}
@@ -132,10 +139,12 @@ export function AdminScheduleView({
               <li key={schedule.date}>
                 <RegisteredScheduleCard
                   assignedCount={schedule.assignedCount}
+                  cancellationReason={schedule.cancellationReason}
                   ceremonyCount={schedule.ceremonyCount}
                   date={schedule.date}
                   dateLabel={formatDateLabel(schedule.date)}
                   time={schedule.time}
+                  status={schedule.status}
                 />
               </li>
             ))}

@@ -71,7 +71,7 @@ export function ProfileView({ profile }: { profile: ProfileViewModel }) {
         </div>
         <div className={layout.row}>
           <strong>이메일</strong>
-          <span>{profile.email}</span>
+          <span className={styles.breakableValue}>{profile.email}</span>
         </div>
         <div className={layout.row}>
           <strong>현재 적용 시급</strong>

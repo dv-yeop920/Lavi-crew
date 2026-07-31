@@ -1,10 +1,9 @@
 'use client'
 
 import Link from 'next/link'
-import { useActionState, useState } from 'react'
+import { useActionState } from 'react'
 
 import { loginAction } from '@/features/auth/actions/auth-actions'
-import { startKakaoOAuth } from '@/features/auth/client/kakao-oauth'
 import { getFirstFieldError } from '@/shared/forms/form-result'
 import { useSelectiveFormRecovery } from '@/shared/forms/use-selective-form-recovery'
 import { Button } from '@/shared/ui/button/button'
@@ -15,14 +14,6 @@ import * as styles from './auth-view.css'
 export function LoginView() {
   const [state, formAction, isPending] = useActionState(loginAction, null)
   const { captureSubmission, formRef } = useSelectiveFormRecovery(state)
-  const [oauthError, setOauthError] = useState('')
-  async function loginWithKakao() {
-    setOauthError('')
-    const { error } = await startKakaoOAuth(
-      `${window.location.origin}/auth/callback?next=/onboarding`,
-    )
-    if (error) setOauthError('카카오 로그인을 시작할 수 없습니다. 잠시 후 다시 시도해 주세요.')
-  }
   return (
     <main className={styles.viewport}>
       <div className={styles.shell}>
@@ -68,14 +59,6 @@ export function LoginView() {
             비밀번호를 잊으셨나요?
           </Link>
         </form>
-        <Button className={styles.fullButton} variant="secondary" onClick={loginWithKakao}>
-          카카오로 로그인
-        </Button>
-        {oauthError ? (
-          <p className={styles.message} role="alert">
-            {oauthError}
-          </p>
-        ) : null}
         <p className={styles.footer}>
           아직 라비크루 계정이 없나요?
           <Link className={styles.link} href="/signup">

@@ -77,7 +77,7 @@ function NoticeEditor({
 
   return (
     <ContentCard>
-      <form action={formAction} className={styles.form}>
+      <form action={formAction} className={styles.form} noValidate>
         <strong>{mode === 'create' ? '새 공지 등록' : '공지 수정'}</strong>
         <input name="payload" type="hidden" value={JSON.stringify(payload)} />
         <TextField
@@ -172,7 +172,7 @@ function DeleteNoticeDialog({
         삭제
       </Button>
       <dialog aria-labelledby={titleId} className={styles.dialog} ref={dialogRef}>
-        <form action={formAction} className={styles.form}>
+        <form action={formAction} className={styles.form} noValidate>
           <strong id={titleId}>공지를 삭제할까요?</strong>
           <p className={styles.noticeContent}>
             “{notice.title}” 공지는 목록에서 숨겨지며 삭제 이력은 보존됩니다.

@@ -26,7 +26,7 @@ flowchart LR
 ```
 
 - 조회 원본은 Supabase이고 서버 컴포넌트가 Controller 결과를 직렬화 가능한 ViewModel로 전달한다.
-- 변경 Action과 Controller가 각각 역할을 확인하고 RLS/RPC가 최종 권한을 강제한다.
+- 변경 Action과 Controller가 각각 역할을 확인하고 RLS/RPC가 최종 권한을 강제한다. 초대 코드 생성·중지는 요청 ID를 받는 관리자 전용 멱등 RPC만 사용한다.
 - 회원 정보와 가능한 포지션은 `admin_update_worker_profile`에서 한 트랜잭션으로 변경한다.
 
 ### Data model
@@ -56,10 +56,10 @@ flowchart LR
 | 전체 인원·통계 조회 | 거부 | 거부 | 허용 | RLS + Controller |
 | 이름·시급·가능 포지션 동시 수정 | 거부 | 거부 | 허용 | 관리자 RPC |
 | 회원 비활성화 | 거부 | 본인 알바만 | 알바 대상만 | 역할별 RPC |
-| 초대 코드 조회·생성·중지 | 거부 | 거부 | 허용 | RLS |
+| 초대 코드 조회·생성·중지 | 거부 | 거부 | 허용 | 조회 RLS + 변경 RPC |
 
 ## 운영 주의
 
 - 마이그레이션 적용 후 원격 프로젝트에서 TypeScript 타입을 다시 생성한다.
-- 적용 전에는 생성 타입에 `profiles.email`, `invite_codes.label`과 신규 RPC가 없으므로 Repository가 해당 경계를 `unknown`으로 검증한다.
-- 원격 적용 전 Security/Performance Advisor와 관리자·알바·비활성 계정의 허용/거부 사례를 확인한다.
+- 생성된 Supabase 타입은 원격 스키마 변경 뒤 다시 동기화한다. nullable PL/pgSQL 입력은 생성 타입이 실제 함수 기본값을 표현하는지 별도로 확인한다.
+- 원격 적용 후 Security/Performance Advisor와 관리자·알바·비활성 계정의 허용/거부 사례를 확인한다.

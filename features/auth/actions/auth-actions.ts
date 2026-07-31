@@ -7,8 +7,8 @@ import { getZodFieldErrors } from '@/shared/forms/zod-errors'
 import {
   loginController,
   logoutController,
-  onboardingController,
   passwordResetController,
+  resendConfirmationController,
   signupController,
   updatePasswordController,
 } from '../controllers/auth-controller'
@@ -16,7 +16,6 @@ import {
   type AuthResult,
   parseLoginInput,
   parseNewPassword,
-  parseOnboardingInput,
   parsePasswordResetRequest,
   parseSignupInput,
 } from '../schemas/auth-input'
@@ -59,25 +58,23 @@ export async function passwordResetAction(
         ok: false,
       }
 }
-export async function logoutAction() {
-  await logoutController()
-  redirect('/')
-}
-export async function onboardingAction(
+export async function resendConfirmationAction(
   _: AuthResult | null,
   formData: FormData,
 ): Promise<AuthResult> {
-  const parsed = parseOnboardingInput(formData)
-  const result = parsed.success
-    ? await onboardingController(parsed.data)
+  const parsed = parsePasswordResetRequest(formData)
+  return parsed.success
+    ? resendConfirmationController(parsed.data.email)
     : {
-        code: 'INVALID_INPUT',
+        code: 'INVALID_EMAIL',
         fieldErrors: getZodFieldErrors(parsed.error),
-        message: '입력 항목별 안내를 확인해 주세요.',
+        message: '이메일 주소를 확인해 주세요.',
         ok: false,
       }
-  if (result.ok) redirect('/home')
-  return result
+}
+export async function logoutAction() {
+  await logoutController()
+  redirect('/')
 }
 export async function updatePasswordAction(
   _: AuthResult | null,

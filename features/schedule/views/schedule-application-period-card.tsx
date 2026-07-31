@@ -1,13 +1,14 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useActionState, useEffect, useState } from 'react'
+import { useActionState, useEffect, useRef, useState } from 'react'
 
 import {
   saveScheduleApplicationPeriodAction,
   setScheduleApplicationPeriodStatusAction,
 } from '@/features/schedule/actions/schedule-actions'
 import type { MonthRegistrationViewModel } from '@/features/schedule/schemas/schedule-view-model'
+import { getFirstFieldError } from '@/shared/forms/form-result'
 import { Button } from '@/shared/ui/button/button'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
@@ -70,6 +71,8 @@ export function ScheduleApplicationPeriodCard({
   const [deadlineRequestId, setDeadlineRequestId] = useState(initialRequestId)
   const [statusRequestId, setStatusRequestId] = useState(initialRequestId)
   const [isConfirmingClose, setIsConfirmingClose] = useState(false)
+  const closeConfirmationRef = useRef<HTMLElement>(null)
+  const closeTriggerRef = useRef<HTMLButtonElement>(null)
   const [periodState, periodAction, isSavingPeriod] = useActionState(
     saveScheduleApplicationPeriodAction,
     null,
@@ -91,6 +94,10 @@ export function ScheduleApplicationPeriodCard({
       setStatusRequestId(initialRequestId)
     })
   }, [initialRequestId])
+
+  useEffect(() => {
+    if (isConfirmingClose) closeConfirmationRef.current?.focus()
+  }, [isConfirmingClose])
 
   function updateDeadline(update: () => void) {
     update()
@@ -115,6 +122,7 @@ export function ScheduleApplicationPeriodCard({
       : period.closedReason === 'manual'
         ? '관리자 마감'
         : '기한 만료'
+  const deadlineError = getFirstFieldError(periodState?.fieldErrors, 'applicationDeadline')
 
   return (
     <ContentCard aria-labelledby="application-period-title">
@@ -138,13 +146,15 @@ export function ScheduleApplicationPeriodCard({
           </p>
         </div>
       ) : (
-        <form action={periodAction} aria-busy={isSavingPeriod}>
+        <form action={periodAction} aria-busy={isSavingPeriod} noValidate>
           <input name="payload" type="hidden" value={periodPayload} />
           <div className={styles.deadlineGrid}>
             <label className={styles.fieldLabel}>
               <span>마감 날짜</span>
               <input
                 required
+                aria-describedby={deadlineError ? 'application-deadline-error' : undefined}
+                aria-invalid={deadlineError ? true : undefined}
                 className={styles.compactInput}
                 disabled={isBusy}
                 type="date"
@@ -156,6 +166,8 @@ export function ScheduleApplicationPeriodCard({
               <span>마감 시간</span>
               <input
                 required
+                aria-describedby={deadlineError ? 'application-deadline-error' : undefined}
+                aria-invalid={deadlineError ? true : undefined}
                 className={styles.compactInput}
                 disabled={isBusy}
                 type="time"
@@ -167,6 +179,11 @@ export function ScheduleApplicationPeriodCard({
               {isSavingPeriod ? '저장 중…' : period.id ? '마감 시각 변경' : '신청 기간 열기'}
             </Button>
           </div>
+          {deadlineError ? (
+            <p className={styles.fieldError} id="application-deadline-error" role="alert">
+              {deadlineError}
+            </p>
+          ) : null}
         </form>
       )}
 
@@ -188,13 +205,18 @@ export function ScheduleApplicationPeriodCard({
         <div className={layout.stack}>
           {period.status === 'open' ? (
             isConfirmingClose ? (
-              <section className={styles.confirmation} aria-labelledby="close-period-title">
+              <section
+                aria-labelledby="close-period-title"
+                className={styles.confirmation}
+                ref={closeConfirmationRef}
+                tabIndex={-1}
+              >
                 <h3 id="close-period-title">지금 신청을 마감할까요?</h3>
                 <p className={styles.meta}>
                   저장하지 않은 구성원 신청은 반영되지 않으며, 게시 일정이 생기면 다시 열 수
                   없습니다.
                 </p>
-                <form action={statusAction}>
+                <form action={statusAction} noValidate>
                   <input
                     name="payload"
                     type="hidden"
@@ -212,7 +234,10 @@ export function ScheduleApplicationPeriodCard({
                     <Button
                       disabled={isBusy}
                       variant="secondary"
-                      onClick={() => setIsConfirmingClose(false)}
+                      onClick={() => {
+                        setIsConfirmingClose(false)
+                        queueMicrotask(() => closeTriggerRef.current?.focus())
+                      }}
                     >
                       계속 신청 받기
                     </Button>
@@ -222,6 +247,7 @@ export function ScheduleApplicationPeriodCard({
             ) : (
               <Button
                 disabled={isBusy}
+                ref={closeTriggerRef}
                 variant="secondary"
                 onClick={() => {
                   prepareStatusMutation()
@@ -232,7 +258,7 @@ export function ScheduleApplicationPeriodCard({
               </Button>
             )
           ) : period.canReopen ? (
-            <form action={statusAction}>
+            <form action={statusAction} noValidate>
               <input
                 name="payload"
                 type="hidden"

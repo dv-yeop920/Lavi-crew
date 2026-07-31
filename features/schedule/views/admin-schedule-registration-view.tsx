@@ -219,7 +219,7 @@ export function AdminScheduleRegistrationView({
   )
 
   return (
-    <form action={formAction} className={layout.page} aria-busy={isPending}>
+    <form action={formAction} className={layout.page} aria-busy={isPending} noValidate>
       <input name="payload" type="hidden" value={JSON.stringify(payload)} />
       <PageHeader
         backHref="/admin/schedules"

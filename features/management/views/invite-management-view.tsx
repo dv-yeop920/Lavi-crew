@@ -35,8 +35,8 @@ const inviteStatusLabel: Record<InviteStatus, string> = {
   expired: '기간 만료',
 }
 
-function InviteItem({ invite }: { invite: InviteViewModel }) {
-  const action = deactivateInviteAction.bind(null, invite.id)
+function InviteItem({ invite, requestId }: { invite: InviteViewModel; requestId: string }) {
+  const action = deactivateInviteAction.bind(null, invite.id, requestId)
   const [state, formAction, isPending] = useActionState(action, null)
   const expiresAt = new Intl.DateTimeFormat('ko-KR', { dateStyle: 'medium' }).format(
     new Date(invite.expiresAt),
@@ -53,7 +53,14 @@ function InviteItem({ invite }: { invite: InviteViewModel }) {
       <p>
         {expiresAt} 만료 · {invite.usedCount} / {invite.maxUses}회 사용
       </p>
-      <form action={formAction}>
+      <form
+        action={formAction}
+        onSubmit={(event) => {
+          if (!window.confirm(`${invite.label} 초대 코드 사용을 중지할까요?`)) {
+            event.preventDefault()
+          }
+        }}
+      >
         <Button
           disabled={invite.status !== 'active' || isPending}
           type="submit"
@@ -74,9 +81,20 @@ function InviteItem({ invite }: { invite: InviteViewModel }) {
   )
 }
 
-export function InviteManagementView({ invites }: { invites: InviteViewModel[] }) {
+export function InviteManagementView({
+  createRequestId,
+  deactivateRequestIds,
+  invites,
+}: {
+  createRequestId: string
+  deactivateRequestIds: Record<string, string>
+  invites: InviteViewModel[]
+}) {
   const [isCreating, setIsCreating] = useState(false)
-  const [state, formAction, isPending] = useActionState(createInviteAction, null)
+  const [state, formAction, isPending] = useActionState(
+    createInviteAction.bind(null, createRequestId),
+    null,
+  )
   const { captureSubmission, formRef } = useSelectiveFormRecovery(state)
 
   return (
@@ -143,7 +161,7 @@ export function InviteManagementView({ invites }: { invites: InviteViewModel[] }
         <ul className={layout.list}>
           {invites.map((invite) => (
             <li key={invite.id}>
-              <InviteItem invite={invite} />
+              <InviteItem invite={invite} requestId={deactivateRequestIds[invite.id]} />
             </li>
           ))}
         </ul>

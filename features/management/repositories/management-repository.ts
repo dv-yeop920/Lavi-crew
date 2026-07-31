@@ -107,27 +107,24 @@ export async function getInviteRecords() {
 
 export async function createInviteRecord(input: {
   code: string
-  createdBy: string
   expiresAt: string
   label: string
   maxUses: number
+  requestId: string
 }) {
   const supabase = await createServerSupabaseClient()
-  return supabase.from('invite_codes').insert({
-    code: input.code,
-    created_by: input.createdBy,
-    expires_at: input.expiresAt,
-    label: input.label,
-    max_uses: input.maxUses,
+  return supabase.rpc('create_invite_code', {
+    p_code: input.code,
+    p_expires_at: input.expiresAt,
+    p_label: input.label,
+    p_max_uses: input.maxUses,
+    p_request_id: input.requestId,
   })
 }
 
-export async function deactivateInviteRecord(inviteId: string) {
-  return (await createServerSupabaseClient())
-    .from('invite_codes')
-    .update({ is_active: false })
-    .eq('id', inviteId)
-    .eq('is_active', true)
-    .select('id')
-    .maybeSingle()
+export async function deactivateInviteRecord(inviteId: string, requestId: string) {
+  return (await createServerSupabaseClient()).rpc('deactivate_invite_code', {
+    p_invite_id: inviteId,
+    p_request_id: requestId,
+  })
 }

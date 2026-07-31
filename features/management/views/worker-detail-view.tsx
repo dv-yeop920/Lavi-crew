@@ -111,7 +111,15 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
             value={worker.phone}
           />
 
-          <fieldset disabled={!worker.isActive || isUpdating} className={styles.positionFieldset}>
+          <fieldset
+            aria-describedby={
+              getFirstFieldError(updateState?.fieldErrors, 'positionIds')
+                ? 'position-ids-error'
+                : undefined
+            }
+            disabled={!worker.isActive || isUpdating}
+            className={styles.positionFieldset}
+          >
             <legend className={styles.positionLegend}>가능한 포지션</legend>
             <div className={styles.checkboxGrid}>
               {POSITION_CATALOG.map((position) => (
@@ -129,7 +137,7 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
             </div>
           </fieldset>
           {getFirstFieldError(updateState?.fieldErrors, 'positionIds') ? (
-            <p aria-live="polite" className={styles.fieldError}>
+            <p aria-live="polite" className={styles.fieldError} id="position-ids-error">
               {getFirstFieldError(updateState?.fieldErrors, 'positionIds')}
             </p>
           ) : null}

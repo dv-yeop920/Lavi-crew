@@ -5,8 +5,12 @@ type ReadyDailySchedule = Extract<DailyScheduleViewModel, { state: 'ready' }>
 
 export function createDailyPositionDrafts(assignments: ReadyDailySchedule['assignments']) {
   const confirmedAssignments = assignments.filter((assignment) => assignment.status === 'confirmed')
+  const displayAssignments =
+    confirmedAssignments.length > 0
+      ? confirmedAssignments
+      : assignments.filter((assignment) => assignment.status === 'cancelled')
   return POSITION_CATALOG.map((position) => {
-    const positionAssignments = confirmedAssignments
+    const positionAssignments = displayAssignments
       .filter((assignment) => assignment.positionId === position.id)
       .sort((first, second) => first.slotIndex - second.slotIndex)
     const slotCount = Math.max(

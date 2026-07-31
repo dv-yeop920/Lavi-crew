@@ -63,11 +63,15 @@ export async function deactivateManagedWorkerAction(
 }
 
 export async function createInviteAction(
+  requestId: string,
   _: ManagementActionResult | null,
   formData: FormData,
 ): Promise<ManagementActionResult> {
   await requireRole('admin')
   const parsed = parseInviteCreate(formData)
+  const parsedRequestId = parseUuid(requestId)
+  if (!parsedRequestId.success)
+    return { code: 'INVALID_REQUEST', message: '요청을 다시 시도해 주세요.', ok: false }
   if (!parsed.success)
     return {
       code: 'INVALID_INPUT',
@@ -75,20 +79,24 @@ export async function createInviteAction(
       message: '입력 항목별 안내를 확인해 주세요.',
       ok: false,
     }
-  const result = await createInviteController(parsed.data)
+  const result = await createInviteController({ ...parsed.data, requestId: parsedRequestId.data })
   if (result.ok) revalidatePath('/admin/invites')
   return result
 }
 
 export async function deactivateInviteAction(
   inviteId: string,
+  requestId: string,
   _: ManagementActionResult | null,
 ): Promise<ManagementActionResult> {
   await requireRole('admin')
   const parsedInviteId = parseUuid(inviteId)
+  const parsedRequestId = parseUuid(requestId)
   if (!parsedInviteId.success)
     return { code: 'INVALID_INVITE', message: '초대 코드를 찾을 수 없습니다.', ok: false }
-  const result = await deactivateInviteController(parsedInviteId.data)
+  if (!parsedRequestId.success)
+    return { code: 'INVALID_REQUEST', message: '요청을 다시 시도해 주세요.', ok: false }
+  const result = await deactivateInviteController(parsedInviteId.data, parsedRequestId.data)
   if (result.ok) revalidatePath('/admin/invites')
   return result
 }

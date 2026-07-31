@@ -1,11 +1,11 @@
 import 'server-only'
 
-import { randomBytes } from 'node:crypto'
-
 import { requireRole } from '@/shared/auth/session'
 import { POSITION_CATALOG, type PositionId } from '@/shared/domain/positions'
 import { maskEmail, maskPhone } from '@/shared/lib/mask-contact'
+import { getProfileUniqueConflict } from '@/shared/lib/postgres-conflict'
 
+import { createInviteCodeFromRequestId } from '../domain/invite-code'
 import { getInviteStatus } from '../domain/invite-status'
 import {
   calculateAverageMonthlyApplicationDays,
@@ -140,6 +140,14 @@ export async function updateManagedWorkerController(input: {
     }
   }
   const { error } = await updateWorkerProfileRecord(input)
+  if (getProfileUniqueConflict(error) === 'name') {
+    return {
+      code: 'NAME_ALREADY_EXISTS',
+      fieldErrors: { name: ['이미 다른 회원이 사용 중인 이름입니다.'] },
+      message: '이름을 확인해 주세요.',
+      ok: false,
+    }
+  }
   return error
     ? { code: 'WORKER_UPDATE_FAILED', message: '회원 정보를 저장하지 못했습니다.', ok: false }
     : { message: '회원 정보와 가능한 포지션을 저장했습니다.', ok: true }
@@ -184,10 +192,11 @@ export async function createInviteController(input: {
   expiresAt: string
   label: string
   maxUses: number
+  requestId: string
 }): Promise<ManagementActionResult> {
-  const admin = await requireRole('admin')
-  const code = `LAVI-${randomBytes(6).toString('hex').toUpperCase()}`
-  const { error } = await createInviteRecord({ ...input, code, createdBy: admin.id })
+  await requireRole('admin')
+  const code = createInviteCodeFromRequestId(input.requestId)
+  const { error } = await createInviteRecord({ ...input, code })
   return error
     ? { code: 'INVITE_CREATE_FAILED', message: '초대 코드를 생성하지 못했습니다.', ok: false }
     : { message: `초대 코드를 생성했습니다: ${code}`, ok: true }
@@ -195,10 +204,11 @@ export async function createInviteController(input: {
 
 export async function deactivateInviteController(
   inviteId: string,
+  requestId: string,
 ): Promise<ManagementActionResult> {
   await requireRole('admin')
-  const { data, error } = await deactivateInviteRecord(inviteId)
-  return error || !data
+  const { error } = await deactivateInviteRecord(inviteId, requestId)
+  return error
     ? { code: 'INVITE_DEACTIVATE_FAILED', message: '초대 코드를 중지하지 못했습니다.', ok: false }
     : { message: '초대 코드 사용을 중지했습니다.', ok: true }
 }

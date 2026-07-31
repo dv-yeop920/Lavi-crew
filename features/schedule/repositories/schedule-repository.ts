@@ -26,11 +26,10 @@ export async function getAdminMonthScheduleRecords(monthStart: string, monthEnd:
     supabase
       .from('shifts')
       .select(
-        'id, work_date, start_time, end_time, ceremony_count, status, shift_assignments(id, status)',
+        'id, work_date, start_time, end_time, ceremony_count, status, cancellation_reason, shift_assignments(id, position_id, slot_index, status, updated_at)',
       )
       .gte('work_date', monthStart)
       .lt('work_date', monthEnd)
-      .eq('shift_assignments.status', 'confirmed')
       .order('work_date'),
     supabase
       .from('profiles')

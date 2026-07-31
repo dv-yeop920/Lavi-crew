@@ -8,10 +8,9 @@ export function VerifyEmailView() {
       <div className={styles.shell}>
         <header className={styles.header}>
           <span className={styles.brand}>라비크루</span>
-          <h1>이메일을 확인해 주세요</h1>
+          <h1>이메일 확인을 완료했어요</h1>
           <p className={styles.description}>
-            가입 이메일로 전송된 확인 링크를 완료한 뒤 로그인할 수 있습니다. 메일이 보이지 않으면
-            스팸함을 확인해 주세요.
+            라비크루 계정이 활성화되었습니다. 이제 가입한 이메일과 비밀번호로 로그인해 주세요.
           </p>
         </header>
         <p className={styles.footer}>

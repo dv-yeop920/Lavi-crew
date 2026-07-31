@@ -3,8 +3,9 @@ import 'server-only'
 import { requireRole } from '@/shared/auth/session'
 import { POSITION_CATALOG, type PositionId } from '@/shared/domain/positions'
 
-import { getActiveDailyAssignments, getDailyWorkerCandidates } from '../domain/daily-schedule'
-import { validateMonthlyRegistration } from '../domain/monthly-registration'
+import { getDailyScheduleAssignments, getDailyWorkerCandidates } from '../domain/daily-schedule'
+import { validateScheduleStructure } from '../domain/monthly-registration'
+import { formatScheduleWorkerSummary } from '../lib/schedule-worker-summary'
 import {
   cancelDailyScheduleRecord,
   confirmAttendanceRecord,
@@ -72,7 +73,10 @@ export async function getAdminDailyScheduleController(
   if (!isExactDate(date)) return { date, state: 'invalid' }
   const records = await getDailyScheduleRecords(date)
   if (!records.shift) return { date, state: 'not-found' }
-  const assignments = getActiveDailyAssignments(records.shift.shift_assignments)
+  const assignments = getDailyScheduleAssignments(
+    records.shift.shift_assignments,
+    records.shift.status,
+  )
   const currentWorkerIds = new Set(assignments.map((assignment) => assignment.worker_id))
   const candidateProfiles = getDailyWorkerCandidates(records.profiles, currentWorkerIds)
   return {
@@ -113,16 +117,21 @@ export async function getAdminDailyScheduleController(
         .filter((skill) => skill.worker_id === profile.id && positionIds.has(skill.position_id))
         .map((skill) => skill.position_id as PositionId)
       return {
+        appliedDates: records.applications
+          .filter(
+            (application) =>
+              application.worker_id === profile.id && application.status === 'applied',
+          )
+          .map((application) => application.work_date),
         id: profile.id,
         isActive: profile.is_active,
         isSelectable: profile.isSelectable,
         name: profile.name,
         positionIds: workerPositions,
-        summary: `가능: ${
-          POSITION_CATALOG.filter((position) => workerPositions.includes(position.id))
-            .map((position) => position.name)
-            .join(', ') || '미설정'
-        }`,
+        summary: formatScheduleWorkerSummary(
+          workerPositions,
+          records.previousAssignments.filter((assignment) => assignment.worker_id === profile.id),
+        ),
       }
     }),
   }
@@ -132,15 +141,13 @@ export async function updateDailyScheduleController(
   input: UpdateDailyScheduleInput,
 ): Promise<DailyScheduleActionResult> {
   await requireRole('admin')
-  const errors = validateMonthlyRegistration('2026-08', [
-    {
-      assignments: input.assignments,
-      ceremonyCount: input.ceremonyCount,
-      endTime: input.endTime,
-      startTime: input.startTime,
-      workDate: '2026-08-01',
-    },
-  ])
+  const errors = validateScheduleStructure({
+    assignments: input.assignments,
+    ceremonyCount: input.ceremonyCount,
+    endTime: input.endTime,
+    startTime: input.startTime,
+    workDate: '',
+  })
   if (errors.length > 0) {
     const code = errors[0].code
     return {

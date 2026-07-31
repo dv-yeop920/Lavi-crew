@@ -143,7 +143,7 @@ export function ScheduleApplicationView({
         : '신청 마감'
 
   return (
-    <form action={formAction} className={layout.page} aria-busy={isPending}>
+    <form action={formAction} className={layout.page} aria-busy={isPending} noValidate>
       {payload ? <input name="payload" type="hidden" value={payload} /> : null}
       <PageHeader
         eyebrow={`${monthNumber}월 일정 신청`}

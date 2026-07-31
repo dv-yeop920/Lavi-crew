@@ -8,11 +8,12 @@ import {
   normalizeMonthlyApplicationDates,
 } from '../domain/monthly-application'
 import {
-  getPublishedScheduleSummaries,
+  getScheduleSummaries,
   getUnregisteredWeekendDates,
   type RegistrationRuleErrorCode,
   validateMonthlyRegistration,
 } from '../domain/monthly-registration'
+import { formatScheduleWorkerSummary } from '../lib/schedule-worker-summary'
 import {
   getAdminMonthScheduleRecords,
   getWorkerMonthApplicationRecords,
@@ -40,29 +41,6 @@ function getMonthBounds(month: string) {
   return { monthEnd: date.toISOString().slice(0, 10), monthStart }
 }
 
-function formatWorkerSummary(
-  positionIds: PositionId[],
-  assignments: Awaited<ReturnType<typeof getAdminMonthScheduleRecords>>['previousAssignments'],
-) {
-  const presentAssignments = assignments.filter(
-    (assignment) => assignment.attendance_records?.status === 'present',
-  )
-  const counts = POSITION_CATALOG.map((position) => ({
-    count: presentAssignments.filter((assignment) => assignment.position_id === position.id).length,
-    name: position.name,
-  })).filter((position) => position.count > 0)
-  const skills = POSITION_CATALOG.filter((position) => positionIds.includes(position.id))
-    .map((position) => position.name)
-    .join(', ')
-  return [
-    `지난달 출근 ${presentAssignments.length}회`,
-    counts.map((position) => `${position.name} ${position.count}회`).join(', '),
-    `가능: ${skills || '미설정'}`,
-  ]
-    .filter(Boolean)
-    .join(' · ')
-}
-
 export async function getAdminMonthScheduleController(
   month: string,
   asOf = new Date(),
@@ -70,7 +48,7 @@ export async function getAdminMonthScheduleController(
   await requireRole('admin')
   const { monthEnd, monthStart } = getMonthBounds(month)
   const records = await getAdminMonthScheduleRecords(monthStart, monthEnd)
-  const registeredSchedules = getPublishedScheduleSummaries(records.shifts)
+  const registeredSchedules = getScheduleSummaries(records.shifts)
   const periodViewState = records.period
     ? getApplicationPeriodViewState(
         records.period.status,
@@ -116,7 +94,7 @@ export async function getAdminMonthScheduleController(
         id: profile.id,
         name: profile.name,
         positionIds,
-        summary: formatWorkerSummary(positionIds, workerAssignments),
+        summary: formatScheduleWorkerSummary(positionIds, workerAssignments),
       }
     }),
   }

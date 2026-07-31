@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import {
   createRegistrationSummary,
-  getPublishedScheduleSummaries,
+  getScheduleSummaries,
   getUnregisteredWeekendDates,
   type ScheduleInput,
   validateMonthlyRegistration,
@@ -117,13 +117,26 @@ describe('monthly schedule registration view rules', () => {
 
   it('counts only confirmed assignments without dropping the published shift', () => {
     expect(
-      getPublishedScheduleSummaries([
+      getScheduleSummaries([
         {
+          cancellation_reason: null,
           ceremony_count: 2,
           end_time: '18:00:00',
           shift_assignments: [
-            { id: 'confirmed', status: 'confirmed' },
-            { id: 'cancelled', status: 'cancelled' },
+            {
+              id: 'confirmed',
+              position_id: 'leader',
+              slot_index: 0,
+              status: 'confirmed',
+              updated_at: '2026-08-01T01:00:00Z',
+            },
+            {
+              id: 'cancelled',
+              position_id: 'leader',
+              slot_index: 0,
+              status: 'cancelled',
+              updated_at: '2026-08-01T00:00:00Z',
+            },
           ],
           start_time: '09:00:00',
           status: 'published',
@@ -133,10 +146,57 @@ describe('monthly schedule registration view rules', () => {
     ).toEqual([
       {
         assignedCount: 1,
+        cancellationReason: null,
         ceremonyCount: 2,
         date: '2026-08-01',
+        status: 'published',
         time: '09:00–18:00',
       },
+    ])
+  })
+
+  it('keeps cancelled schedule history visible', () => {
+    expect(
+      getScheduleSummaries([
+        {
+          cancellation_reason: '행사 취소',
+          ceremony_count: 2,
+          end_time: '18:00:00',
+          shift_assignments: [
+            {
+              id: 'old-cancelled',
+              position_id: 'leader',
+              slot_index: 0,
+              status: 'cancelled',
+              updated_at: '2026-08-01T00:00:00Z',
+            },
+            {
+              id: 'latest-cancelled',
+              position_id: 'leader',
+              slot_index: 0,
+              status: 'cancelled',
+              updated_at: '2026-08-02T00:00:00Z',
+            },
+            {
+              id: 'second-slot',
+              position_id: 'manager',
+              slot_index: 1,
+              status: 'cancelled',
+              updated_at: '2026-08-02T00:00:00Z',
+            },
+          ],
+          start_time: '09:00:00',
+          status: 'cancelled',
+          work_date: '2026-08-02',
+        },
+      ]),
+    ).toEqual([
+      expect.objectContaining({
+        cancellationReason: '행사 취소',
+        date: '2026-08-02',
+        status: 'cancelled',
+        assignedCount: 2,
+      }),
     ])
   })
 })

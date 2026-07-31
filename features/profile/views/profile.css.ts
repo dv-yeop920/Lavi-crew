@@ -7,6 +7,11 @@ export const form = style({
   gap: '1rem',
 })
 
+export const breakableValue = style({
+  minWidth: 0,
+  overflowWrap: 'anywhere',
+})
+
 export const confirmation = style({
   display: 'grid',
   gap: '0.75rem',

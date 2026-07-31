@@ -2,8 +2,10 @@ import type { PositionId } from '@/shared/domain/positions'
 
 export type RegisteredScheduleSummary = {
   assignedCount: number
+  cancellationReason: string | null
   ceremonyCount: number
   date: string
+  status: 'cancelled' | 'published'
   time: string
 }
 

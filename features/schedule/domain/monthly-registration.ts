@@ -53,24 +53,44 @@ export function createRegistrationSummary(schedules: ScheduleInput[]) {
   }
 }
 
-export function getPublishedScheduleSummaries(
+export function getScheduleSummaries(
   shifts: Array<{
+    cancellation_reason: string | null
     ceremony_count: number
     end_time: string
-    shift_assignments: Array<{ id: string; status: string }>
+    shift_assignments: Array<{
+      id: string
+      position_id: string
+      slot_index: number
+      status: string
+      updated_at: string
+    }>
     start_time: string
     status: string
     work_date: string
   }>,
 ) {
   return shifts
-    .filter((shift) => shift.status === 'published')
+    .filter((shift) => shift.status === 'published' || shift.status === 'cancelled')
     .map((shift) => ({
-      assignedCount: shift.shift_assignments.filter(
-        (assignment) => assignment.status === 'confirmed',
-      ).length,
+      assignedCount:
+        shift.status === 'published'
+          ? shift.shift_assignments.filter((assignment) => assignment.status === 'confirmed').length
+          : new Map(
+              shift.shift_assignments
+                .filter((assignment) => assignment.status === 'cancelled')
+                .sort((left, right) =>
+                  `${left.updated_at}:${left.id}`.localeCompare(`${right.updated_at}:${right.id}`),
+                )
+                .map((assignment) => [
+                  `${assignment.position_id}:${assignment.slot_index}`,
+                  assignment,
+                ]),
+            ).size,
+      cancellationReason: shift.cancellation_reason,
       ceremonyCount: shift.ceremony_count,
       date: shift.work_date,
+      status: shift.status as 'cancelled' | 'published',
       time: `${shift.start_time.slice(0, 5)}–${shift.end_time.slice(0, 5)}`,
     }))
 }
@@ -92,61 +112,70 @@ export function validateMonthlyRegistration(
     if (!isWeekendInMonth(month, schedule.workDate)) {
       errors.push({ code: 'INVALID_DATE', path: `${schedulePath}.workDate` })
     }
-    if (schedule.endTime <= schedule.startTime) {
-      errors.push({ code: 'INVALID_TIME', path: `${schedulePath}.endTime` })
+    errors.push(...validateScheduleStructure(schedule, schedulePath))
+  })
+
+  return errors
+}
+
+export function validateScheduleStructure(
+  schedule: ScheduleInput,
+  schedulePath = 'schedule',
+): RegistrationRuleError[] {
+  const errors: RegistrationRuleError[] = []
+  if (schedule.endTime <= schedule.startTime) {
+    errors.push({ code: 'INVALID_TIME', path: `${schedulePath}.endTime` })
+  }
+
+  const seenWorkers = new Set<string>()
+  schedule.assignments.forEach((assignment) => {
+    if (seenWorkers.has(assignment.workerId)) {
+      errors.push({
+        code: 'DUPLICATE_WORKER',
+        path: `${schedulePath}.positions.${assignment.positionId}.slots.${assignment.slotIndex}.workerId`,
+      })
     }
+    seenWorkers.add(assignment.workerId)
+  })
 
-    const seenWorkers = new Set<string>()
-    schedule.assignments.forEach((assignment, assignmentIndex) => {
-      if (seenWorkers.has(assignment.workerId)) {
-        errors.push({
-          code: 'DUPLICATE_WORKER',
-          path: `${schedulePath}.positions.${assignment.positionId}.slots.${assignment.slotIndex}.workerId`,
-        })
-      }
-      seenWorkers.add(assignment.workerId)
-    })
-
-    POSITION_CATALOG.forEach((position) => {
-      const assignments = schedule.assignments
-        .filter((assignment) => assignment.positionId === position.id)
-        .sort((left, right) => left.slotIndex - right.slotIndex)
-      const base = assignments.filter((assignment) => assignment.slotKind === 'base')
-      const extras = assignments.filter((assignment) => assignment.slotKind === 'extra-training')
-      const hasExactBaseSlots =
-        base.length === position.defaultAssigneeCount &&
-        base.every(
-          (assignment, index) =>
-            assignment.slotIndex === index && positionById.has(assignment.positionId as PositionId),
-        )
-      const hasValidExtra =
-        extras.length <= 1 &&
-        extras.every(
-          (assignment) =>
-            assignment.slotIndex === position.defaultAssigneeCount && assignment.isTraining,
-        )
-      if (!hasExactBaseSlots || !hasValidExtra) {
-        errors.push({
-          code: 'INVALID_CAPACITY',
-          path: `${schedulePath}.positions.${position.id}`,
-        })
-      }
-      if (extras.some((assignment) => !assignment.isTraining)) {
-        errors.push({
-          code: 'EXTRA_SLOT_MUST_BE_TRAINING',
-          path: `${schedulePath}.positions.${position.id}`,
-        })
-      }
-    })
-
-    if (
-      schedule.assignments.some(
-        (assignment) => !positionById.has(assignment.positionId as PositionId),
+  POSITION_CATALOG.forEach((position) => {
+    const assignments = schedule.assignments
+      .filter((assignment) => assignment.positionId === position.id)
+      .sort((left, right) => left.slotIndex - right.slotIndex)
+    const base = assignments.filter((assignment) => assignment.slotKind === 'base')
+    const extras = assignments.filter((assignment) => assignment.slotKind === 'extra-training')
+    const hasExactBaseSlots =
+      base.length === position.defaultAssigneeCount &&
+      base.every(
+        (assignment, index) =>
+          assignment.slotIndex === index && positionById.has(assignment.positionId as PositionId),
       )
-    ) {
-      errors.push({ code: 'INVALID_CAPACITY', path: `${schedulePath}.assignments` })
+    const hasValidExtra =
+      extras.length <= 1 &&
+      extras.every(
+        (assignment) =>
+          assignment.slotIndex === position.defaultAssigneeCount && assignment.isTraining,
+      )
+    if (!hasExactBaseSlots || !hasValidExtra) {
+      errors.push({
+        code: 'INVALID_CAPACITY',
+        path: `${schedulePath}.positions.${position.id}`,
+      })
+    }
+    if (extras.some((assignment) => !assignment.isTraining)) {
+      errors.push({
+        code: 'EXTRA_SLOT_MUST_BE_TRAINING',
+        path: `${schedulePath}.positions.${position.id}`,
+      })
     }
   })
 
+  if (
+    schedule.assignments.some(
+      (assignment) => !positionById.has(assignment.positionId as PositionId),
+    )
+  ) {
+    errors.push({ code: 'INVALID_CAPACITY', path: `${schedulePath}.assignments` })
+  }
   return errors
 }

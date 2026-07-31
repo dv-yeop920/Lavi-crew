@@ -36,6 +36,7 @@ export type DailyScheduleViewModel =
       }
       state: 'ready'
       workers: Array<{
+        appliedDates: string[]
         id: string
         isActive: boolean
         isSelectable: boolean

@@ -110,7 +110,8 @@ export function AttendanceConfirmationCard({
   const positionName =
     POSITION_CATALOG.find((position) => position.id === assignment.positionId)?.name ??
     assignment.positionId
-  const timeError = getFirstFieldError(state?.fieldErrors, 'actualStartedAt')
+  const startTimeError = getFirstFieldError(state?.fieldErrors, 'actualStartedAt')
+  const endTimeError = getFirstFieldError(state?.fieldErrors, 'actualEndedAt')
   const correctionError = getFirstFieldError(state?.fieldErrors, 'correctionReason')
 
   return (
@@ -128,7 +129,7 @@ export function AttendanceConfirmationCard({
       {!isScheduleActive ? (
         <p className={styles.meta}>게시 중인 일정이 아니어서 출석을 변경할 수 없습니다.</p>
       ) : (
-        <form action={formAction} className={layout.stack} aria-busy={isPending}>
+        <form action={formAction} className={layout.stack} aria-busy={isPending} noValidate>
           <input name="payload" type="hidden" value={JSON.stringify(payload)} />
           <label className={styles.fieldLabel} htmlFor={`${fieldId}-status`}>
             <span>출석 상태</span>
@@ -154,7 +155,8 @@ export function AttendanceConfirmationCard({
                 <span>실제 출근</span>
                 <input
                   required
-                  aria-invalid={timeError ? true : undefined}
+                  aria-describedby={startTimeError ? `${fieldId}-start-error` : undefined}
+                  aria-invalid={startTimeError ? true : undefined}
                   className={styles.compactInput}
                   disabled={isPending}
                   type="datetime-local"
@@ -166,7 +168,8 @@ export function AttendanceConfirmationCard({
                 <span>실제 퇴근</span>
                 <input
                   required
-                  aria-invalid={timeError ? true : undefined}
+                  aria-describedby={endTimeError ? `${fieldId}-end-error` : undefined}
+                  aria-invalid={endTimeError ? true : undefined}
                   className={styles.compactInput}
                   disabled={isPending}
                   type="datetime-local"
@@ -176,9 +179,14 @@ export function AttendanceConfirmationCard({
               </label>
             </div>
           ) : null}
-          {timeError ? (
-            <p className={styles.fieldError} role="alert">
-              {timeError}
+          {startTimeError ? (
+            <p className={styles.fieldError} id={`${fieldId}-start-error`} role="alert">
+              {startTimeError}
+            </p>
+          ) : null}
+          {endTimeError ? (
+            <p className={styles.fieldError} id={`${fieldId}-end-error`} role="alert">
+              {endTimeError}
             </p>
           ) : null}
           {isConfirmed ? (
@@ -186,6 +194,7 @@ export function AttendanceConfirmationCard({
               <span>정정 사유</span>
               <textarea
                 required
+                aria-describedby={correctionError ? `${fieldId}-correction-error` : undefined}
                 aria-invalid={correctionError ? true : undefined}
                 className={styles.textArea}
                 disabled={isPending}
@@ -200,7 +209,7 @@ export function AttendanceConfirmationCard({
             <p className={styles.meta}>최근 정정 사유 · {attendance.correctionReason}</p>
           ) : null}
           {correctionError ? (
-            <p className={styles.fieldError} role="alert">
+            <p className={styles.fieldError} id={`${fieldId}-correction-error`} role="alert">
               {correctionError}
             </p>
           ) : null}
