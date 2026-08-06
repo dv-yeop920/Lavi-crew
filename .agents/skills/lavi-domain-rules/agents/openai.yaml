@@ -1,4 +1,0 @@
-interface:
-  display_name: "Lavi Domain Rules"
-  short_description: "Implement schedule and payroll rules."
-  default_prompt: "Use $lavi-domain-rules to implement and test this business rule."

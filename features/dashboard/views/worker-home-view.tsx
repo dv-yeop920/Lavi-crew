@@ -94,15 +94,14 @@ export function WorkerHomeView({ viewModel }: { viewModel: WorkerHomeViewModel }
         <h2 id="application-title">일정 신청</h2>
         {viewModel.application ? (
           <ContentCard>
-            <div className={styles.responsiveRow}>
-              <div className={styles.metric}>
-                <strong>{formatMonth(viewModel.application.yearMonth)} 신청 진행 중</strong>
-                <span className={styles.meta}>
-                  {formatDeadline(viewModel.application.deadline)}까지 변경할 수 있어요.
-                </span>
-              </div>
-              <StatusBadge tone="positive">{viewModel.application.appliedCount}일 신청</StatusBadge>
+            <div className={layout.wrap}>
+              <StatusBadge tone="positive">신청 가능</StatusBadge>
+              <StatusBadge tone="accent">{viewModel.application.appliedCount}일 신청</StatusBadge>
             </div>
+            <strong>{formatMonth(viewModel.application.yearMonth)} 신청 진행 중</strong>
+            <span className={styles.meta}>
+              {formatDeadline(viewModel.application.deadline)}까지 변경할 수 있어요.
+            </span>
             <Link
               className={styles.link}
               href={`/schedule/apply?month=${viewModel.application.yearMonth.slice(0, 7)}`}

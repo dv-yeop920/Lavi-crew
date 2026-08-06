@@ -39,6 +39,13 @@ export function SignupView() {
             required
           />
           <TextField
+            error={getFirstFieldError(state?.fieldErrors, 'hiredAt')}
+            label="입사 년월일"
+            name="hiredAt"
+            required
+            type="date"
+          />
+          <TextField
             autoComplete="email"
             error={getFirstFieldError(state?.fieldErrors, 'email')}
             inputMode="email"

@@ -2,7 +2,12 @@ import { POSITION_CATALOG, type PositionId } from '@/shared/domain/positions'
 import { Button } from '@/shared/ui/button/button'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
 
-import { getWorkerAvailabilityLabel, isWorkerOptionDisabled } from '../lib/schedule-worker-option'
+import {
+  getWorkerApplicationLabel,
+  getWorkerAvailabilityLabel,
+  getWorkerOptionsForDate,
+  isWorkerOptionDisabled,
+} from '../lib/schedule-worker-option'
 
 import * as styles from './schedule-assignment-table.css'
 
@@ -10,8 +15,10 @@ export type ScheduleWorkerOption = {
   appliedDates?: string[]
   id: string
   isActive?: boolean
+  isDemo?: boolean
   isSelectable?: boolean
   name: string
+  positionIds?: PositionId[]
   summary: string
 }
 
@@ -83,6 +90,9 @@ export function ScheduleAssignmentTable({
                       const availabilityLabel = selectedWorker
                         ? getWorkerAvailabilityLabel(selectedWorker)
                         : null
+                      const applicationLabel = selectedWorker
+                        ? getWorkerApplicationLabel(selectedWorker, selectedDate, workerId)
+                        : null
 
                       if (!isEditing) {
                         return selectedWorker ? (
@@ -100,6 +110,7 @@ export function ScheduleAssignmentTable({
                               ) : null}
                             </div>
                             <span className={styles.personSummary}>
+                              {applicationLabel ? `${applicationLabel} · ` : ''}
                               {availabilityLabel ? `${availabilityLabel} · ` : ''}
                               {selectedWorker.summary}
                             </span>
@@ -132,7 +143,12 @@ export function ScheduleAssignmentTable({
                               }
                             >
                               <option value="">인원을 선택하세요</option>
-                              {workers.map((worker) => (
+                              {getWorkerOptionsForDate(
+                                workers,
+                                selectedDate,
+                                workerId,
+                                position.id,
+                              ).map((worker) => (
                                 <option
                                   disabled={isWorkerOptionDisabled(
                                     worker,
@@ -145,11 +161,9 @@ export function ScheduleAssignmentTable({
                                   {worker.name}
                                   {getWorkerAvailabilityLabel(worker)
                                     ? ` · ${getWorkerAvailabilityLabel(worker)}`
-                                    : ''}
-                                  {selectedDate && worker.appliedDates
-                                    ? worker.appliedDates.includes(selectedDate)
-                                      ? ' · 신청'
-                                      : ' · 미신청'
+                                    : ''}{' '}
+                                  {getWorkerApplicationLabel(worker, selectedDate, workerId)
+                                    ? ` · ${getWorkerApplicationLabel(worker, selectedDate, workerId)}`
                                     : ''}{' '}
                                   · {worker.summary}
                                 </option>
@@ -166,17 +180,6 @@ export function ScheduleAssignmentTable({
                               </button>
                             ) : null}
                           </div>
-                          {selectedWorker ? (
-                            <span className={styles.personSummary}>
-                              {selectedDate && selectedWorker.appliedDates
-                                ? selectedWorker.appliedDates?.includes(selectedDate)
-                                  ? '해당 날짜 신청 · '
-                                  : '해당 날짜 미신청 · '
-                                : null}
-                              {availabilityLabel ? `${availabilityLabel} · ` : ''}
-                              {selectedWorker.summary}
-                            </span>
-                          ) : null}
                           {workerError ? (
                             <span className={styles.fieldError} id={errorId}>
                               {workerError}

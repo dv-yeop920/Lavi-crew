@@ -17,6 +17,7 @@ export type ManagedWorkerViewModel = {
   hourlyWage: number
   id: string
   isActive: boolean
+  isDemo: boolean
   joinedAt: string
   name: string
   phone: string
@@ -50,15 +51,23 @@ export function WorkerManagementView({ workers }: { workers: ManagedWorkerViewMo
                 <ContentCard>
                   <div className={layout.row}>
                     <strong>{worker.name}</strong>
-                    <StatusBadge tone={worker.isActive ? 'positive' : 'neutral'}>
-                      {worker.role === 'admin' ? '관리자' : worker.isActive ? '활성' : '삭제됨'}
+                    <StatusBadge
+                      tone={worker.isDemo ? 'accent' : worker.isActive ? 'positive' : 'neutral'}
+                    >
+                      {worker.isDemo
+                        ? '데모'
+                        : worker.role === 'admin'
+                          ? '관리자'
+                          : worker.isActive
+                            ? '활성'
+                            : '삭제됨'}
                     </StatusBadge>
                   </div>
                   <div className={styles.contactList} aria-label={`${worker.name} 연락처`}>
                     <span>{worker.phone}</span>
                     <span>{worker.email}</span>
                     <span>
-                      가입일 · {formatJoinedAt(worker.joinedAt)} · 근속{' '}
+                      입사일 · {formatJoinedAt(worker.joinedAt)} · 근속{' '}
                       {formatTenure(worker.joinedAt, asOf)}
                     </span>
                   </div>

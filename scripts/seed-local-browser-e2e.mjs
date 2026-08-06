@@ -75,17 +75,17 @@ function sqlText(value) {
 }
 
 const profileRows = [
-  `(${sqlText(fixtures.admin.id)}, ${sqlText(fixtures.admin.email)}, ${sqlText(fixtures.admin.name)}, ${sqlText(fixtures.admin.phone)}, 'admin', 15000, true, false)`,
+  `(${sqlText(fixtures.admin.id)}, ${sqlText(fixtures.admin.email)}, ${sqlText(fixtures.admin.name)}, ${sqlText(fixtures.admin.phone)}, 'admin', 15000, true, false, date '2024-01-15')`,
   ...fixtures.workers.map(
     (worker, index) =>
-      `(${sqlText(worker.id)}, ${sqlText(worker.email)}, ${sqlText(worker.name)}, ${sqlText(worker.phone)}, 'worker', ${10000 + index * 100}, true, ${index === 0})`,
+      `(${sqlText(worker.id)}, ${sqlText(worker.email)}, ${sqlText(worker.name)}, ${sqlText(worker.phone)}, 'worker', ${10000 + index * 100}, true, ${index === 0}, date '2024-01-15')`,
   ),
 ]
 const workerIds = fixtures.workers.map((worker) => sqlText(worker.id)).join(', ')
 const fixtureSql = `
 begin;
 insert into public.profiles
-  (id, email, name, phone, role, hourly_wage, is_active, kakao_consent)
+  (id, email, name, phone, role, hourly_wage, is_active, kakao_consent, hired_at)
 values ${profileRows.join(',\n')};
 insert into public.worker_position_skills (worker_id, position_id, assigned_by)
 select worker_id, position.id, ${sqlText(fixtures.admin.id)}

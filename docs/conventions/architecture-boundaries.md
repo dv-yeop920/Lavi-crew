@@ -6,13 +6,16 @@
 
 ```mermaid
 flowchart LR
-  V["View<br/>표시 · 입력"] --> A["Action<br/>검증 · Controller 호출"]
+  V["View<br/>표시 · 입력"] --> H["Hook<br/>로컬 상태 · 파생 계산"]
+  H --> A["Action<br/>검증 · Controller 호출"]
   A --> C["Controller<br/>권한 · 유스케이스 조합"]
   C --> D["Domain<br/>순수 업무 규칙"]
   C --> R["Repository<br/>Supabase 쿼리"]
   R --> S["Supabase<br/>PostgreSQL · RLS"]
   C --> K["Kakao Adapter<br/>알림톡"]
 ```
+
+로컬 상태나 파생 계산이 없는 단순한 View는 Hook 없이 Action을 직접 호출해도 된다(`docs/decisions/013-view-hook-separation.md`).
 
 ## 권장 예시
 
@@ -22,6 +25,30 @@ import { ScheduleView } from '@/features/schedule/views/schedule-view'
 
 export default function SchedulePage() {
   return <ScheduleView />
+}
+```
+
+```ts
+// features/schedule/hooks/use-schedule-application-form.ts
+'use client'
+
+import { useState } from 'react'
+
+import { applySchedule } from '@/features/schedule/actions/apply-schedule'
+
+export function useScheduleApplicationForm() {
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  async function submit(input: unknown) {
+    setIsSubmitting(true)
+    try {
+      return await applySchedule(input)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  return { isSubmitting, submit }
 }
 ```
 
@@ -55,6 +82,13 @@ import { saveApplication } from '@/features/schedule/repositories/schedule-repos
 ```
 
 ```ts
+// features/schedule/hooks/use-schedule-application-form.ts
+import { saveApplication } from '@/features/schedule/repositories/schedule-repository'
+
+// Hook도 View와 동일하게 Repository·Supabase를 직접 호출하지 않는다.
+```
+
+```ts
 // shared/ui/button/button.tsx
 import type { Schedule } from '@/features/schedule/domain/schedule'
 
@@ -70,6 +104,6 @@ import type { Schedule } from '@/features/schedule/domain/schedule'
 - Action에서 Domain, Repository, Supabase를 직접 참조하는 import
 - 한 feature에서 다른 feature의 내부 파일을 직접 참조하는 import
 - Client Component에서 서버 전용 모듈을 참조하는 import
-- Domain에서 React, Next.js, Supabase 또는 외부 VAC 계층을 참조하는 import
+- Domain에서 React, Next.js, Supabase, Hook 또는 다른 외부 VAC 계층을 참조하는 import
 
 검사 스크립트는 TypeScript의 의미 전체를 증명하지 않는다. 검사를 통과하더라도 Controller의 서버 역할 확인과 Supabase RLS 검증은 별도로 수행한다.

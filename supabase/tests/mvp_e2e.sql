@@ -23,22 +23,22 @@ from (
 ) identities
 where not exists (select 1 from auth.users where id = identity_id);
 
-insert into public.profiles (id, name, phone, role, hourly_wage, is_active)
-select admin_id, 'E2E검증관리자', '01790000001', 'admin', 10000, true
+insert into public.profiles (id, name, phone, role, hourly_wage, is_active, hired_at)
+select admin_id, 'E2E검증관리자', '01790000001', 'admin', 10000, true, current_date
 from e2e_context
 where not exists (select 1 from public.profiles where id = admin_id);
 
-insert into public.profiles (id, name, phone, role, hourly_wage, is_active)
-select worker_id, 'E2E검증신청자', '01790000002', 'worker', 10000, true
+insert into public.profiles (id, name, phone, role, hourly_wage, is_active, hired_at)
+select worker_id, 'E2E검증신청자', '01790000002', 'worker', 10000, true, current_date
 from e2e_context
 where not exists (select 1 from public.profiles where id = worker_id);
 
 create temp table e2e_workers (rn integer primary key, id uuid not null unique);
 insert into e2e_workers
-select n, gen_random_uuid() from generate_series(1, 10) n;
+select n, gen_random_uuid() from generate_series(1, 11) n;
 insert into auth.users (id) select id from e2e_workers;
-insert into public.profiles (id, name, phone, hourly_wage, is_active, kakao_consent)
-select id, 'E2E검증근로자' || rn, '019' || lpad(rn::text, 8, '0'), 10000, true, rn = 1
+insert into public.profiles (id, name, phone, hourly_wage, is_active, kakao_consent, hired_at)
+select id, 'E2E검증근로자' || rn, '019' || lpad(rn::text, 8, '0'), 10000, true, rn = 1, current_date
 from e2e_workers;
 
 create temp table e2e_results (key text primary key, value jsonb not null);
@@ -96,11 +96,21 @@ with weekend_dates as (
       order by sequence_no
     ) updated_assignments
   from e2e_assignments
+), payload_variants as (
+  select
+    payloads.*,
+    jsonb_set(
+      payloads.assignments,
+      '{0,workerId}',
+      to_jsonb((select id::text from e2e_workers where rn = 11))
+    ) non_applicant_assignments
+  from payloads
 )
 select
   (select array_agg(work_date order by work_date) from weekend_dates) selected_dates,
   payloads.assignments,
   payloads.updated_assignments,
+  payloads.non_applicant_assignments,
   (
     select jsonb_agg(jsonb_build_object(
       'workDate', work_date,
@@ -110,8 +120,18 @@ select
       'assignments', payloads.assignments
     ) order by work_date)
     from weekend_dates
-  ) schedules
-from payloads;
+  ) schedules,
+  (
+    select jsonb_agg(jsonb_build_object(
+      'workDate', work_date,
+      'ceremonyCount', 3,
+      'startTime', '08:00',
+      'endTime', '17:00',
+      'assignments', payloads.non_applicant_assignments
+    ) order by work_date)
+    from weekend_dates
+  ) non_applicant_schedules
+from payload_variants payloads;
 grant select on e2e_assignments, e2e_payloads to authenticated;
 
 set local role authenticated;
@@ -143,6 +163,22 @@ select 'applications_replay', public.save_own_monthly_schedule_applications(
   (select (value ->> 'updatedAt')::timestamptz from e2e_results where key = 'period_created'),
   (select selected_dates from e2e_payloads)
 );
+
+reset role;
+insert into public.schedule_applications (application_period_id, work_date, worker_id, status)
+select
+  (select (value ->> 'periodId')::uuid from e2e_results where key = 'period_created'),
+  selected_date,
+  worker.id,
+  'applied'
+from e2e_workers worker
+cross join lateral unnest((select selected_dates from e2e_payloads)) selected_date
+where worker.rn between 1 and 10;
+set local role authenticated;
+select set_config('request.jwt.claim.sub', (select worker_id::text from e2e_context), true);
+select set_config('request.jwt.claims', jsonb_build_object(
+  'sub', (select worker_id from e2e_context), 'role', 'authenticated'
+)::text, true);
 
 do $$
 begin
@@ -178,6 +214,29 @@ select 'period_closed', public.set_schedule_application_period_status(
   'closed',
   (select (value ->> 'updatedAt')::timestamptz from e2e_results where key = 'period_created')
 );
+
+do $$
+begin
+  begin
+    perform public.save_monthly_schedule_registration(
+      '40000000-0000-4000-8000-000000000017', date '2099-01-01',
+      timestamptz '2098-12-15 23:59:59+09',
+      (select (value ->> 'updatedAt')::timestamptz from e2e_results where key = 'period_closed'),
+      (select non_applicant_schedules from e2e_payloads)
+    );
+    raise exception 'EXPECTED_WORKER_NOT_APPLIED';
+  exception
+    when others then
+      if sqlerrm = 'WORKER_NOT_APPLIED' then
+        insert into e2e_results values ('monthly_non_applicant_rejected', 'true'::jsonb);
+      elsif sqlerrm = 'EXPECTED_WORKER_NOT_APPLIED' then
+        raise exception 'MONTHLY_NON_APPLICANT_NOT_REJECTED';
+      else
+        raise;
+      end if;
+  end;
+end;
+$$;
 insert into e2e_results
 select 'publish_first', public.save_monthly_schedule_registration(
   '40000000-0000-4000-8000-000000000004', date '2099-01-01',
@@ -201,6 +260,12 @@ where application_period_id =
   (select (value ->> 'periodId')::uuid from e2e_results where key = 'period_created');
 grant select on e2e_shift_targets to authenticated;
 
+-- A previously confirmed worker remains valid even if the application is no longer applied.
+update public.schedule_applications
+set status = 'cancelled', cancelled_at = now()
+where work_date = (select selected_dates[1] from e2e_payloads)
+  and worker_id = (select id from e2e_workers where rn = 1);
+
 set local role authenticated;
 select set_config('request.jwt.claim.sub', (select admin_id::text from e2e_context), true);
 select set_config('request.jwt.claims', jsonb_build_object(
@@ -214,6 +279,31 @@ select 'daily_updated', public.update_daily_schedule(
   4::smallint, time '08:00', time '18:00',
   (select updated_assignments from e2e_payloads)
 );
+
+do $$
+begin
+  begin
+    perform public.update_daily_schedule(
+      '40000000-0000-4000-8000-000000000018',
+      (select id from e2e_shift_targets where rn = 1),
+      (select (value ->> 'shiftUpdatedAt')::timestamptz
+         from e2e_results where key = 'daily_updated'),
+      4::smallint, time '08:00', time '18:00',
+      (select non_applicant_assignments from e2e_payloads)
+    );
+    raise exception 'EXPECTED_WORKER_NOT_APPLIED';
+  exception
+    when others then
+      if sqlerrm = 'WORKER_NOT_APPLIED' then
+        insert into e2e_results values ('daily_non_applicant_rejected', 'true'::jsonb);
+      elsif sqlerrm = 'EXPECTED_WORKER_NOT_APPLIED' then
+        raise exception 'DAILY_NON_APPLICANT_NOT_REJECTED';
+      else
+        raise;
+      end if;
+  end;
+end;
+$$;
 
 do $$
 begin
@@ -316,6 +406,31 @@ from public.attendance_records attendance
 join public.shift_assignments assignment on assignment.id = attendance.assignment_id
 join public.shifts shift on shift.id = assignment.shift_id
 where shift.work_date = date '2001-01-06';
+
+do $$
+begin
+  begin
+    perform public.confirm_attendance_and_payroll(
+      '40000000-0000-4000-8000-000000000019', attendance.id, attendance.updated_at,
+      'present', attendance.actual_started_at, attendance.actual_ended_at, '값 없는 정정 거부'
+    )
+    from public.attendance_records attendance
+    join public.shift_assignments assignment on assignment.id = attendance.assignment_id
+    join public.shifts shift on shift.id = assignment.shift_id
+    where shift.work_date = date '2001-01-06';
+    raise exception 'EXPECTED_ATTENDANCE_UNCHANGED';
+  exception
+    when others then
+      if sqlerrm = 'ATTENDANCE_UNCHANGED' then
+        insert into e2e_results values ('unchanged_attendance_rejected', 'true'::jsonb);
+      elsif sqlerrm = 'EXPECTED_ATTENDANCE_UNCHANGED' then
+        raise exception 'UNCHANGED_ATTENDANCE_NOT_REJECTED';
+      else
+        raise;
+      end if;
+  end;
+end;
+$$;
 insert into e2e_results
 select 'attendance_corrected', public.confirm_attendance_and_payroll(
   '40000000-0000-4000-8000-000000000008', attendance.id, attendance.updated_at,
@@ -374,6 +489,83 @@ select 'invite_deactivated', public.deactivate_invite_code(
   '40000000-0000-4000-8000-000000000014',
   (select (value ->> 'inviteId')::uuid from e2e_results where key = 'invite_created')
 );
+
+-- Admin worker-profile update (name, wage, positions, hired_at) applies atomically.
+select public.admin_update_worker_profile(
+  (select id from e2e_workers where rn = 1),
+  'E2E검증근로자1수정',
+  12000,
+  array['scan', 'main'],
+  date '2020-01-15'
+);
+
+insert into e2e_results
+select 'worker_profile_updated', jsonb_build_object(
+  'name', name,
+  'hourlyWage', hourly_wage,
+  'hiredAt', hired_at::text,
+  'positionIds', (
+    select coalesce(jsonb_agg(position_id order by position_id), '[]'::jsonb)
+    from public.worker_position_skills
+    where worker_id = (select id from e2e_workers where rn = 1)
+  )
+)
+from public.profiles
+where id = (select id from e2e_workers where rn = 1);
+
+do $$
+begin
+  begin
+    perform public.admin_update_worker_profile(
+      (select id from e2e_workers where rn = 1),
+      'E2E검증근로자1미래',
+      12000,
+      array['scan'],
+      (current_date + interval '1 day')::date
+    );
+    raise exception 'EXPECTED_INVALID_PROFILE';
+  exception
+    when others then
+      if sqlerrm = 'INVALID_PROFILE' then
+        insert into e2e_results values ('worker_profile_future_hired_at_rejected', 'true'::jsonb);
+      elsif sqlerrm = 'EXPECTED_INVALID_PROFILE' then
+        raise exception 'WORKER_PROFILE_FUTURE_HIRED_AT_NOT_REJECTED';
+      else
+        raise;
+      end if;
+  end;
+end;
+$$;
+
+-- A non-admin worker cannot call the admin-only profile update RPC.
+select set_config('request.jwt.claim.sub', (select id::text from e2e_workers where rn = 2), true);
+select set_config('request.jwt.claims', jsonb_build_object(
+  'sub', (select id from e2e_workers where rn = 2), 'role', 'authenticated'
+)::text, true);
+
+do $$
+begin
+  begin
+    perform public.admin_update_worker_profile(
+      (select id from e2e_workers where rn = 1),
+      'E2E검증근로자1비관리자수정',
+      12000,
+      array['scan'],
+      date '2020-01-15'
+    );
+    raise exception 'EXPECTED_WORKER_PROFILE_UPDATE_FORBIDDEN';
+  exception
+    when others then
+      if sqlerrm = 'FORBIDDEN' then
+        insert into e2e_results values ('worker_profile_update_forbidden', 'true'::jsonb);
+      elsif sqlerrm = 'EXPECTED_WORKER_PROFILE_UPDATE_FORBIDDEN' then
+        raise exception 'WORKER_PROFILE_UPDATE_NOT_REJECTED';
+      else
+        raise;
+      end if;
+  end;
+end;
+$$;
 
 select set_config('request.jwt.claim.sub', (select worker_id::text from e2e_context), true);
 select set_config('request.jwt.claims', jsonb_build_object(
@@ -444,6 +636,10 @@ select 'assertions', jsonb_build_object(
     (select value from e2e_results where key = 'applications_replay'),
   'applicationIdempotencyConflictRejected',
     (select value = 'true'::jsonb from e2e_results where key = 'application_idempotency_conflict'),
+  'monthlyNonApplicantRejected',
+    (select value = 'true'::jsonb from e2e_results where key = 'monthly_non_applicant_rejected'),
+  'dailyNonApplicantRejected',
+    (select value = 'true'::jsonb from e2e_results where key = 'daily_non_applicant_rejected'),
   'publishReplayMatches',
     (select value from e2e_results where key = 'publish_first') =
     (select value from e2e_results where key = 'publish_replay'),
@@ -467,6 +663,8 @@ select 'assertions', jsonb_build_object(
     (select (value ->> 'requestCount')::integer = 0
       and (value ->> 'shiftUnchanged')::boolean
       from e2e_results where key = 'failed_daily_update_rollback'),
+  'unchangedAttendanceRejected',
+    (select value = 'true'::jsonb from e2e_results where key = 'unchanged_attendance_rejected'),
   'activePayrollAmount', (select amount from public.payroll_items item
     join public.shift_assignments assignment on assignment.id = item.assignment_id
     join public.shifts shift on shift.id = assignment.shift_id
@@ -493,7 +691,19 @@ select 'assertions', jsonb_build_object(
   'workerOwnPayrollReadable',
     (select (value ->> 'ownPayrollCount')::integer = 1
       and (value ->> 'ownPayrollItemCount')::integer = 2
-      from e2e_results where key = 'worker_rls')
+      from e2e_results where key = 'worker_rls'),
+  'workerProfileUpdated',
+    (select (value ->> 'name') = 'E2E검증근로자1수정'
+      and (value ->> 'hourlyWage')::integer = 12000
+      and (value ->> 'hiredAt') = '2020-01-15'
+      and value -> 'positionIds' = '["main", "scan"]'::jsonb
+      from e2e_results where key = 'worker_profile_updated'),
+  'workerProfileFutureHiredAtRejected',
+    (select value = 'true'::jsonb
+      from e2e_results where key = 'worker_profile_future_hired_at_rejected'),
+  'workerProfileUpdateForbidden',
+    (select value = 'true'::jsonb
+      from e2e_results where key = 'worker_profile_update_forbidden')
 );
 
 do $$
@@ -503,6 +713,8 @@ begin
   if evidence ->> 'signupAccepted' is distinct from 'true'
      or evidence ->> 'applicationReplayMatches' is distinct from 'true'
      or evidence ->> 'applicationIdempotencyConflictRejected' is distinct from 'true'
+     or evidence ->> 'monthlyNonApplicantRejected' is distinct from 'true'
+     or evidence ->> 'dailyNonApplicantRejected' is distinct from 'true'
      or evidence ->> 'publishReplayMatches' is distinct from 'true'
      or (evidence ->> 'publishedShiftCount')::integer is distinct from 2
      or (evidence ->> 'cancelledShiftCount')::integer is distinct from 1
@@ -510,6 +722,7 @@ begin
      or (evidence ->> 'scheduleChangedNotificationCount')::integer is distinct from 1
      or evidence ->> 'staleShiftRejected' is distinct from 'true'
      or evidence ->> 'failedDailyUpdateRolledBack' is distinct from 'true'
+     or evidence ->> 'unchangedAttendanceRejected' is distinct from 'true'
      or (evidence ->> 'activePayrollAmount')::integer is distinct from 97500
      or (evidence ->> 'voidedPayrollRevisionCount')::integer is distinct from 1
      or evidence ->> 'noticeDeleted' is distinct from 'true'
@@ -518,7 +731,10 @@ begin
      or evidence ->> 'workerAdminRpcForbidden' is distinct from 'true'
      or evidence ->> 'workerIsolationEnforced' is distinct from 'true'
      or (evidence ->> 'workerOwnShiftCount')::integer is distinct from 1
-     or evidence ->> 'workerOwnPayrollReadable' is distinct from 'true' then
+     or evidence ->> 'workerOwnPayrollReadable' is distinct from 'true'
+     or evidence ->> 'workerProfileUpdated' is distinct from 'true'
+     or evidence ->> 'workerProfileFutureHiredAtRejected' is distinct from 'true'
+     or evidence ->> 'workerProfileUpdateForbidden' is distinct from 'true' then
     raise exception 'MVP_E2E_ASSERTION_FAILED: %', evidence;
   end if;
 end;

@@ -1,4 +1,0 @@
-interface:
-  display_name: "Supabase"
-  short_description: "Implement Supabase safely in Lavi Crew."
-  default_prompt: "Use $supabase to implement and verify this Supabase change."

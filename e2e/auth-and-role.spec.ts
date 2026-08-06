@@ -1,6 +1,8 @@
+import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 
 import { type Browser, devices, expect, type Page, test } from '@playwright/test'
+import { createClient } from '@supabase/supabase-js'
 
 const fixtures = JSON.parse(readFileSync(new URL('./fixtures.json', import.meta.url), 'utf8')) as {
   admin: { email: string }
@@ -8,9 +10,9 @@ const fixtures = JSON.parse(readFileSync(new URL('./fixtures.json', import.meta.
   workers: Array<{ email: string; id: string; name: string }>
 }
 
-const password = process.env.LAVI_E2E_PASSWORD
-const mailpitUrl = process.env.LAVI_E2E_MAILPIT_URL
-const runId = process.env.LAVI_E2E_RUN_ID
+const password = process.env.LAVI_E2E_PASSWORD ?? ''
+const mailpitUrl = process.env.LAVI_E2E_MAILPIT_URL ?? ''
+const runId = process.env.LAVI_E2E_RUN_ID ?? ''
 const mobileDevice = devices['iPhone SE']
 const roleContextOptions = {
   baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3000',
@@ -25,11 +27,58 @@ if (!password || !mailpitUrl || !runId) {
   throw new Error('test:e2e 실행기를 통해 Playwright를 실행하세요.')
 }
 
-async function login(page: Page, email: string) {
+async function login(page: Page, email: string, expectedPath: '/admin' | '/home') {
   await page.goto('/')
   await page.getByLabel('이메일', { exact: true }).fill(email)
   await page.getByLabel('비밀번호', { exact: true }).fill(password)
   await page.getByRole('button', { name: '로그인', exact: true }).click()
+  await expect(page).toHaveURL(new RegExp(`${expectedPath}$`))
+  await expect(page.getByRole('button', { name: '로그아웃' })).toBeVisible()
+}
+
+async function applyScheduleDates(email: string, dates: string[], month = scheduleMonth) {
+  const client = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+    { auth: { autoRefreshToken: false, persistSession: false } },
+  )
+  const { error: signInError } = await client.auth.signInWithPassword({ email, password })
+  if (signInError) throw signInError
+  const { data: period, error: periodError } = await client
+    .from('schedule_application_periods')
+    .select('id, updated_at')
+    .eq('year_month', `${month}-01`)
+    .single()
+  if (periodError) throw periodError
+  const { error } = await client.rpc('save_own_monthly_schedule_applications', {
+    p_expected_period_updated_at: period.updated_at,
+    p_period_id: period.id,
+    p_request_id: crypto.randomUUID(),
+    p_selected_dates: dates,
+  })
+  if (error) throw error
+  await client.auth.signOut()
+}
+
+async function getScheduleDatabaseCounts() {
+  const databaseUrl = process.env.SUPABASE_DB_URL
+  if (!databaseUrl) throw new Error('로컬 Supabase DB URL이 없습니다.')
+  const output = execFileSync(
+    'psql',
+    [
+      databaseUrl,
+      '-At',
+      '-v',
+      'ON_ERROR_STOP=1',
+      '-c',
+      `select json_build_object(
+        'shifts', (select count(*) from public.shifts),
+        'assignments', (select count(*) from public.shift_assignments)
+      )::text`,
+    ],
+    { encoding: 'utf8' },
+  )
+  return JSON.parse(output.trim()) as { assignments: number; shifts: number }
 }
 
 function createRoleContext(browser: Browser) {
@@ -56,8 +105,12 @@ async function expectNoHorizontalOverflow(page: Page) {
 }
 
 const scheduleMonth = '2099-01'
+const scheduleMonthLabel = '2099년 1월'
 const firstScheduleDate = '2099-01-03'
 const secondScheduleDate = '2099-01-04'
+const demoScheduleMonth = '2099-02'
+const demoScheduleMonthLabel = '2099년 2월'
+const demoScheduleDate = '2099-02-07'
 
 function formatScheduleDate(date: string) {
   return new Intl.DateTimeFormat('ko-KR', {
@@ -91,11 +144,11 @@ test('실제 Auth 세션이 역할별 화면과 보호 경계를 유지한다', 
   const workerErrors = captureUnexpectedBrowserErrors(workerPage)
 
   await test.step('관리자와 알바가 이메일·비밀번호로 로그인한다', async () => {
-    await login(adminPage, fixtures.admin.email)
+    await login(adminPage, fixtures.admin.email, '/admin')
     await expect(adminPage).toHaveURL(/\/admin$/)
     await expect(adminPage.getByRole('button', { name: '로그아웃' })).toBeVisible()
 
-    await login(workerPage, fixtures.workers[0].email)
+    await login(workerPage, fixtures.workers[0].email, '/home')
     await expect(workerPage).toHaveURL(/\/home$/)
     await expect(workerPage.getByRole('button', { name: '로그아웃' })).toBeVisible()
   })
@@ -130,16 +183,21 @@ test('관리자 마감·배정·수정과 알바 신청·조회가 실제 DB에�
   const adminErrors = captureUnexpectedBrowserErrors(adminPage)
   const workerErrors = captureUnexpectedBrowserErrors(workerPage)
 
-  await login(adminPage, fixtures.admin.email)
-  await login(workerPage, fixtures.workers[0].email)
+  await login(adminPage, fixtures.admin.email, '/admin')
+  await login(workerPage, fixtures.workers[0].email, '/home')
 
   await test.step('관리자가 월별 신청 기간을 연다', async () => {
     await adminPage.goto(`/admin/schedules?month=${scheduleMonth}`)
     await expect(adminPage.getByRole('heading', { name: '일정 달력' })).toBeVisible()
+    await expect(
+      adminPage.getByRole('button', { name: '먼저 신청 기간을 열어주세요' }),
+    ).toBeDisabled()
     await adminPage.getByLabel('마감 날짜', { exact: true }).fill('2098-12-15')
     await adminPage.getByLabel('마감 시간', { exact: true }).fill('18:00')
     await adminPage.getByRole('button', { name: '신청 기간 열기' }).click()
     await expect(adminPage.getByText('신청 중', { exact: true })).toBeVisible()
+    await adminPage.getByRole('link', { name: `${scheduleMonthLabel} 일정 등록하기` }).click()
+    await expect(adminPage).toHaveURL(`/admin/schedules/new?month=${scheduleMonth}`)
   })
 
   await test.step('알바가 두 날짜를 신청한 뒤 한 날짜를 취소한다', async () => {
@@ -173,7 +231,14 @@ test('관리자 마감·배정·수정과 알바 신청·조회가 실제 DB에�
     ).toHaveAttribute('aria-pressed', 'false')
   })
 
+  await test.step('배정 후보들이 각 날짜를 실제 계정으로 신청한다', async () => {
+    for (const worker of fixtures.workers.slice(1, 11)) {
+      await applyScheduleDates(worker.email, [firstScheduleDate, secondScheduleDate])
+    }
+  })
+
   await test.step('관리자가 신청을 수동 마감하고 알바 화면이 잠긴다', async () => {
+    await adminPage.goto(`/admin/schedules?month=${scheduleMonth}`)
     await adminPage.getByRole('button', { name: '신청 수동 마감' }).click()
     await expect(adminPage.getByRole('heading', { name: '지금 신청을 마감할까요?' })).toBeVisible()
     await adminPage.getByRole('button', { name: '신청 마감 확정' }).click()
@@ -185,7 +250,8 @@ test('관리자 마감·배정·수정과 알바 신청·조회가 실제 DB에�
   })
 
   await test.step('관리자가 이틀의 일정과 포지션별 인원을 확정한다', async () => {
-    await adminPage.goto(`/admin/schedules/new?month=${scheduleMonth}`)
+    await adminPage.getByRole('link', { name: `${scheduleMonthLabel} 일정 등록하기` }).click()
+    await expect(adminPage).toHaveURL(`/admin/schedules/new?month=${scheduleMonth}`)
     await expect(adminPage.getByRole('heading', { name: '2099년 1월 일정 등록' })).toBeVisible()
 
     for (const [dateIndex, date] of [firstScheduleDate, secondScheduleDate].entries()) {
@@ -202,7 +268,7 @@ test('관리자 마감·배정·수정과 알바 신청·조회가 실제 DB에�
     }
     await expectNoHorizontalOverflow(adminPage)
 
-    await adminPage.getByRole('button', { name: '최종 저장 내용 확인' }).click()
+    await adminPage.getByRole('button', { name: '스케줄 확정' }).click()
     await expect(
       adminPage.getByRole('heading', { name: '일정과 배정을 확정할까요?' }),
     ).toBeVisible()
@@ -224,6 +290,10 @@ test('관리자 마감·배정·수정과 알바 신청·조회가 실제 DB에�
   await test.step('관리자가 상세 화면의 같은 테이블로 일정과 배정을 수정한다', async () => {
     await adminPage.goto(`/admin/schedules/${firstScheduleDate}`)
     await expect(adminPage.getByRole('heading', { name: '등록 스케줄' })).toBeVisible()
+    await expect(adminPage.getByRole('link', { name: '일정으로 돌아가기' })).toHaveAttribute(
+      'href',
+      `/admin/schedules?month=${scheduleMonth}`,
+    )
     await adminPage.getByRole('button', { name: '수정', exact: true }).click()
     await adminPage.getByLabel('예식 개수', { exact: true }).fill('4')
     await adminPage
@@ -267,12 +337,97 @@ test('관리자 마감·배정·수정과 알바 신청·조회가 실제 DB에�
   await workerContext.close()
 })
 
+test('실제 신청자와 데모 인원의 혼합 일정은 브라우저에만 저장되고 역할 전환 뒤 조회된다', async ({
+  browser,
+}) => {
+  const context = await createRoleContext(browser)
+  const page = await context.newPage()
+  const browserErrors = captureUnexpectedBrowserErrors(page)
+  const actualWorker = fixtures.workers[0]
+  const demoAssignments = [
+    ['스캔 1번째 인원', 'demo-worker-05'],
+    ['메인 1번째 인원', 'demo-worker-06'],
+    ['드레스 1번째 인원', 'demo-worker-07'],
+    ['축가 1번째 인원', 'demo-worker-02'],
+    ['매니저 1번째 인원', 'demo-worker-10'],
+    ['매니저 2번째 인원', 'demo-worker-11'],
+    ['안내 1번째 인원', 'demo-worker-01'],
+    ['안내 2번째 인원', 'demo-worker-04'],
+    ['대기실 1번째 인원', 'demo-worker-08'],
+  ] as const
+
+  await login(page, fixtures.admin.email, '/admin')
+
+  await test.step('관리자가 데모 월의 신청 기간을 열고 실제 회원 한 명이 신청한다', async () => {
+    await page.goto(`/admin/schedules?month=${demoScheduleMonth}`)
+    await page.getByLabel('마감 날짜', { exact: true }).fill('2099-01-15')
+    await page.getByLabel('마감 시간', { exact: true }).fill('18:00')
+    await page.getByRole('button', { name: '신청 기간 열기' }).click()
+    await expect(page.getByText('신청 중', { exact: true })).toBeVisible()
+
+    await applyScheduleDates(actualWorker.email, [demoScheduleDate], demoScheduleMonth)
+    await page.reload()
+    await page.getByRole('button', { name: '신청 수동 마감' }).click()
+    await page.getByRole('button', { name: '신청 마감 확정' }).click()
+    await expect(page.getByText('관리자 마감', { exact: true })).toBeVisible()
+
+    await page.getByRole('link', { name: `${demoScheduleMonthLabel} 일정 등록하기` }).click()
+    await expect(page).toHaveURL(`/admin/schedules/new?month=${demoScheduleMonth}`)
+  })
+
+  const countsBeforeOverlaySave = await getScheduleDatabaseCounts()
+
+  await test.step('실제 신청자 한 명과 데모 인원 아홉 명을 함께 배정한다', async () => {
+    const dateRegion = page.getByRole('region', { name: formatScheduleDate(demoScheduleDate) })
+    await dateRegion.getByRole('button', { name: '일정 설정' }).click()
+    await dateRegion.getByLabel('예식 개수', { exact: true }).fill('3')
+    await dateRegion.getByLabel('팀장 1번째 인원', { exact: true }).selectOption(actualWorker.id)
+    for (const [label, workerId] of demoAssignments) {
+      await dateRegion.getByLabel(label, { exact: true }).selectOption(workerId)
+    }
+
+    await page.getByRole('button', { name: '스케줄 확정' }).click()
+    await page.getByRole('button', { name: '1일 일정 등록·배정 확정' }).click()
+    await expect(page).toHaveURL(`/admin/schedules?month=${demoScheduleMonth}`)
+  })
+
+  const demoCardName = `${formatScheduleDate(demoScheduleDate)} 데모 일정 상세 관리`
+  await test.step('관리자 카드가 즉시 보이고 새로고침과 월 왕복 뒤에도 유지된다', async () => {
+    await expect(page.getByRole('link', { name: demoCardName })).toContainText('브라우저 데모')
+    await page.reload()
+    await expect(page.getByRole('link', { name: demoCardName })).toBeVisible()
+    await page.getByRole('button', { name: '이전 달 보기' }).click()
+    await expect(page.getByText('2099년 1월', { exact: true })).toBeVisible()
+    await page.getByRole('button', { name: '다음 달 보기' }).click()
+    await expect(page.getByRole('link', { name: demoCardName })).toBeVisible()
+  })
+
+  await test.step('브라우저 저장은 실제 일정과 배정 테이블을 변경하지 않는다', async () => {
+    expect(await getScheduleDatabaseCounts()).toEqual(countsBeforeOverlaySave)
+  })
+
+  await test.step('같은 브라우저에서 실제 신청자로 전환하면 월·주·일 모두 본인 배정이 보인다', async () => {
+    await page.getByRole('button', { name: '로그아웃' }).click()
+    await login(page, actualWorker.email, '/home')
+    for (const mode of ['month', 'week', 'day']) {
+      await page.goto(`/schedule?mode=${mode}&anchor=${demoScheduleDate}`)
+      await expect(page.getByRole('heading', { name: '1회 확정' })).toBeVisible()
+      await expect(page.getByText('브라우저 데모', { exact: true })).toBeVisible()
+      await expect(page.getByText('팀장', { exact: true })).toBeVisible()
+    }
+  })
+
+  expect(browserErrors).toEqual([])
+  await context.close()
+})
+
 test('회원가입 확인 메일과 PKCE callback이 실제 계정을 활성화한다', async ({ page, request }) => {
   const browserErrors = captureUnexpectedBrowserErrors(page)
   const signupEmail = `signup-${runId}@lavi.local`
 
   await page.goto('/signup')
   await page.getByLabel('이름', { exact: true }).fill('E2E가입알바')
+  await page.getByLabel('입사 년월일', { exact: true }).fill('2024-01-15')
   await page.getByLabel('이메일', { exact: true }).fill(signupEmail)
   await page.getByLabel('휴대폰 번호', { exact: true }).fill('01090000999')
   await page.getByLabel('비밀번호', { exact: true }).fill(password)
@@ -313,7 +468,7 @@ test('회원가입 확인 메일과 PKCE callback이 실제 계정을 활성화�
   await page.goto('/home')
   await expect(page).toHaveURL(/\/home$/)
   await page.getByRole('button', { name: '로그아웃' }).click()
-  await login(page, signupEmail)
+  await login(page, signupEmail, '/home')
   await expect(page).toHaveURL(/\/home$/)
   expect(browserErrors).toEqual([])
 })

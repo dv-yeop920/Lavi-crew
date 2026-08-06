@@ -7,7 +7,7 @@ export async function getWorkerManagementRecords() {
   const [profilesResult, skillsResult, applicationsResult, assignmentsResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, email, name, phone, role, hourly_wage, is_active, created_at')
+      .select('id, email, name, phone, role, hourly_wage, is_active, hired_at, created_at')
       .order('created_at'),
     supabase.from('worker_position_skills').select('worker_id, position_id'),
     supabase
@@ -37,7 +37,7 @@ export async function getWorkerProfileRecord(workerId: string) {
   const [profileResult, skillsResult] = await Promise.all([
     supabase
       .from('profiles')
-      .select('id, email, name, phone, role, hourly_wage, is_active, created_at')
+      .select('id, email, name, phone, role, hourly_wage, is_active, hired_at, created_at')
       .eq('id', workerId)
       .maybeSingle(),
     supabase
@@ -75,6 +75,7 @@ export async function getWorkerHistoryRecords(workerId: string) {
 }
 
 export async function updateWorkerProfileRecord(input: {
+  hiredAt: string
   hourlyWage: number
   name: string
   positionIds: string[]
@@ -82,6 +83,7 @@ export async function updateWorkerProfileRecord(input: {
 }) {
   const supabase = await createServerSupabaseClient()
   return supabase.rpc('admin_update_worker_profile', {
+    candidate_hired_at: input.hiredAt,
     candidate_hourly_wage: input.hourlyWage,
     candidate_name: input.name,
     candidate_position_ids: input.positionIds,

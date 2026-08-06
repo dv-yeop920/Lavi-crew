@@ -1,6 +1,10 @@
 import { execFileSync, spawnSync } from 'node:child_process'
 import { randomBytes } from 'node:crypto'
 
+import { assertSupportedNodeVersion } from './lib/node-version.mjs'
+
+assertSupportedNodeVersion()
+
 const supabaseStatus = JSON.parse(
   execFileSync('supabase', ['status', '-o', 'json'], { encoding: 'utf8' }),
 )
@@ -15,11 +19,13 @@ if (
 
 const environment = {
   ...process.env,
+  NEXT_PUBLIC_APP_URL: 'http://127.0.0.1:3000',
   NEXT_PUBLIC_SUPABASE_URL: apiUrl.origin,
   NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: supabaseStatus.PUBLISHABLE_KEY,
   SUPABASE_SERVICE_ROLE_KEY: supabaseStatus.SERVICE_ROLE_KEY,
   SUPABASE_DB_URL: supabaseStatus.DB_URL,
   LAVI_ALLOW_LOCAL_SEED: '1',
+  LAVI_ENABLE_DEMO_FIXTURES: 'true',
   LAVI_E2E_PASSWORD: randomBytes(24).toString('base64url'),
   LAVI_E2E_RUN_ID: randomBytes(8).toString('hex'),
   LAVI_E2E_MAILPIT_URL: supabaseStatus.MAILPIT_URL,

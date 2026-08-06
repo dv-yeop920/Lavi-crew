@@ -1,46 +1,29 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect } from 'react'
 
-import {
-  getCleanSentinelTransition,
-  getDirtyHistoryPopstateMode,
-  shouldCollapseSentinelOnMount,
-  shouldConfirmDirtyNavigation,
-} from '../lib/draft-reconciliation'
-
-const DIRTY_HISTORY_SENTINEL = '__laviCrewScheduleDirtyGuard'
+import { shouldConfirmDirtyNavigation } from '../lib/draft-reconciliation'
 
 type DirtyNavigationGuardOptions = {
   confirmationMessage: string
   isDirty: boolean
 }
 
+/**
+ * 작성 중인 내용이 있을 때 링크 클릭·탭 닫기를 확인 없이 벗어나지 않도록 막는다.
+ * 브라우저 뒤로가기/앞으로가기 버튼은 history API로 가로챌 수 없어 이 훅의 보호 대상이
+ * 아니다(next/navigation의 router와 표준 DOM 이벤트만 사용한다).
+ */
 export function useDirtyNavigationGuard({
   confirmationMessage,
   isDirty,
 }: DirtyNavigationGuardOptions) {
   const router = useRouter()
-  const hasHistorySentinelRef = useRef(false)
-  const isBypassingHistorySentinelRef = useRef(false)
-  const isCollapsingHistorySentinelRef = useRef(false)
-  const pendingDestinationRef = useRef<string | null>(null)
 
   const navigate = useCallback(
     (destination: string, skipConfirmation = false) => {
       if (isDirty && !skipConfirmation && !window.confirm(confirmationMessage)) return false
-
-      pendingDestinationRef.current = destination
-      if (hasHistorySentinelRef.current) {
-        if (!isCollapsingHistorySentinelRef.current) {
-          isCollapsingHistorySentinelRef.current = true
-          window.history.back()
-        }
-        return true
-      }
-
-      pendingDestinationRef.current = null
       router.push(destination)
       return true
     },
@@ -89,92 +72,6 @@ export function useDirtyNavigationGuard({
       document.removeEventListener('click', confirmLinkNavigation, true)
     }
   }, [isDirty, navigate])
-
-  useEffect(() => {
-    const historyState =
-      window.history.state && typeof window.history.state === 'object'
-        ? (window.history.state as Record<string, unknown>)
-        : {}
-
-    if (isDirty && historyState[DIRTY_HISTORY_SENTINEL] !== true) {
-      window.history.pushState(
-        { ...historyState, [DIRTY_HISTORY_SENTINEL]: true },
-        '',
-        window.location.href,
-      )
-      hasHistorySentinelRef.current = true
-    } else if (isDirty) {
-      hasHistorySentinelRef.current = true
-    } else if (
-      shouldCollapseSentinelOnMount({
-        hasMarker: historyState[DIRTY_HISTORY_SENTINEL] === true,
-        isDirty,
-      }) &&
-      !isCollapsingHistorySentinelRef.current
-    ) {
-      hasHistorySentinelRef.current = true
-      isCollapsingHistorySentinelRef.current = true
-      window.history.back()
-    }
-
-    function confirmPopstateNavigation(event: PopStateEvent) {
-      const targetState =
-        event.state && typeof event.state === 'object'
-          ? (event.state as Record<string, unknown>)
-          : {}
-      if (isCollapsingHistorySentinelRef.current) {
-        event.stopImmediatePropagation()
-        isCollapsingHistorySentinelRef.current = false
-        hasHistorySentinelRef.current = false
-        const destination = pendingDestinationRef.current
-        pendingDestinationRef.current = null
-        if (destination) queueMicrotask(() => router.push(destination))
-        return
-      }
-
-      const cleanTransition = getCleanSentinelTransition({
-        hasActiveSentinel: hasHistorySentinelRef.current,
-        isDirty,
-        isTargetSentinel: targetState[DIRTY_HISTORY_SENTINEL] === true,
-      })
-      if (cleanTransition === 'skip-stale-forward') {
-        event.stopImmediatePropagation()
-        isCollapsingHistorySentinelRef.current = true
-        window.history.back()
-        return
-      }
-      const mode = getDirtyHistoryPopstateMode({
-        isBypassing: isBypassingHistorySentinelRef.current,
-        isDirty,
-        isTargetSentinel: targetState[DIRTY_HISTORY_SENTINEL] === true,
-      })
-      if (mode === 'allow') {
-        isBypassingHistorySentinelRef.current = false
-        return
-      }
-      if (mode === 'arm-sentinel') {
-        hasHistorySentinelRef.current = true
-        return
-      }
-
-      event.stopImmediatePropagation()
-      if (window.confirm(confirmationMessage)) {
-        isBypassingHistorySentinelRef.current = true
-        hasHistorySentinelRef.current = false
-        window.history.back()
-        return
-      }
-      window.history.pushState(
-        { ...targetState, [DIRTY_HISTORY_SENTINEL]: true },
-        '',
-        window.location.href,
-      )
-      hasHistorySentinelRef.current = true
-    }
-
-    window.addEventListener('popstate', confirmPopstateNavigation, true)
-    return () => window.removeEventListener('popstate', confirmPopstateNavigation, true)
-  }, [confirmationMessage, isDirty, router])
 
   return { navigate }
 }

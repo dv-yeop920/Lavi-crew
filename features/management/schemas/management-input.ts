@@ -6,18 +6,6 @@ export type ManagementActionResult = FormActionResult
 
 const positionIdSchema = z.string().regex(/^[a-z-]{3,24}$/, '가능한 포지션 값이 올바르지 않습니다.')
 
-export const workerUpdateSchema = z.object({
-  hourlyWage: z.preprocess(
-    (value) => (typeof value === 'string' && value.trim() !== '' ? Number(value) : Number.NaN),
-    z
-      .number({ error: '개인 시급을 숫자로 입력해 주세요.' })
-      .int('개인 시급은 원 단위의 정수로 입력해 주세요.')
-      .positive('개인 시급은 0원보다 커야 합니다.'),
-  ),
-  name: z.string().trim().min(1, '이름을 입력해 주세요.').min(2, '이름은 2자 이상 입력해 주세요.'),
-  positionIds: z.array(positionIdSchema).transform((values) => [...new Set(values)]),
-})
-
 function getKoreanDate(asOf: Date) {
   return new Intl.DateTimeFormat('en-CA', {
     day: '2-digit',
@@ -33,6 +21,31 @@ function isCalendarDate(value: string) {
   return (
     date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
   )
+}
+
+function workerUpdateSchema(asOf: Date) {
+  return z.object({
+    hiredAt: z
+      .string()
+      .trim()
+      .min(1, '입사일을 입력해 주세요.')
+      .regex(/^\d{4}-\d{2}-\d{2}$/, '입사일 형식이 올바르지 않습니다.')
+      .refine(isCalendarDate, '존재하는 날짜를 입력해 주세요.')
+      .refine((value) => value <= getKoreanDate(asOf), '입사일은 오늘 이전 날짜여야 합니다.'),
+    hourlyWage: z.preprocess(
+      (value) => (typeof value === 'string' && value.trim() !== '' ? Number(value) : Number.NaN),
+      z
+        .number({ error: '개인 시급을 숫자로 입력해 주세요.' })
+        .int('개인 시급은 원 단위의 정수로 입력해 주세요.')
+        .positive('개인 시급은 0원보다 커야 합니다.'),
+    ),
+    name: z
+      .string()
+      .trim()
+      .min(1, '이름을 입력해 주세요.')
+      .min(2, '이름은 2자 이상 입력해 주세요.'),
+    positionIds: z.array(positionIdSchema).transform((values) => [...new Set(values)]),
+  })
 }
 
 function inviteCreateSchema(asOf: Date) {
@@ -74,8 +87,9 @@ function stringValue(formData: FormData, name: string) {
   return typeof value === 'string' ? value : ''
 }
 
-export function parseWorkerUpdate(formData: FormData) {
-  return workerUpdateSchema.safeParse({
+export function parseWorkerUpdate(formData: FormData, asOf = new Date()) {
+  return workerUpdateSchema(asOf).safeParse({
+    hiredAt: stringValue(formData, 'hiredAt'),
     hourlyWage: stringValue(formData, 'hourlyWage'),
     name: stringValue(formData, 'name'),
     positionIds: formData

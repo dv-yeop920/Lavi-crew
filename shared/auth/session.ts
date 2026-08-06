@@ -13,11 +13,12 @@ export async function getAuthenticatedProfile(): Promise<AuthenticatedProfile | 
   const { data: claimsData } = await supabase.auth.getClaims()
   const userId = getVerifiedUserId(claimsData?.claims)
   if (!userId) return null
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('profiles')
     .select('id, name, role, is_active')
     .eq('id', userId)
     .maybeSingle()
+  if (error) throw new Error('인증된 사용자 프로필을 조회하지 못했습니다.')
   if (!data || !data.is_active || (data.role !== 'admin' && data.role !== 'worker')) return null
   return { id: data.id, isActive: data.is_active, name: data.name, role: data.role }
 }

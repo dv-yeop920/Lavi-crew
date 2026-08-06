@@ -19,7 +19,10 @@ export const scheduleAssignmentSchema = z.object({
   ]),
   slotIndex: z.number().int().min(0).max(2),
   slotKind: z.enum(['base', 'extra-training']),
-  workerId: z.uuid('배정할 인원을 선택해 주세요.'),
+  workerId: z.union([
+    z.uuid('배정할 인원을 선택해 주세요.'),
+    z.string().regex(/^demo-worker-\d{2}$/, '배정할 인원을 선택해 주세요.'),
+  ]),
 })
 
 export const monthlyRegistrationSchema = z.object({

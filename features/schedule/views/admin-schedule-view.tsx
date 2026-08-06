@@ -2,8 +2,11 @@
 
 import { useRouter } from 'next/navigation'
 
+import { getDemoSchedulesForMonth } from '@/features/schedule/domain/demo-schedule-overlay'
+import { useDemoScheduleOverlay } from '@/features/schedule/hooks/use-demo-schedule-overlay'
+import { useScheduleRegistrationDraftOverlay } from '@/features/schedule/hooks/use-schedule-registration-draft-overlay'
 import type { MonthRegistrationViewModel } from '@/features/schedule/schemas/schedule-view-model'
-import { Button } from '@/shared/ui/button/button'
+import { Button, ButtonLink } from '@/shared/ui/button/button'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 
@@ -30,20 +33,47 @@ function formatDateLabel(date: string) {
 }
 
 export function AdminScheduleView({
+  demoEnabled,
   requestId,
   viewModel,
 }: {
+  demoEnabled: boolean
   requestId: string
   viewModel: MonthRegistrationViewModel
 }) {
   const router = useRouter()
+  const { document } = useDemoScheduleOverlay(demoEnabled)
   const [year, monthNumber] = viewModel.month.split('-').map(Number)
   const monthIndex = monthNumber - 1
   const monthValue = viewModel.month
   const monthLabel = `${year}년 ${monthIndex + 1}월`
   const days = Array.from({ length: getDaysInMonth(year, monthIndex) }, (_, index) => index + 1)
   const firstWeekday = getLeadingBlankCount(year, monthIndex)
-  const monthSchedules = viewModel.registeredSchedules
+  const demoSchedules = getDemoSchedulesForMonth(
+    document,
+    viewModel.month,
+    viewModel.registeredSchedules.map((schedule) => schedule.date),
+  ).map((schedule) => ({
+    assignedCount: schedule.assignments.length,
+    cancellationReason: null,
+    ceremonyCount: schedule.ceremonyCount,
+    date: schedule.date,
+    isDemo: true,
+    isDraft: false as const,
+    status: 'published' as const,
+    time: `${schedule.startTime}–${schedule.endTime}`,
+  }))
+  const { draftSchedules } = useScheduleRegistrationDraftOverlay({
+    excludedDates: [...viewModel.registeredSchedules, ...demoSchedules].map(
+      (schedule) => schedule.date,
+    ),
+    month: viewModel.month,
+  })
+  const monthSchedules = [
+    ...viewModel.registeredSchedules,
+    ...demoSchedules,
+    ...draftSchedules,
+  ].sort((left, right) => left.date.localeCompare(right.date))
   const registeredDays = new Set(monthSchedules.map((schedule) => Number(schedule.date.slice(-2))))
 
   function moveMonth(offset: number) {
@@ -59,14 +89,6 @@ export function AdminScheduleView({
         eyebrow="일정 관리"
         title="일정 달력"
         description="월별 일정을 확인하고 해당 월의 스케줄 등록 화면으로 이동하세요."
-      />
-
-      <ScheduleApplicationPeriodCard
-        hasScheduleHistory={viewModel.hasScheduleHistory}
-        key={viewModel.month}
-        month={viewModel.month}
-        period={viewModel.period}
-        requestId={requestId}
       />
 
       <ContentCard>
@@ -126,10 +148,25 @@ export function AdminScheduleView({
             </span>
           ))}
         </div>
-        <Button onClick={() => router.push(`/admin/schedules/new?month=${monthValue}`)}>
-          {monthLabel} 일정 등록하기
-        </Button>
       </ContentCard>
+
+      <ScheduleApplicationPeriodCard
+        hasScheduleHistory={viewModel.hasScheduleHistory}
+        key={monthValue}
+        month={monthValue}
+        period={viewModel.period}
+        requestId={requestId}
+      />
+
+      {viewModel.period.id ? (
+        <ButtonLink href={`/admin/schedules/new?month=${monthValue}`}>
+          {monthLabel} 일정 등록하기
+        </ButtonLink>
+      ) : (
+        <Button disabled variant="secondary">
+          먼저 신청 기간을 열어주세요
+        </Button>
+      )}
 
       <section className={layout.stack} aria-labelledby="registered-schedule-title">
         <h2 id="registered-schedule-title">{monthLabel} 등록된 일정</h2>
@@ -143,6 +180,8 @@ export function AdminScheduleView({
                   ceremonyCount={schedule.ceremonyCount}
                   date={schedule.date}
                   dateLabel={formatDateLabel(schedule.date)}
+                  isDemo={schedule.isDemo}
+                  isDraft={schedule.isDraft}
                   time={schedule.time}
                   status={schedule.status}
                 />

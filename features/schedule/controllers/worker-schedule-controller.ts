@@ -28,6 +28,7 @@ export async function getWorkerScheduleController(input: {
       range: { end: input.anchor, start: input.anchor },
       shifts: [],
       state: 'invalid',
+      workerId: profile.id,
     }
   }
   const mode = input.mode as WorkerScheduleMode
@@ -52,5 +53,6 @@ export async function getWorkerScheduleController(input: {
       startTime: record.shifts.start_time.slice(0, 5),
     })),
     state: 'ready',
+    workerId: profile.id,
   }
 }

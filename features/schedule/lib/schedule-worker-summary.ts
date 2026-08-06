@@ -20,11 +20,11 @@ export function formatScheduleWorkerSummary(
     .map((position) => position.name)
     .join(', ')
 
-  return [
-    `지난달 출근 ${presentAssignments.length}회`,
-    counts.map((position) => `${position.name} ${position.count}회`).join(', '),
-    `가능: ${skills || '미설정'}`,
-  ]
+  const lastMonthCounts = counts
+    .map((position) => `${position.name} ${position.count}회`)
+    .join(', ')
+
+  return [lastMonthCounts ? `지난달: ${lastMonthCounts}` : '', `가능: ${skills || '미설정'}`]
     .filter(Boolean)
     .join(' · ')
 }

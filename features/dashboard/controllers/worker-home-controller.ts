@@ -1,6 +1,8 @@
 import 'server-only'
 
 import { requireRole } from '@/shared/auth/session'
+import { isPortfolioDemoEnabled } from '@/shared/demo/portfolio-demo-config'
+import { PORTFOLIO_DEMO_NOTICES } from '@/shared/demo/portfolio-fixtures'
 
 import { getWorkerHomeRecords } from '../repositories/worker-home-repository'
 import type { WorkerHomeViewModel } from '../schemas/worker-home-view-model'
@@ -28,6 +30,32 @@ export async function getWorkerHomeController(asOf = new Date()): Promise<Worker
       (assignment) =>
         new Date(`${assignment.shifts.work_date}T${assignment.shifts.start_time}+09:00`) > asOf,
     ) ?? null
+  const notices: WorkerHomeViewModel['notices'] = records.notices.map((notice) => ({
+    contentPreview: notice.content.slice(0, 120),
+    createdAt: notice.created_at,
+    id: notice.id,
+    isPinned: notice.is_pinned,
+    isRead: notice.notice_reads.some((read) => read.worker_id === profile.id),
+    title: notice.title,
+  }))
+  if (isPortfolioDemoEnabled()) {
+    notices.push(
+      ...PORTFOLIO_DEMO_NOTICES.map((notice) => ({
+        contentPreview: notice.content.slice(0, 120),
+        createdAt: notice.createdAt,
+        id: notice.id,
+        isPinned: notice.isPinned,
+        isRead: true,
+        title: notice.title,
+      })),
+    )
+  }
+  const visibleNotices = notices
+    .sort((left, right) => {
+      if (left.isPinned !== right.isPinned) return left.isPinned ? -1 : 1
+      return right.createdAt.localeCompare(left.createdAt)
+    })
+    .slice(0, 3)
   return {
     application: records.period
       ? {
@@ -49,13 +77,6 @@ export async function getWorkerHomeController(asOf = new Date()): Promise<Worker
           startTime: nextAssignment.shifts.start_time.slice(0, 5),
         }
       : null,
-    notices: records.notices.map((notice) => ({
-      contentPreview: notice.content.slice(0, 120),
-      createdAt: notice.created_at,
-      id: notice.id,
-      isPinned: notice.is_pinned,
-      isRead: notice.notice_reads.some((read) => read.worker_id === profile.id),
-      title: notice.title,
-    })),
+    notices: visibleNotices,
   }
 }

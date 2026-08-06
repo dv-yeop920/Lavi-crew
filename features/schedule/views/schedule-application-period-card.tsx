@@ -9,6 +9,7 @@ import {
 } from '@/features/schedule/actions/schedule-actions'
 import type { MonthRegistrationViewModel } from '@/features/schedule/schemas/schedule-view-model'
 import { getFirstFieldError } from '@/shared/forms/form-result'
+import { useActionSuccessEffect } from '@/shared/forms/use-action-success-effect'
 import { Button } from '@/shared/ui/button/button'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
@@ -83,10 +84,8 @@ export function ScheduleApplicationPeriodCard({
   )
   const isBusy = isSavingPeriod || isSavingStatus
 
-  useEffect(() => {
-    if (!periodState?.ok && !statusState?.ok) return
-    router.refresh()
-  }, [periodState?.ok, router, statusState?.ok])
+  useActionSuccessEffect(periodState, () => router.refresh())
+  useActionSuccessEffect(statusState, () => router.refresh())
 
   useEffect(() => {
     queueMicrotask(() => {

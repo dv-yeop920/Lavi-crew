@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto'
+
 import { getInvitesController } from '../controllers/management-controller'
 
 import { InviteManagementView } from './invite-management-view'
@@ -12,4 +14,3 @@ export async function InviteManagementPageView() {
     />
   )
 }
-import { randomUUID } from 'node:crypto'

@@ -9,6 +9,7 @@ import {
 } from '@/features/management/actions/management-actions'
 import { POSITION_CATALOG, type PositionId } from '@/shared/domain/positions'
 import { getFirstFieldError } from '@/shared/forms/form-result'
+import { useActionSuccessEffect } from '@/shared/forms/use-action-success-effect'
 import { useSelectiveFormRecovery } from '@/shared/forms/use-selective-form-recovery'
 import { Button } from '@/shared/ui/button/button'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
@@ -28,6 +29,7 @@ export type WorkerDetailViewModel = {
   hourlyWage: number
   id: string
   isActive: boolean
+  isDemo: boolean
   joinedAt: string
   name: string
   phone: string
@@ -47,6 +49,10 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
   const { captureSubmission, formRef } = useSelectiveFormRecovery(updateState)
   const [isDeleteConfirming, setIsDeleteConfirming] = useState(false)
 
+  useActionSuccessEffect(updateState, () => {
+    router.replace('/admin/workers')
+  })
+
   return (
     <div className={layout.page}>
       <PageHeader
@@ -54,21 +60,31 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
         backLabel="인원 목록으로 돌아가기"
         eyebrow="인원 상세"
         title={worker.name}
-        description="이름, 개인 시급과 가능한 포지션을 수정할 수 있습니다."
+        description={
+          worker.isDemo
+            ? '포트폴리오 화면 시연용 인원이며 정보는 조회만 할 수 있습니다.'
+            : '이름, 입사 년월일, 개인 시급과 가능한 포지션을 수정할 수 있습니다.'
+        }
       />
 
       <ContentCard>
         <div className={layout.row}>
           <strong>회원 상태</strong>
-          <StatusBadge tone={worker.isActive ? 'positive' : 'neutral'}>
-            {worker.role === 'admin' ? '관리자' : worker.isActive ? '활성' : '삭제됨 · 로그인 불가'}
+          <StatusBadge tone={worker.isDemo ? 'accent' : worker.isActive ? 'positive' : 'neutral'}>
+            {worker.isDemo
+              ? '데모 · 읽기 전용'
+              : worker.role === 'admin'
+                ? '관리자'
+                : worker.isActive
+                  ? '활성'
+                  : '삭제됨 · 로그인 불가'}
           </StatusBadge>
         </div>
         <div className={styles.contactList}>
           <span>이메일 · {worker.email}</span>
           <span>연락처 · {worker.phone}</span>
           <span>
-            가입일 · {formatJoinedAt(worker.joinedAt)} · 근속 {formatTenure(worker.joinedAt)}
+            입사일 · {formatJoinedAt(worker.joinedAt)} · 근속 {formatTenure(worker.joinedAt)}
           </span>
           <span>월 평균 신청 일수 · {worker.averageMonthlyApplicationDays}일</span>
           <span>{worker.history}</span>
@@ -85,15 +101,24 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
         >
           <TextField
             defaultValue={worker.name}
-            disabled={!worker.isActive || isUpdating}
+            disabled={worker.isDemo || !worker.isActive || isUpdating}
             error={getFirstFieldError(updateState?.fieldErrors, 'name')}
             label="이름"
             name="name"
             required
           />
           <TextField
+            defaultValue={worker.joinedAt}
+            disabled={worker.isDemo || !worker.isActive || isUpdating}
+            error={getFirstFieldError(updateState?.fieldErrors, 'hiredAt')}
+            label="입사 년월일"
+            name="hiredAt"
+            required
+            type="date"
+          />
+          <TextField
             defaultValue={worker.hourlyWage}
-            disabled={!worker.isActive || isUpdating}
+            disabled={worker.isDemo || !worker.isActive || isUpdating}
             error={getFirstFieldError(updateState?.fieldErrors, 'hourlyWage')}
             hint="이 인원의 모든 포지션 근무에 공통으로 적용됩니다."
             inputMode="numeric"
@@ -117,7 +142,7 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
                 ? 'position-ids-error'
                 : undefined
             }
-            disabled={!worker.isActive || isUpdating}
+            disabled={worker.isDemo || !worker.isActive || isUpdating}
             className={styles.positionFieldset}
           >
             <legend className={styles.positionLegend}>가능한 포지션</legend>
@@ -143,7 +168,7 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
           ) : null}
 
           <div className={layout.wrap}>
-            <Button disabled={!worker.isActive || isUpdating} type="submit">
+            <Button disabled={worker.isDemo || !worker.isActive || isUpdating} type="submit">
               {isUpdating ? '저장 중...' : '완료'}
             </Button>
             <Button
@@ -154,7 +179,7 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
               취소
             </Button>
             <Button
-              disabled={!worker.isActive || worker.role === 'admin'}
+              disabled={worker.isDemo || !worker.isActive || worker.role === 'admin'}
               variant="secondary"
               onClick={() => setIsDeleteConfirming(true)}
             >
@@ -176,7 +201,13 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
         <p className={styles.contactList}>단일 관리자 계정은 인원 관리에서 삭제할 수 없습니다.</p>
       ) : null}
 
-      {isDeleteConfirming && worker.role === 'worker' && worker.isActive ? (
+      {worker.isDemo ? (
+        <p className={styles.contactList}>
+          데모 인원은 Supabase 회원이 아니며 수정·회원 삭제·실제 일정 저장 대상이 아닙니다.
+        </p>
+      ) : null}
+
+      {isDeleteConfirming && !worker.isDemo && worker.role === 'worker' && worker.isActive ? (
         <section className={styles.confirmation} aria-labelledby="delete-worker-title">
           <strong id="delete-worker-title">{worker.name} 회원을 삭제할까요?</strong>
           <p>로그인과 신규 신청·배정은 차단되며 기존 근무 및 급여 이력은 삭제되지 않습니다.</p>

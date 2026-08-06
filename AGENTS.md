@@ -41,6 +41,7 @@
 - 프로덕션 실행: `npm run start`
 - 단위 테스트: `npm test`
 - 테스트 감시 모드: `npm run test:watch`
+- 로컬 Supabase 시작·리셋·DB E2E·브라우저 E2E의 전체 절차와 명령은 `README.md`를 따른다.
 
 ## 4. 디렉토리 책임
 
@@ -50,6 +51,7 @@
 app/                       # 라우트, 레이아웃, 페이지 조합
 features/<feature>/        # 기능별 VAC, 스키마, 기능 컴포넌트
   views/
+  hooks/
   actions/
   controllers/
   domain/
@@ -79,11 +81,12 @@ docs/                      # 기획·아키텍처 문서
 호출 방향은 다음을 지킨다.
 
 ```text
-View → Action → Controller → Domain / Repository → Supabase
-                           └→ Kakao Adapter
+View → Hook → Action → Controller → Domain / Repository → Supabase
+                                  └→ Kakao Adapter
 ```
 
-- View: 표시, 입력, 로컬 UI 상태만 담당한다. Supabase 쓰기와 업무 규칙을 금지한다.
+- View: 표시, 레이아웃, 입력 마크업만 담당한다. Supabase 쓰기와 업무 규칙을 금지한다. 로컬 상태·파생 계산·이벤트 핸들러가 얽히면 Hook으로 추출한다. 단일 상태 토글처럼 사소한 로컬 상태까지 강제로 추출하지 않는다.
+- Hook: `features/<feature>/hooks`에 두는 커스텀 React 훅으로 View의 로컬 상태, 파생 계산, 이벤트 핸들러, 브라우저 전용 API 접근을 담당한다. Action 호출은 할 수 있지만 Supabase 쓰기 직접 호출과 업무 규칙 판단은 View와 동일하게 금지한다(`docs/decisions/013-view-hook-separation.md`).
 - Action: 입력 수신, 스키마 검증, Controller 호출, 캐시 갱신만 담당한다.
 - Controller: 역할 확인, 유스케이스 조합, Domain·Repository·Adapter 호출을 담당한다.
 - Domain: DB, React, Next.js, 외부 API에 의존하지 않는 순수 로직만 둔다.
@@ -144,9 +147,9 @@ View → Action → Controller → Domain / Repository → Supabase
 - 식대, 교통비, 주휴수당은 MVP 급여 계산에서 제외한다.
 - 스케줄 신청은 관리자가 마감하기 전까지만 취소할 수 있다.
 - 스케줄 신청 마감은 근무일별이나 주별이 아니라 대상 월 전체에 한 번 적용한다.
-- 관리자 일정 달력은 조회 전용이며 날짜를 직접 선택하지 않는다. 월 이동 후 해당 월 일정 등록 화면에서 월 전체 신청 마감일과 미등록 날짜별 일정을 설정한다.
+- 관리자 일정 달력은 날짜를 직접 선택하지 않는 조회 전용이며, 달력 화면에서 월 전체 신청 기간(마감일)을 설정한다. 월 이동 후 해당 월 일정 등록 화면에서 미등록 날짜별 일정을 설정한다.
 - 관리자 인원 배정은 스케줄 등록 화면에 포함한다.
-- 관리자는 미신청자 배정과 교육 여부 표시를 할 수 있다.
+- 관리자는 선택한 날짜에 신청한 인원만 신규 배정할 수 있으며 교육 여부를 표시할 수 있다.
 - 운영 포지션은 팀장·스캔·메인·드레스·축가·매니저·안내·대기실 8개로 고정한다. 포지션별 시급은 두지 않으며 관리자는 인원 관리 상세에서 구성원별 시급을 수정한다.
 - 관리자 알바 목록과 상세에는 마스킹한 연락처를 표시한다. 회원 삭제 요청은 관계 이력을 보존하는 계정 비활성화로 처리한다.
 - 위 규칙을 변경해야 하는 요청은 구현 전에 요구사항 문서와 함께 사용자 결정을 받는다.
@@ -187,13 +190,17 @@ View → Action → Controller → Domain / Repository → Supabase
 
 ## 13. 하네스 파일 책임
 
-- `AGENTS.md`: 이 저장소 전체에 항상 적용되는 규칙과 명령
-- `.codex/agents/*.toml`: 전문 에이전트의 역할, 경계, 산출물
-- `.agents/skills/*/SKILL.md`: 작업 종류별 재사용 절차
-- `.codex/hooks.json`: Codex 생명주기에 연결할 빠른 기계적 검사
+이 저장소는 Claude Code 하네스만 사용한다.
+
+- `AGENTS.md`: 이 저장소 전체에 항상 적용되는 규칙과 명령의 원본
+- `CLAUDE.md`: Claude Code 진입점. `@AGENTS.md` import로 이 문서를 그대로 불러오고 Claude Code 전용 보충 정보만 덧붙인다. 규칙을 바꿀 때는 이 파일이 아니라 AGENTS.md를 수정한다.
+- Claude Code 세션 간 지속 메모리(`~/.claude/projects/.../memory/`): 대화 세션 재시작이나 `/clear`로도 사라지지 않는 파일 기반 저장소. 사용 방식과 기록 기준은 `CLAUDE.md`에 원본으로 두고 여기서는 중복 서술하지 않는다.
+- `.claude/agents/*.md`: Claude Code 전용 서브에이전트 정의 (품질 리뷰, 프론트엔드 구현 등)
+- `.claude/skills/*/SKILL.md`: Claude Code 전용 스킬 정의(반복 절차를 현재 에이전트가 직접 따르게 함). 목록과 용도는 `CLAUDE.md`에 원본으로 둔다.
+- `.claude/settings.json`과 `.claude/hooks/*`: Claude Code 훅. `check-agents-compliance.mjs`는 `app`·`features`·`shared`·`docs`·`scripts`·`.claude`·`AGENTS.md`·`CLAUDE.md` 파일을 Edit·MultiEdit·Write로 바꿀 때마다 `check:architecture`·`check:harness`·해당 파일의 eslint를 자동 실행해 위반을 그 자리에서 차단한다(9절의 업무 규칙처럼 정적 분석으로 판별할 수 없는 항목은 다루지 않는다). `block-dangerous-bash.mjs`는 되돌릴 수 없는 파괴적 Bash 명령을 실행 전에 차단한다.
 - `scripts/check-architecture.mjs`: import 방향과 서버·클라이언트 경계 센서
-- `scripts/check-harness.mjs`: 문서·스킬·에이전트·훅·임시 파일 드리프트 센서
+- `scripts/check-harness.mjs`: 문서·에이전트·임시 파일 드리프트 센서
 - `.github/workflows/ci.yml`: 저장소 병합 전 전체 검증 센서
 - 같은 규칙을 여러 하네스 파일에 복사하지 않는다. 원본 한 곳을 두고 다른 파일에서는 참조한다.
 - `AGENTS.md`와 `docs`는 작업 전·중 방향을 주는 가이드이고, 린트·검사 스크립트·빌드·CI는 작업 후 위반을 감지하는 센서다. 가이드와 센서의 규칙이 다르면 둘 중 하나를 임의로 우회하지 말고 함께 정합시킨다.
-- 제품 범위나 화면 흐름이 바뀌는 복합 작업의 에이전트 선택·handoff·소통 방식은 `lavi-feature-delivery` 스킬을 따른다.
+- 제품 범위나 화면 흐름이 바뀌는 복합 작업은 관련 있는 `.claude/agents/*.md` 서브에이전트를 필요에 따라 조합해 사용한다.

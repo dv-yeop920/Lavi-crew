@@ -14,7 +14,8 @@
 
 ```mermaid
 flowchart LR
-  V["View<br/>페이지 · UI 컴포넌트"] --> A["Action<br/>Server Action · Route Handler"]
+  V["View<br/>페이지 · UI 조합"] --> H["Hook<br/>로컬 상태 · 파생 계산 · 이벤트 핸들러"]
+  H --> A["Action<br/>Server Action · Route Handler"]
   A --> C["Controller<br/>유스케이스 · 권한 확인"]
   C --> D["Domain<br/>급여 계산 · 스케줄 규칙"]
   C --> R["Repository<br/>Supabase 쿼리"]
@@ -22,11 +23,14 @@ flowchart LR
   C --> K["Kakao Adapter<br/>알림톡 발송"]
 ```
 
+로컬 상태나 파생 계산이 없는 단순한 View는 Hook 없이 Action을 직접 호출해도 된다.
+
 ### 계층 책임
 
 | 계층 | 책임 | 금지 사항 |
 | --- | --- | --- |
-| View | 화면 표시, 입력, 로컬 UI 상태 | Supabase 쓰기 호출, 업무 규칙 구현 |
+| View | 화면 표시, 레이아웃, 입력 마크업 | Supabase 쓰기 호출, 업무 규칙 구현 |
+| Hook | View의 로컬 상태, 파생 계산, 이벤트 핸들러, 브라우저 전용 API 접근 | Supabase 쓰기 직접 호출, 업무 규칙 판단 |
 | Action | 입력 수신, 스키마 검증, Controller 호출, 화면 갱신 | DB 쿼리와 업무 규칙 혼합 |
 | Controller | 유스케이스 조합, 역할 확인, 업무 규칙 실행 | 폼 형식 검증, UI 상태와 SQL 세부 구현 |
 | Domain | 급여 계산, 마감·배정 규칙 같은 순수 로직 | 외부 API, DB 접근 |
@@ -45,6 +49,7 @@ app/
 features/
 ├─ schedule/
 │  ├─ views/
+│  ├─ hooks/
 │  ├─ actions/
 │  ├─ controllers/
 │  ├─ repositories/
@@ -64,16 +69,20 @@ shared/
 └─ lib/
 ```
 
+포트폴리오 촬영용 표시 데이터는 `shared/demo`의 단일 fixture에서 관리한다. `LAVI_ENABLE_DEMO_FIXTURES=true`인 서버 렌더링에서만 Controller가 실제 조회 결과와 합성하며 Repository, Supabase Auth, PostgreSQL, RLS에는 전달하거나 저장하지 않는다. 더미 인원·공지 ID는 실제 UUID와 구분하고 모든 쓰기 Controller가 Repository 호출 전에 거부한다. 데모 인원이 포함된 일정은 Server Action을 호출하지 않고 버전이 명시된 브라우저 `localStorage` 오버레이에만 저장한다. Domain이 오버레이 구조 검증·날짜별 병합·근무자별 조회를 담당하고 Adapter와 Hook이 브라우저 저장소 접근을 격리한다. 같은 날짜에 실제 DB 일정이 있으면 DB 일정을 우선하며, 플래그가 꺼진 환경에서는 저장소를 읽지 않는다.
+
 ## 권한과 보안
 
 - 알바와 관리자는 하나의 Next.js 앱을 사용한다. 인증 화면은 `/`, 알바 화면은 `/home`, 관리자 화면은 `/admin`에 둔다.
 - Supabase Auth는 이메일·비밀번호와 이메일 확인을 담당한다. 휴대폰 번호는 로그인 식별자가 아니라 `public.profiles`의 업무 연락처로 분리한다.
+- Auth 이메일 callback은 요청 헤더의 Origin을 신뢰하지 않고 서버에 설정한 `NEXT_PUBLIC_APP_URL`의 canonical origin으로 생성한다. 비밀번호 재설정 성공 후에는 recovery 세션을 종료하고 새 비밀번호로 다시 로그인한다.
 - 서버 레이아웃과 Controller에서 역할을 확인한다.
 - Supabase RLS는 최종 데이터 접근 권한을 강제한다.
 - 브라우저에는 Supabase 익명 키만 사용한다.
 - `service_role` 키와 카카오 API 키는 서버 환경 변수에서만 사용한다.
 - 신청 기간 생성·수정·마감·재개, 월별 신청 저장, 월별 일정 등록·배정 확정, 일별 일정 변경·취소, 출석 확정처럼 여러 데이터가 함께 변하는 작업은 Postgres RPC로 원자 처리한다.
 - 신청 기간은 `save_schedule_application_period`와 `set_schedule_application_period_status`로 일정 등록과 분리해 운영한다. `save_monthly_schedule_registration`은 이미 마감된 신청 기간만 사용하며 마감일이나 기간 상태를 변경하지 않고, 게시 일정·확정 배정·출석 대기·알림 발송 대기·멱등 결과를 한 번에 저장한다.
+- 월 등록 RPC는 모든 신규 배정자가 해당 근무일에 신청했는지 검증한다. 일별 수정 RPC는 기존 확정 배정자의 worker ID를 보존할 수 있지만 새로 추가·교체하는 worker ID는 해당 근무일의 `applied` 신청이 있어야 한다.
 
 ### Supabase 스키마와 타입
 
@@ -96,6 +105,7 @@ shared/
 - 공개 `SECURITY DEFINER` RPC는 회원가입 식별 검증, 신청 기간 운영, 월별 신청 저장, 월·일별 일정 및 배정 변경, 출석·급여 반영, 공지 변경·읽음, 초대 코드 변경, 알림 발송 상태 전이와 인원·프로필 변경에만 둔다. 운영 테이블은 관리자도 직접 변경하지 않고 RPC를 사용한다. 업무 변경 함수는 호출자 역할과 활성 상태를 다시 확인하고 `PUBLIC`·`anon` 실행 권한을 제거한다. 가입 전 `check_signup_identity`만 제한된 boolean 결과로 `anon` 호출을 허용하고, 알림 발송 상태 RPC는 서버의 `service_role`에만 허용한다.
 - 일정이 한 번이라도 생성된 신청 기간은 이후 일정이 취소되더라도 마감 시각을 변경하거나 다시 열 수 없다. UI에서 해당 조작을 숨기고 DB 트리거가 최종 불변식을 강제한다.
 - 출석 확정은 실제 출근·퇴근 시각을 함께 저장하며, 급여는 예정 일정 시간이 아니라 이 확정 시간과 배정 시점의 개인 시급 스냅샷으로 계산한다. 9시간(540분) 초과분에만 1.5배를 적용한다.
+- 확정 출석 정정은 정정 사유와 함께 상태 또는 실제 근무 시각 중 하나 이상이 바뀌어야 하며, 동일 값 재저장은 UI와 RPC에서 모두 거부한다.
 - RLS에서 사용하는 관리자 판별 구현은 노출되지 않는 `private.is_admin()`에 두고, 공개 `is_admin()`은 권한 상승이 없는 `SECURITY INVOKER` 래퍼로 유지한다.
 
 ## 다이어그램 규칙

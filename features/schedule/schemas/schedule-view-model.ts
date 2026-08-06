@@ -7,11 +7,14 @@ export type RegisteredScheduleSummary = {
   date: string
   status: 'cancelled' | 'published'
   time: string
+  isDemo?: boolean
+  isDraft?: boolean
 }
 
 export type AssignmentWorkerOption = {
   appliedDates: string[]
   id: string
+  isDemo: boolean
   name: string
   positionIds: PositionId[]
   summary: string

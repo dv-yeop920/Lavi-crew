@@ -1,4 +1,0 @@
-interface:
-  display_name: "Lavi Supabase Change"
-  short_description: "Change Supabase schema and RLS safely."
-  default_prompt: "Use $lavi-supabase-change to design and verify this database change."

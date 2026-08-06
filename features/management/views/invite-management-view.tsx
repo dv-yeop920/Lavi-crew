@@ -1,5 +1,6 @@
 'use client'
 
+import { useRouter } from 'next/navigation'
 import { useActionState, useState } from 'react'
 
 import {
@@ -8,6 +9,7 @@ import {
 } from '@/features/management/actions/management-actions'
 import type { InviteStatus } from '@/features/management/domain/invite-status'
 import { getFirstFieldError } from '@/shared/forms/form-result'
+import { useActionSuccessEffect } from '@/shared/forms/use-action-success-effect'
 import { useSelectiveFormRecovery } from '@/shared/forms/use-selective-form-recovery'
 import { Button } from '@/shared/ui/button/button'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
@@ -90,12 +92,23 @@ export function InviteManagementView({
   deactivateRequestIds: Record<string, string>
   invites: InviteViewModel[]
 }) {
+  const router = useRouter()
   const [isCreating, setIsCreating] = useState(false)
+  const [requestId, setRequestId] = useState(createRequestId)
   const [state, formAction, isPending] = useActionState(
-    createInviteAction.bind(null, createRequestId),
+    createInviteAction.bind(null, requestId),
     null,
   )
   const { captureSubmission, formRef } = useSelectiveFormRecovery(state)
+
+  useActionSuccessEffect(state, () => {
+    queueMicrotask(() => {
+      formRef.current?.reset()
+      setIsCreating(false)
+      setRequestId(crypto.randomUUID())
+      router.refresh()
+    })
+  })
 
   return (
     <div className={layout.page}>
@@ -109,6 +122,11 @@ export function InviteManagementView({
       <Button onClick={() => setIsCreating((current) => !current)}>
         {isCreating ? '등록 닫기' : '새 초대 코드 등록'}
       </Button>
+      {state?.ok ? (
+        <p className={styles.saveMessage} role="status">
+          {state.message}
+        </p>
+      ) : null}
 
       {isCreating ? (
         <ContentCard>

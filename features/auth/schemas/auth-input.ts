@@ -41,30 +41,60 @@ const kakaoConsentSchema = z.literal(true, {
   error: '카카오 알림톡 수신에 동의해 주세요.',
 })
 
+function isCalendarDate(value: string) {
+  const [year, month, day] = value.split('-').map(Number)
+  const date = new Date(Date.UTC(year, month - 1, day))
+  return (
+    date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day
+  )
+}
+
+function getKoreanDate(asOf: Date) {
+  return new Intl.DateTimeFormat('en-CA', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+  }).format(asOf)
+}
+
+function hiredAtSchema(asOf: Date) {
+  return z
+    .string()
+    .trim()
+    .min(1, '입사일을 입력해 주세요.')
+    .regex(/^\d{4}-\d{2}-\d{2}$/, '입사일 형식이 올바르지 않습니다.')
+    .refine(isCalendarDate, '존재하는 날짜를 입력해 주세요.')
+    .refine((value) => value <= getKoreanDate(asOf), '입사일은 오늘 이전 날짜여야 합니다.')
+}
+
 export const loginSchema = z.object({
   email: emailSchema,
   password: passwordSchema,
 })
 
-export const signupSchema = z
-  .object({
-    email: emailSchema,
-    inviteCode: inviteCodeSchema,
-    kakaoConsent: kakaoConsentSchema,
-    name: nameSchema,
-    password: passwordSchema,
-    passwordConfirm: z.string().min(1, '비밀번호 확인을 입력해 주세요.'),
-    phone: phoneSchema,
-  })
-  .superRefine((value, context) => {
-    if (value.password !== value.passwordConfirm) {
-      context.addIssue({
-        code: 'custom',
-        message: '비밀번호와 비밀번호 확인이 일치하지 않습니다.',
-        path: ['passwordConfirm'],
-      })
-    }
-  })
+function signupSchema(asOf: Date) {
+  return z
+    .object({
+      email: emailSchema,
+      hiredAt: hiredAtSchema(asOf),
+      inviteCode: inviteCodeSchema,
+      kakaoConsent: kakaoConsentSchema,
+      name: nameSchema,
+      password: passwordSchema,
+      passwordConfirm: z.string().min(1, '비밀번호 확인을 입력해 주세요.'),
+      phone: phoneSchema,
+    })
+    .superRefine((value, context) => {
+      if (value.password !== value.passwordConfirm) {
+        context.addIssue({
+          code: 'custom',
+          message: '비밀번호와 비밀번호 확인이 일치하지 않습니다.',
+          path: ['passwordConfirm'],
+        })
+      }
+    })
+}
 
 export const passwordResetRequestSchema = z.object({ email: emailSchema })
 
@@ -85,7 +115,7 @@ export const newPasswordSchema = z
 
 export type AuthResult = FormActionResult
 export type LoginInput = z.infer<typeof loginSchema>
-export type SignupInput = z.infer<typeof signupSchema>
+export type SignupInput = z.infer<ReturnType<typeof signupSchema>>
 
 function stringValue(formData: FormData, name: string) {
   const value = formData.get(name)
@@ -99,9 +129,10 @@ export function parseLoginInput(formData: FormData) {
   })
 }
 
-export function parseSignupInput(formData: FormData) {
-  return signupSchema.safeParse({
+export function parseSignupInput(formData: FormData, asOf = new Date()) {
+  return signupSchema(asOf).safeParse({
     email: stringValue(formData, 'email'),
+    hiredAt: stringValue(formData, 'hiredAt'),
     inviteCode: stringValue(formData, 'inviteCode'),
     kakaoConsent: formData.get('kakaoConsent') === 'on',
     name: stringValue(formData, 'name'),

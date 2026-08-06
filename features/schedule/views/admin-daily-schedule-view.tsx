@@ -11,6 +11,7 @@ import { useDirtyNavigationGuard } from '@/features/schedule/hooks/use-dirty-nav
 import { createDailyPositionDrafts } from '@/features/schedule/lib/daily-schedule-view'
 import type { DailyScheduleViewModel } from '@/features/schedule/schemas/daily-schedule-view-model'
 import { getFirstFieldError } from '@/shared/forms/form-result'
+import { useActionSuccessEffect } from '@/shared/forms/use-action-success-effect'
 import { Button } from '@/shared/ui/button/button'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
@@ -102,24 +103,22 @@ export function AdminDailyScheduleView({
     })
   }, [])
 
-  useEffect(() => {
-    if (!updateState?.ok) return
+  useActionSuccessEffect(updateState, () => {
     queueMicrotask(() => {
       setIsEditing(false)
       setUpdateRequestId(crypto.randomUUID())
       router.refresh()
     })
-  }, [router, updateState?.ok])
+  })
 
-  useEffect(() => {
-    if (!cancelState?.ok) return
+  useActionSuccessEffect(cancelState, () => {
     queueMicrotask(() => {
       setIsCancelling(false)
       setCancellationReason('')
       setCancelRequestId(crypto.randomUUID())
       router.refresh()
     })
-  }, [cancelState?.ok, router])
+  })
 
   function updateDraft(changes: Partial<DailyScheduleDraft>) {
     setDraft((current) => ({ ...current, ...changes }))
@@ -218,10 +217,18 @@ export function AdminDailyScheduleView({
     appliedDates: worker.appliedDates,
     id: worker.id,
     isActive: worker.isActive,
+    isDemo: worker.isDemo,
     isSelectable: worker.isSelectable,
     name: worker.name,
+    positionIds: worker.positionIds,
     summary: worker.summary,
   }))
+  const demoWorkerIds = new Set(
+    workers.filter((worker) => worker.isDemo).map((worker) => worker.id),
+  )
+  const hasDemoAssignment = draft.positions.some((position) =>
+    position.assignedWorkerIds.some((workerId) => demoWorkerIds.has(workerId)),
+  )
   const structureReason = scheduleCancelled
     ? '취소된 일정은 구조를 변경할 수 없습니다.'
     : viewModel.shift.status !== 'published'
@@ -236,7 +243,7 @@ export function AdminDailyScheduleView({
   return (
     <div className={layout.page}>
       <PageHeader
-        backHref="/admin/schedules"
+        backHref={`/admin/schedules?month=${viewModel.date.slice(0, 7)}`}
         backLabel="일정으로 돌아가기"
         eyebrow="일별 일정 관리"
         title={formatDate(viewModel.date)}
@@ -360,6 +367,12 @@ export function AdminDailyScheduleView({
               {assignmentsError}
             </p>
           ) : null}
+          {hasDemoAssignment ? (
+            <p className={styles.fieldError} role="alert">
+              데모 인원은 화면 시연용이라 실제 일정에 저장할 수 없습니다. 등록된 회원으로 교체해
+              주세요.
+            </p>
+          ) : null}
           {updateState ? (
             <div
               className={updateState.ok ? styles.saveMessage : styles.errorMessage}
@@ -378,7 +391,7 @@ export function AdminDailyScheduleView({
 
           {isEditing ? (
             <div className={layout.wrap}>
-              <Button disabled={!structureDirty || isUpdating} type="submit">
+              <Button disabled={!structureDirty || hasDemoAssignment || isUpdating} type="submit">
                 {isUpdating ? '저장 중…' : '수정 저장'}
               </Button>
               <Button

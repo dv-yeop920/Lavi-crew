@@ -425,6 +425,7 @@ export type Database = {
         Row: {
           created_at: string
           email: string | null
+          hired_at: string
           hourly_wage: number
           id: string
           is_active: boolean
@@ -437,6 +438,7 @@ export type Database = {
         Insert: {
           created_at?: string
           email?: string | null
+          hired_at: string
           hourly_wage?: number
           id: string
           is_active?: boolean
@@ -449,6 +451,7 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string | null
+          hired_at?: string
           hourly_wage?: number
           id?: string
           is_active?: boolean
@@ -760,6 +763,7 @@ export type Database = {
       }
       admin_update_worker_profile: {
         Args: {
+          candidate_hired_at: string
           candidate_hourly_wage: number
           candidate_name: string
           candidate_position_ids: string[]

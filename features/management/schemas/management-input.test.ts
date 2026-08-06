@@ -1,20 +1,38 @@
 import { describe, expect, it } from 'vitest'
+import { z } from 'zod'
 
 import { parseInviteCreate, parseUuid, parseWorkerUpdate } from './management-input'
 
 describe('management action parsers', () => {
   it('accepts known positions and rejects invalid worker input', () => {
+    const asOf = new Date('2026-08-04T00:00:00+09:00')
     const valid = new FormData()
     valid.set('name', '김민지')
     valid.set('hourlyWage', '13000')
+    valid.set('hiredAt', '2026-08-01')
     valid.append('positionIds', 'main')
-    const parsed = parseWorkerUpdate(valid)
+    const parsed = parseWorkerUpdate(valid, asOf)
     expect(parsed.success).toBe(true)
     if (!parsed.success) return
     expect(parsed.data.positionIds).toEqual(['main'])
 
     valid.append('positionIds', 'unknown position')
-    expect(parseWorkerUpdate(valid).success).toBe(false)
+    expect(parseWorkerUpdate(valid, asOf).success).toBe(false)
+  })
+
+  it('rejects a future hired date for worker updates', () => {
+    const asOf = new Date('2026-08-04T00:00:00+09:00')
+    const valid = new FormData()
+    valid.set('name', '김민지')
+    valid.set('hourlyWage', '13000')
+    valid.set('hiredAt', '2026-08-05')
+    valid.append('positionIds', 'main')
+    const parsed = parseWorkerUpdate(valid, asOf)
+    expect(parsed.success).toBe(false)
+    if (parsed.success) return
+    expect(z.flattenError(parsed.error).fieldErrors.hiredAt?.[0]).toBe(
+      '입사일은 오늘 이전 날짜여야 합니다.',
+    )
   })
 
   it('normalizes invite codes and rejects invalid limits', () => {

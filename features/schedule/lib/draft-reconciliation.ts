@@ -23,28 +23,3 @@ export function shouldConfirmDirtyNavigation(
     `${current.pathname}${current.search}${current.hash}`
   )
 }
-
-export function getDirtyHistoryPopstateMode(input: {
-  isBypassing: boolean
-  isDirty: boolean
-  isTargetSentinel: boolean
-}) {
-  if (input.isBypassing || !input.isDirty) return 'allow' as const
-  if (input.isTargetSentinel) return 'arm-sentinel' as const
-  return 'confirm-back' as const
-}
-
-export function getCleanSentinelTransition(input: {
-  hasActiveSentinel: boolean
-  isDirty: boolean
-  isTargetSentinel: boolean
-}) {
-  if (input.isDirty) return 'none' as const
-  if (input.hasActiveSentinel && input.isTargetSentinel) return 'collapse-current' as const
-  if (!input.hasActiveSentinel && input.isTargetSentinel) return 'skip-stale-forward' as const
-  return 'none' as const
-}
-
-export function shouldCollapseSentinelOnMount(input: { hasMarker: boolean; isDirty: boolean }) {
-  return !input.isDirty && input.hasMarker
-}

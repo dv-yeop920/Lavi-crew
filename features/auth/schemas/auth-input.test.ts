@@ -12,20 +12,24 @@ function validSignupForm() {
   formData.set('passwordConfirm', 'password123!')
   formData.set('inviteCode', 'lavi-crew')
   formData.set('kakaoConsent', 'on')
+  formData.set('hiredAt', '2026-08-01')
   return formData
 }
+
+const asOf = new Date('2026-08-04T00:00:00+09:00')
 
 describe('auth Zod schemas', () => {
   it('normalizes valid signup input without trimming passwords', () => {
     const formData = validSignupForm()
     formData.set('password', ' password123! ')
     formData.set('passwordConfirm', ' password123! ')
-    const parsed = parseSignupInput(formData)
+    const parsed = parseSignupInput(formData, asOf)
 
     expect(parsed.success).toBe(true)
     if (!parsed.success) return
     expect(parsed.data).toMatchObject({
       email: 'crew@example.com',
+      hiredAt: '2026-08-01',
       inviteCode: 'LAVI-CREW',
       password: ' password123! ',
       phone: '01012345678',
@@ -33,7 +37,7 @@ describe('auth Zod schemas', () => {
   })
 
   it('returns detailed field errors for omitted signup values', () => {
-    const parsed = parseSignupInput(new FormData())
+    const parsed = parseSignupInput(new FormData(), asOf)
 
     expect(parsed.success).toBe(false)
     if (parsed.success) return
@@ -45,6 +49,19 @@ describe('auth Zod schemas', () => {
     expect(errors.passwordConfirm?.[0]).toBe('비밀번호 확인을 입력해 주세요.')
     expect(errors.inviteCode?.[0]).toBe('라비에벨 전용 코드를 입력해 주세요.')
     expect(errors.kakaoConsent?.[0]).toBe('카카오 알림톡 수신에 동의해 주세요.')
+    expect(errors.hiredAt?.[0]).toBe('입사일을 입력해 주세요.')
+  })
+
+  it('rejects a future hired date', () => {
+    const formData = validSignupForm()
+    formData.set('hiredAt', '2026-08-05')
+    const parsed = parseSignupInput(formData, asOf)
+
+    expect(parsed.success).toBe(false)
+    if (parsed.success) return
+    expect(z.flattenError(parsed.error).fieldErrors.hiredAt?.[0]).toBe(
+      '입사일은 오늘 이전 날짜여야 합니다.',
+    )
   })
 
   it('reports mismatched password confirmation', () => {

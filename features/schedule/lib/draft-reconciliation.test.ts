@@ -1,12 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  getCleanSentinelTransition,
-  getDirtyHistoryPopstateMode,
-  reconcileDateDrafts,
-  shouldCollapseSentinelOnMount,
-  shouldConfirmDirtyNavigation,
-} from './draft-reconciliation'
+import { reconcileDateDrafts, shouldConfirmDirtyNavigation } from './draft-reconciliation'
 
 describe('reconcileDateDrafts', () => {
   it('removes only conflicts, preserves remaining drafts, and adds new disabled drafts', () => {
@@ -39,62 +33,5 @@ describe('shouldConfirmDirtyNavigation', () => {
         '/schedule/apply?month=2026-08',
       ),
     ).toBe(true)
-  })
-})
-
-describe('getDirtyHistoryPopstateMode', () => {
-  it('distinguishes bypass, sentinel forward, and intercepted back transitions', () => {
-    expect(
-      getDirtyHistoryPopstateMode({
-        isBypassing: true,
-        isDirty: true,
-        isTargetSentinel: false,
-      }),
-    ).toBe('allow')
-    expect(
-      getDirtyHistoryPopstateMode({
-        isBypassing: false,
-        isDirty: true,
-        isTargetSentinel: true,
-      }),
-    ).toBe('arm-sentinel')
-    expect(
-      getDirtyHistoryPopstateMode({
-        isBypassing: false,
-        isDirty: true,
-        isTargetSentinel: false,
-      }),
-    ).toBe('confirm-back')
-  })
-})
-
-describe('clean sentinel collapse', () => {
-  it('collapses A → B → dirty sentinel so the next Back reaches A', () => {
-    const history = ['A', 'B', 'B:sentinel']
-    let index = 2
-    expect(
-      getCleanSentinelTransition({
-        hasActiveSentinel: true,
-        isDirty: false,
-        isTargetSentinel: true,
-      }),
-    ).toBe('collapse-current')
-    index -= 1
-    expect(history[index]).toBe('B')
-    index -= 1
-    expect(history[index]).toBe('A')
-  })
-
-  it('collapses a stale sentinel after clean remount without affecting a direct load', () => {
-    const history = ['A', 'B', 'C:sentinel', 'D']
-    let index = 3
-    index -= 1
-    expect(history[index]).toBe('C:sentinel')
-    expect(shouldCollapseSentinelOnMount({ hasMarker: true, isDirty: false })).toBe(true)
-    index -= 1
-    expect(history[index]).toBe('B')
-    index -= 1
-    expect(history[index]).toBe('A')
-    expect(shouldCollapseSentinelOnMount({ hasMarker: false, isDirty: false })).toBe(false)
   })
 })

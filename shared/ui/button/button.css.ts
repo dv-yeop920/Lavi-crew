@@ -3,6 +3,9 @@ import { style, styleVariants } from '@vanilla-extract/css'
 import { semanticVars } from '@/shared/styles/theme.css'
 
 const base = style({
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   minHeight: '2.75rem',
   border: `1px solid ${semanticVars.color.lineNormal}`,
   borderRadius: '0.75rem',
@@ -10,6 +13,7 @@ const base = style({
   fontSize: semanticVars.font.size.labelMedium,
   fontWeight: semanticVars.font.weight.bold,
   lineHeight: semanticVars.font.lineHeight.normal,
+  textDecoration: 'none',
   cursor: 'pointer',
   selectors: {
     '&:disabled': {

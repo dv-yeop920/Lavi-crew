@@ -151,7 +151,9 @@ function inspectFile(file) {
         (importedPath &&
           (/^app\//.test(importedPath) ||
             /^shared\/supabase\//.test(importedPath) ||
-            /(^|\/)(actions|components|controllers|repositories|views)(\/|$)/.test(importedPath))))
+            /(^|\/)(actions|components|controllers|hooks|repositories|views)(\/|$)/.test(
+              importedPath,
+            ))))
     ) {
       addViolation(
         file,

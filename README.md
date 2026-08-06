@@ -47,7 +47,11 @@ npm run db:reset
 npm run test:e2e
 ```
 
-`test:e2e`는 로컬 Supabase API(54321)와 PostgreSQL(54322)만 허용합니다. 임의 비밀번호와 고정 UUID의 관리자·알바 fixture를 만든 뒤 production Next.js 서버에서 실제 이메일·비밀번호 세션, 역할 보호, 신청·취소·월 마감, 일정 등록·배정·수정, 월·주·일 조회와 Mailpit 이메일 확인 callback을 검증합니다. 실행마다 fixture가 남으므로 재실행 전 `npm run db:reset`이 필요합니다.
+`test:e2e`는 Node.js 22 이상과 로컬 Supabase API(54321)·PostgreSQL(54322)만 허용합니다. runner는 Next.js와 Supabase `site_url`이 공유하는 canonical origin을 `http://127.0.0.1:3000`으로 고정합니다. 임의 비밀번호와 고정 UUID의 관리자·알바 fixture를 만든 뒤 production Next.js 서버에서 실제 이메일·비밀번호 세션, 역할 보호, 신청·취소·월 마감, 일정 등록·배정·수정, 월·주·일 조회와 Mailpit 이메일 확인 callback을 검증합니다. 실행마다 fixture가 남으므로 재실행 전 `npm run db:reset`이 필요합니다.
+
+## 포트폴리오 화면 데이터
+
+`.env.local`에 `LAVI_ENABLE_DEMO_FIXTURES=true`를 설정하면 인원 배치, 인원 목록·상세, 관리자·알바 공지와 알바 홈에 정적 시연 데이터가 합성됩니다. 이 데이터는 Supabase Auth나 데이터베이스에 저장되지 않으며 실제 일정 저장, 회원 수정·삭제, 공지 변경·읽음 기록 대상이 아닙니다.
 
 ## 품질 검증
 

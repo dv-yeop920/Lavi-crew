@@ -2,6 +2,8 @@ import { randomUUID } from 'node:crypto'
 
 import { redirect } from 'next/navigation'
 
+import { isPortfolioDemoEnabled } from '@/shared/demo/portfolio-demo-config'
+
 import { getAdminMonthScheduleController } from '../controllers/schedule-controller'
 import { getCanonicalMonth } from '../lib/month-query'
 
@@ -19,5 +21,11 @@ export async function AdminSchedulePageView({ monthQuery }: { monthQuery?: strin
   const month = getCanonicalMonth(monthQuery)
   if (!month) redirect(`/admin/schedules?month=${getCurrentKoreanMonth()}`)
   const viewModel = await getAdminMonthScheduleController(month)
-  return <AdminScheduleView requestId={randomUUID()} viewModel={viewModel} />
+  return (
+    <AdminScheduleView
+      demoEnabled={isPortfolioDemoEnabled()}
+      requestId={randomUUID()}
+      viewModel={viewModel}
+    />
+  )
 }

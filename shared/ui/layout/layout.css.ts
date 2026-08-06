@@ -28,6 +28,14 @@ export const wrap = style({
   gap: '0.5rem',
 })
 
+export const wrapEnd = style({
+  display: 'flex',
+  minWidth: 0,
+  flexWrap: 'wrap',
+  gap: '0.5rem',
+  justifyContent: 'flex-end',
+})
+
 export const list = style({
   display: 'grid',
   gap: '0.75rem',

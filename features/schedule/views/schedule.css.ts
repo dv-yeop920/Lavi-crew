@@ -251,6 +251,13 @@ export const cardAction = style({
   fontWeight: semanticVars.font.weight.bold,
 })
 
+export const link = style({
+  color: semanticVars.color.primaryStrong,
+  fontSize: semanticVars.font.size.labelMedium,
+  fontWeight: semanticVars.font.weight.bold,
+  overflowWrap: 'anywhere',
+})
+
 export const scheduleInfoGrid = style({
   display: 'grid',
   gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',

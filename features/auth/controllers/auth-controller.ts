@@ -1,9 +1,8 @@
 import 'server-only'
 
-import { headers } from 'next/headers'
-
 import { getAuthenticatedProfile } from '@/shared/auth/session'
 
+import { getCanonicalAppOrigin } from '../domain/app-origin'
 import {
   mapPasswordUpdateFailure,
   mapSignupFailure,
@@ -21,11 +20,18 @@ import {
 } from '../repositories/auth-repository'
 import type { AuthResult, LoginInput, SignupInput } from '../schemas/auth-input'
 
-async function appOrigin() {
-  return (
-    (await headers()).get('origin') ?? process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
-  )
+function appOrigin() {
+  return getCanonicalAppOrigin(process.env.NEXT_PUBLIC_APP_URL)
 }
+
+async function safeSignOut() {
+  try {
+    await signOut()
+  } catch {
+    // Best-effort cleanup: never replace the safe authentication error with a raw provider error.
+  }
+}
+
 export async function loginController(
   input: LoginInput,
 ): Promise<AuthResult & { role?: 'admin' | 'worker' }> {
@@ -36,9 +42,19 @@ export async function loginController(
       message: '이메일 또는 비밀번호를 다시 확인해 주세요.',
       ok: false,
     }
-  const profile = await getAuthenticatedProfile()
+  let profile: Awaited<ReturnType<typeof getAuthenticatedProfile>>
+  try {
+    profile = await getAuthenticatedProfile()
+  } catch {
+    await safeSignOut()
+    return {
+      code: 'PROFILE_LOOKUP_FAILED',
+      message: '계정 정보를 확인하지 못했습니다. 잠시 후 다시 로그인해 주세요.',
+      ok: false,
+    }
+  }
   if (profile) return { message: '로그인했습니다.', ok: true, role: profile.role }
-  await signOut()
+  await safeSignOut()
   return {
     code: 'ACCOUNT_UNAVAILABLE',
     message: '이메일 확인 또는 계정 활성 상태를 관리자에게 확인해 주세요.',
@@ -59,7 +75,7 @@ export async function signupController(input: SignupInput): Promise<AuthResult> 
 
   const { data, error } = await signUpWorker(
     input,
-    `${await appOrigin()}/auth/callback?next=/verify-email`,
+    `${appOrigin()}/auth/callback?next=/verify-email`,
   )
   if (error) {
     if (error.message.includes('Database error saving new user')) {
@@ -77,7 +93,7 @@ export async function signupController(input: SignupInput): Promise<AuthResult> 
 export async function passwordResetController(email: string): Promise<AuthResult> {
   const { error } = await sendPasswordReset(
     email,
-    `${await appOrigin()}/auth/callback?next=/reset-password`,
+    `${appOrigin()}/auth/callback?next=/reset-password`,
   )
   return error
     ? {
@@ -90,7 +106,7 @@ export async function passwordResetController(email: string): Promise<AuthResult
 export async function resendConfirmationController(email: string): Promise<AuthResult> {
   const { error } = await resendSignupConfirmation(
     email,
-    `${await appOrigin()}/auth/callback?next=/verify-email`,
+    `${appOrigin()}/auth/callback?next=/verify-email`,
   )
   return error
     ? {
@@ -105,7 +121,14 @@ export async function logoutController() {
 }
 export async function updatePasswordController(password: string): Promise<AuthResult> {
   const { error } = await updatePassword(password)
-  return error
-    ? mapPasswordUpdateFailure(error)
+  if (error) return mapPasswordUpdateFailure(error)
+  const { error: signOutError } = await signOut()
+  return signOutError
+    ? {
+        code: 'SIGN_OUT_FAILED',
+        message:
+          '비밀번호는 변경했지만 세션을 종료하지 못했습니다. 로그아웃 후 다시 로그인해 주세요.',
+        ok: false,
+      }
     : { message: '비밀번호를 변경했습니다. 새 비밀번호로 로그인해 주세요.', ok: true }
 }

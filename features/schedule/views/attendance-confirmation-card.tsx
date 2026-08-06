@@ -8,6 +8,7 @@ import { toKoreanDateTimeInput, toKoreanIso } from '@/features/schedule/lib/dail
 import type { DailyScheduleViewModel } from '@/features/schedule/schemas/daily-schedule-view-model'
 import { POSITION_CATALOG } from '@/shared/domain/positions'
 import { getFirstFieldError } from '@/shared/forms/form-result'
+import { useActionSuccessEffect } from '@/shared/forms/use-action-success-effect'
 import { Button } from '@/shared/ui/button/button'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
 
@@ -53,25 +54,24 @@ export function AttendanceConfirmationCard({
   const [requestId, setRequestId] = useState(initialRequestId)
   const [state, formAction, isPending] = useActionState(confirmAttendanceAction, null)
   const isConfirmed = Boolean(attendance?.confirmedAt)
-  const isDirty =
+  const hasAttendanceChange =
     status !== initialStatus ||
     (status === 'present' &&
-      (actualStartedAt !== initialStartedAt || actualEndedAt !== initialEndedAt)) ||
-    correctionReason.trim().length > 0
+      (actualStartedAt !== initialStartedAt || actualEndedAt !== initialEndedAt))
+  const isDirty = hasAttendanceChange || correctionReason.trim().length > 0
 
   useEffect(() => {
     onDirtyChange(assignment.id, isDirty && !state?.ok)
     return () => onDirtyChange(assignment.id, false)
   }, [assignment.id, isDirty, onDirtyChange, state?.ok])
 
-  useEffect(() => {
-    if (!state?.ok) return
+  useActionSuccessEffect(state, () => {
     queueMicrotask(() => {
       setCorrectionReason('')
       setRequestId(crypto.randomUUID())
       router.refresh()
     })
-  }, [router, state?.ok])
+  })
 
   function updateDraft(update: () => void) {
     update()
@@ -230,7 +230,7 @@ export function AttendanceConfirmationCard({
           <Button
             disabled={
               isPending ||
-              !isDirty ||
+              !hasAttendanceChange ||
               status === 'pending' ||
               (isConfirmed && correctionReason.trim().length < 2)
             }

@@ -1,6 +1,11 @@
 import 'server-only'
 
 import { requireRole } from '@/shared/auth/session'
+import { isPortfolioDemoEnabled } from '@/shared/demo/portfolio-demo-config'
+import {
+  containsPortfolioDemoWorkerId,
+  getPortfolioDemoWorkers,
+} from '@/shared/demo/portfolio-fixtures'
 import { POSITION_CATALOG, type PositionId } from '@/shared/domain/positions'
 
 import { getDailyScheduleAssignments, getDailyWorkerCandidates } from '../domain/daily-schedule'
@@ -30,8 +35,11 @@ const errorMessages = {
   ATTENDANCE_ALREADY_CONFIRMED: '출석이 확정된 일정은 구조를 변경하거나 취소할 수 없습니다.',
   ATTENDANCE_NOT_CONFIRMABLE: '이 출석은 확정할 수 없습니다.',
   ATTENDANCE_NOT_FOUND: '출석 기록을 찾지 못했습니다.',
+  ATTENDANCE_UNCHANGED: '출석 상태나 실제 근무 시간을 변경해 주세요.',
   CORRECTION_REASON_REQUIRED: '확정된 출석을 정정하려면 사유가 필요합니다.',
   DUPLICATE_WORKER: '한 일정에 같은 인원을 중복 배정할 수 없습니다.',
+  DEMO_WORKER_READ_ONLY:
+    '데모 인원은 화면 시연용입니다. 실제 일정을 저장하려면 등록된 회원만 배정해 주세요.',
   EXTRA_SLOT_MUST_BE_TRAINING: '추가 슬롯은 교육 인원만 사용할 수 있습니다.',
   FORBIDDEN: '이 작업을 수행할 권한이 없습니다.',
   IDEMPOTENCY_KEY_REUSED: '이미 사용한 요청입니다. 화면을 새로고침해 주세요.',
@@ -46,6 +54,7 @@ const errorMessages = {
   STALE_ATTENDANCE: '출석 정보가 변경되었습니다. 최신 상태를 다시 불러와 주세요.',
   STALE_SHIFT: '일정 정보가 변경되었습니다. 최신 상태를 다시 불러와 주세요.',
   WORKER_INACTIVE_OR_WAGE_MISSING: '비활성 인원이거나 시급이 설정되지 않은 인원이 있습니다.',
+  WORKER_NOT_APPLIED: '선택한 날짜에 신청하지 않은 신규 배정 인원이 있습니다.',
 } as const
 
 function mapMutationError(error: { message: string } | null) {
@@ -79,7 +88,7 @@ export async function getAdminDailyScheduleController(
   )
   const currentWorkerIds = new Set(assignments.map((assignment) => assignment.worker_id))
   const candidateProfiles = getDailyWorkerCandidates(records.profiles, currentWorkerIds)
-  return {
+  const viewModel: DailyScheduleViewModel = {
     assignments: assignments.map((assignment) => ({
       attendance: assignment.attendance_records
         ? {
@@ -125,6 +134,7 @@ export async function getAdminDailyScheduleController(
           .map((application) => application.work_date),
         id: profile.id,
         isActive: profile.is_active,
+        isDemo: false,
         isSelectable: profile.isSelectable,
         name: profile.name,
         positionIds: workerPositions,
@@ -135,12 +145,34 @@ export async function getAdminDailyScheduleController(
       }
     }),
   }
+  if (viewModel.state === 'ready' && isPortfolioDemoEnabled()) {
+    viewModel.workers.push(
+      ...getPortfolioDemoWorkers(date.slice(0, 7)).map((worker) => ({
+        appliedDates: worker.appliedDates,
+        id: worker.id,
+        isActive: true,
+        isDemo: true,
+        isSelectable: true,
+        name: worker.name,
+        positionIds: worker.positionIds,
+        summary: worker.summary,
+      })),
+    )
+  }
+  return viewModel
 }
 
 export async function updateDailyScheduleController(
   input: UpdateDailyScheduleInput,
 ): Promise<DailyScheduleActionResult> {
   await requireRole('admin')
+  if (containsPortfolioDemoWorkerId(input.assignments.map((assignment) => assignment.workerId))) {
+    return {
+      code: 'DEMO_WORKER_READ_ONLY',
+      message: errorMessages.DEMO_WORKER_READ_ONLY,
+      ok: false,
+    }
+  }
   const errors = validateScheduleStructure({
     assignments: input.assignments,
     ceremonyCount: input.ceremonyCount,
