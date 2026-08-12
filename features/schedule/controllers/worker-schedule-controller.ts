@@ -2,12 +2,15 @@ import 'server-only'
 
 import { requireRole } from '@/shared/auth/session'
 
+import { buildScheduleHistoryRows, getMonthDateRange } from '../domain/schedule-history'
 import {
   getWorkerScheduleRange,
   isExactDate,
   type WorkerScheduleMode,
 } from '../domain/worker-read-models'
+import { getScheduleHistoryForMonthRecords } from '../repositories/schedule-history-repository'
 import { getWorkerScheduleRecords } from '../repositories/worker-schedule-repository'
+import type { ScheduleHistoryRow } from '../schemas/schedule-history-view-model'
 import type { WorkerScheduleViewModel } from '../schemas/worker-schedule-view-model'
 
 function addDay(value: string) {
@@ -55,4 +58,14 @@ export async function getWorkerScheduleController(input: {
     state: 'ready',
     workerId: profile.id,
   }
+}
+
+export async function getWorkerFullScheduleController(
+  month: string,
+): Promise<ScheduleHistoryRow[]> {
+  await requireRole('worker')
+  const { monthEndExclusive, monthStart } = getMonthDateRange(month)
+  const records = await getScheduleHistoryForMonthRecords(monthStart, monthEndExclusive)
+  const workerNamesById = new Map(records.profiles.map((profile) => [profile.id, profile.name]))
+  return buildScheduleHistoryRows(records.shifts, workerNamesById)
 }
