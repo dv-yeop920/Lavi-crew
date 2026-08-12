@@ -2,20 +2,12 @@ import { randomUUID } from 'node:crypto'
 
 import { redirect } from 'next/navigation'
 
-import { isPortfolioDemoEnabled } from '@/shared/demo/portfolio-demo-config'
-
 import { getAdminMonthScheduleController } from '../controllers/schedule-controller'
 import { getCanonicalMonth } from '../lib/month-query'
 
 import { AdminScheduleRegistrationView } from './admin-schedule-registration-view'
 
-export async function AdminScheduleRegistrationPageView({
-  demoDate,
-  monthQuery,
-}: {
-  demoDate?: string
-  monthQuery?: string
-}) {
+export async function AdminScheduleRegistrationPageView({ monthQuery }: { monthQuery?: string }) {
   const month = getCanonicalMonth(monthQuery)
   if (!month) {
     const currentMonth = new Intl.DateTimeFormat('en-CA', {
@@ -26,12 +18,5 @@ export async function AdminScheduleRegistrationPageView({
     redirect(`/admin/schedules/new?month=${currentMonth}`)
   }
   const viewModel = await getAdminMonthScheduleController(month)
-  return (
-    <AdminScheduleRegistrationView
-      demoEnabled={isPortfolioDemoEnabled()}
-      editDemoDate={demoDate}
-      requestId={randomUUID()}
-      viewModel={viewModel}
-    />
-  )
+  return <AdminScheduleRegistrationView requestId={randomUUID()} viewModel={viewModel} />
 }

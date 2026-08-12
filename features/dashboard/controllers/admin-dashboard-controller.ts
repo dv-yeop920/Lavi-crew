@@ -16,36 +16,41 @@ export async function getAdminDashboardController(
   await requireRole('admin')
   const range = getKstDashboardDateRange(asOf)
   const records = await getAdminDashboardRecords(range)
-  const effectiveStatus = records.period
-    ? getEffectiveApplicationPeriodStatus(
-        records.period.status,
-        records.period.application_deadline,
-        asOf,
-      )
-    : null
-  return {
-    applicationPeriod:
-      records.period && effectiveStatus
-        ? {
-            deadline: records.period.application_deadline,
-            effectiveStatus,
-            id: records.period.id,
-            requiresClose:
-              records.period.status === 'open' && effectiveStatus === 'effectively_closed',
-            status: records.period.status,
-            updatedAt: records.period.updated_at,
-            yearMonth: records.period.year_month,
-          }
-        : null,
-    asOfDate: range.today,
-    currentMonth: {
+  const registeredDates = records.monthSchedules.map((schedule) => schedule.work_date)
+
+  function buildMonth(monthStart: string, monthEndExclusive: string) {
+    const record = records.periods.find((period) => period.year_month === monthStart) ?? null
+    const effectiveStatus = record
+      ? getEffectiveApplicationPeriodStatus(record.status, record.application_deadline, asOf)
+      : null
+    return {
+      applicationPeriod:
+        record && effectiveStatus
+          ? {
+              deadline: record.application_deadline,
+              effectiveStatus,
+              id: record.id,
+              requiresClose: record.status === 'open' && effectiveStatus === 'effectively_closed',
+              status: record.status,
+              updatedAt: record.updated_at,
+              yearMonth: record.year_month,
+            }
+          : null,
       unregisteredWeekendCount: countUnregisteredWeekendDates(
-        range.monthStart,
-        range.monthEndExclusive,
-        records.monthSchedules.map((schedule) => schedule.work_date),
+        monthStart,
+        monthEndExclusive,
+        registeredDates,
       ),
-      yearMonth: range.monthStart.slice(0, 7),
-    },
+      yearMonth: monthStart.slice(0, 7),
+    }
+  }
+
+  return {
+    asOfDate: range.today,
+    months: [
+      buildMonth(range.monthStart, range.monthEndExclusive),
+      buildMonth(range.nextMonthStart, range.nextMonthEndExclusive),
+    ],
     currentWeek: {
       endExclusive: range.weekEndExclusive,
       schedules: records.weekSchedules.map((schedule) => ({

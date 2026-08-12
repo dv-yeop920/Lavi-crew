@@ -8,6 +8,7 @@ import {
 } from '../adapters/schedule-registration-draft-storage'
 import {
   getScheduleRegistrationDraftForMonth,
+  mergeRestoredScheduleRegistrationDrafts,
   removeScheduleRegistrationDraftMonth,
   type ScheduleRegistrationDraftEntry,
   upsertScheduleRegistrationDraftMonth,
@@ -41,12 +42,7 @@ export function useScheduleRegistrationDraft<Draft extends ScheduleDraftLike>({
       )
       setLastSavedAt(record?.savedAt ?? null)
       if (!record) return
-      setDrafts((current) =>
-        current.map((draft) => {
-          const stored = record.drafts.find((entry) => entry.date === draft.date)
-          return stored ? { ...draft, ...stored } : draft
-        }),
-      )
+      setDrafts((current) => mergeRestoredScheduleRegistrationDrafts(current, record.drafts))
     })
     return () => {
       isCancelled = true

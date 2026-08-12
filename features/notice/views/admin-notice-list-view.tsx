@@ -245,35 +245,28 @@ function AdminNoticeCard({
           <strong>{notice.title}</strong>
           <span className={layout.wrap}>
             {notice.isPinned ? <StatusBadge tone="warning">고정</StatusBadge> : null}
-            {notice.isDemo ? <StatusBadge tone="accent">데모</StatusBadge> : null}
           </span>
         </div>
         <span className={styles.meta}>{formatNoticeDate(notice.createdAt)}</span>
         <p className={styles.noticeContent}>{notice.content}</p>
         <div className={styles.responsiveRow}>
-          {notice.isDemo ? (
-            <StatusBadge tone="neutral">화면 시연용 · 읽기 전용</StatusBadge>
-          ) : (
-            <>
-              <StatusBadge tone="neutral">
-                읽음 {notice.readCount} / {notice.activeWorkerCount}명
-              </StatusBadge>
-              <div className={layout.wrap}>
-                <Button onClick={() => setIsEditing(true)} type="button" variant="secondary">
-                  수정
-                </Button>
-                <DeleteNoticeDialog
-                  initialRequestId={requestIds.delete}
-                  notice={notice}
-                  onDeleted={onFeedback}
-                  onRefresh={refreshNotice}
-                />
-              </div>
-            </>
-          )}
+          <StatusBadge tone="neutral">
+            읽음 {notice.readCount} / {notice.activeWorkerCount}명
+          </StatusBadge>
+          <div className={layout.wrap}>
+            <Button onClick={() => setIsEditing(true)} type="button" variant="secondary">
+              수정
+            </Button>
+            <DeleteNoticeDialog
+              initialRequestId={requestIds.delete}
+              notice={notice}
+              onDeleted={onFeedback}
+              onRefresh={refreshNotice}
+            />
+          </div>
         </div>
       </ContentCard>
-      {isEditing && !notice.isDemo ? (
+      {isEditing ? (
         <div className={styles.editor}>
           <NoticeEditor
             initialRequestId={requestIds.update}

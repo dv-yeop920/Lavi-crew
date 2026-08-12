@@ -1,7 +1,7 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
-import { useActionState, useCallback, useEffect, useState } from 'react'
+import { useActionState, useState } from 'react'
 
 import {
   cancelDailyScheduleAction,
@@ -21,8 +21,6 @@ import {
   type PositionAssignment,
   ScheduleAssignmentTable,
 } from '../components/schedule-assignment-table'
-
-import { AttendanceConfirmationCard } from './attendance-confirmation-card'
 
 import * as styles from './schedule.css'
 import * as layout from '@/shared/ui/layout/layout.css'
@@ -63,7 +61,7 @@ export function AdminDailyScheduleView({
   requestIds,
   viewModel,
 }: {
-  requestIds: { attendance: Record<string, string>; cancel: string; update: string }
+  requestIds: { cancel: string; update: string }
   viewModel: ReadyDailySchedule
 }) {
   const router = useRouter()
@@ -74,7 +72,6 @@ export function AdminDailyScheduleView({
   const [cancellationReason, setCancellationReason] = useState('')
   const [updateRequestId, setUpdateRequestId] = useState(requestIds.update)
   const [cancelRequestId, setCancelRequestId] = useState(requestIds.cancel)
-  const [attendanceDirtyIds, setAttendanceDirtyIds] = useState(() => new Set<string>())
   const [updateState, updateAction, isUpdating] = useActionState(updateDailyScheduleAction, null)
   const [cancelState, cancelAction, isCancelPending] = useActionState(
     cancelDailyScheduleAction,
@@ -82,26 +79,11 @@ export function AdminDailyScheduleView({
   )
   const structureDirty = isEditing && !isSameDraft(draft, initialDraft)
   const cancellationDirty = isCancelling && cancellationReason.trim().length > 0
-  const isDirty =
-    (structureDirty && !updateState?.ok) ||
-    (cancellationDirty && !cancelState?.ok) ||
-    attendanceDirtyIds.size > 0
+  const isDirty = (structureDirty && !updateState?.ok) || (cancellationDirty && !cancelState?.ok)
   useDirtyNavigationGuard({
-    confirmationMessage: '저장하지 않은 일정 또는 출석 변경이 있습니다. 이동할까요?',
+    confirmationMessage: '저장하지 않은 일정 변경이 있습니다. 이동할까요?',
     isDirty,
   })
-
-  const handleAttendanceDirtyChange = useCallback((assignmentId: string, nextDirty: boolean) => {
-    setAttendanceDirtyIds((current) => {
-      const next = new Set(current)
-      if (nextDirty) next.add(assignmentId)
-      else next.delete(assignmentId)
-      if (next.size === current.size && [...next].every((currentId) => current.has(currentId))) {
-        return current
-      }
-      return next
-    })
-  }, [])
 
   useActionSuccessEffect(updateState, () => {
     queueMicrotask(() => {
@@ -209,31 +191,19 @@ export function AdminDailyScheduleView({
     requestId: cancelRequestId,
     shiftId: viewModel.shift.id,
   }
-  const activeAssignments = viewModel.assignments.filter(
-    (assignment) => assignment.status === 'confirmed',
-  )
   const scheduleCancelled = viewModel.shift.status === 'cancelled'
   const workers = viewModel.workers.map((worker) => ({
     appliedDates: worker.appliedDates,
     id: worker.id,
     isActive: worker.isActive,
-    isDemo: worker.isDemo,
     isSelectable: worker.isSelectable,
     name: worker.name,
     positionIds: worker.positionIds,
     summary: worker.summary,
   }))
-  const demoWorkerIds = new Set(
-    workers.filter((worker) => worker.isDemo).map((worker) => worker.id),
-  )
-  const hasDemoAssignment = draft.positions.some((position) =>
-    position.assignedWorkerIds.some((workerId) => demoWorkerIds.has(workerId)),
-  )
   const structureReason = scheduleCancelled
     ? '취소된 일정은 구조를 변경할 수 없습니다.'
-    : viewModel.shift.status !== 'published'
-      ? '게시된 일정만 구조를 변경하거나 취소할 수 있습니다.'
-      : '출석이 확정된 배정이 있어 일정 구조 수정과 취소가 잠겼습니다.'
+    : '게시된 일정만 구조를 변경하거나 취소할 수 있습니다.'
   const ceremonyCountError = getFirstFieldError(updateState?.fieldErrors, 'ceremonyCount')
   const startTimeError = getFirstFieldError(updateState?.fieldErrors, 'startTime')
   const endTimeError = getFirstFieldError(updateState?.fieldErrors, 'endTime')
@@ -247,7 +217,7 @@ export function AdminDailyScheduleView({
         backLabel="일정으로 돌아가기"
         eyebrow="일별 일정 관리"
         title={formatDate(viewModel.date)}
-        description="일정 구조와 배정을 관리하고 같은 화면에서 출석 또는 결근을 확정합니다."
+        description="일정 구조와 배정을 관리합니다."
       />
 
       <ContentCard>
@@ -367,21 +337,13 @@ export function AdminDailyScheduleView({
               {assignmentsError}
             </p>
           ) : null}
-          {hasDemoAssignment ? (
-            <p className={styles.fieldError} role="alert">
-              데모 인원은 화면 시연용이라 실제 일정에 저장할 수 없습니다. 등록된 회원으로 교체해
-              주세요.
-            </p>
-          ) : null}
           {updateState ? (
             <div
               className={updateState.ok ? styles.saveMessage : styles.errorMessage}
               role={updateState.ok ? 'status' : 'alert'}
             >
               <p>{updateState.message}</p>
-              {!updateState.ok &&
-              (updateState.code === 'STALE_SHIFT' ||
-                updateState.code === 'ATTENDANCE_ALREADY_CONFIRMED') ? (
+              {!updateState.ok && updateState.code === 'STALE_SHIFT' ? (
                 <Button variant="secondary" onClick={() => router.refresh()}>
                   최신 상태 다시 불러오기
                 </Button>
@@ -391,7 +353,7 @@ export function AdminDailyScheduleView({
 
           {isEditing ? (
             <div className={layout.wrap}>
-              <Button disabled={!structureDirty || hasDemoAssignment || isUpdating} type="submit">
+              <Button disabled={!structureDirty || isUpdating} type="submit">
                 {isUpdating ? '저장 중…' : '수정 저장'}
               </Button>
               <Button
@@ -454,9 +416,7 @@ export function AdminDailyScheduleView({
                 role={cancelState.ok ? 'status' : 'alert'}
               >
                 <p>{cancelState.message}</p>
-                {!cancelState.ok &&
-                (cancelState.code === 'STALE_SHIFT' ||
-                  cancelState.code === 'ATTENDANCE_ALREADY_CONFIRMED') ? (
+                {!cancelState.ok && cancelState.code === 'STALE_SHIFT' ? (
                   <Button variant="secondary" onClick={() => router.refresh()}>
                     최신 상태 다시 불러오기
                   </Button>
@@ -484,41 +444,6 @@ export function AdminDailyScheduleView({
           </form>
         </ContentCard>
       ) : null}
-
-      <section className={layout.stack} aria-labelledby="attendance-title">
-        <div className={layout.row}>
-          <h2 id="attendance-title">배정자 출석</h2>
-          <StatusBadge tone="neutral">{activeAssignments.length}명</StatusBadge>
-        </div>
-        {activeAssignments.length > 0 ? (
-          <ul className={styles.attendanceList}>
-            {activeAssignments.map((assignment) => (
-              <AttendanceConfirmationCard
-                assignment={assignment}
-                date={viewModel.date}
-                initialRequestId={requestIds.attendance[assignment.id]}
-                isScheduleActive={viewModel.shift.status === 'published'}
-                key={assignment.id}
-                shiftEndTime={viewModel.shift.endTime}
-                shiftStartTime={viewModel.shift.startTime}
-                workerName={
-                  viewModel.workers.find((worker) => worker.id === assignment.workerId)?.name ??
-                  '알 수 없는 구성원'
-                }
-                onDirtyChange={handleAttendanceDirtyChange}
-              />
-            ))}
-          </ul>
-        ) : (
-          <ContentCard>
-            <p className={styles.emptyState}>
-              {viewModel.shift.status === 'cancelled'
-                ? '취소된 일정은 출석을 관리할 수 없습니다.'
-                : '출석 관리 대상 인원이 없습니다.'}
-            </p>
-          </ContentCard>
-        )}
-      </section>
     </div>
   )
 }

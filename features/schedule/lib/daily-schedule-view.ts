@@ -36,27 +36,3 @@ export function createDailyPositionDrafts(assignments: ReadyDailySchedule['assig
     }
   })
 }
-
-export function toKoreanDateTimeInput(value: string | null) {
-  if (!value) return ''
-  const parts = new Intl.DateTimeFormat('en-CA', {
-    day: '2-digit',
-    hour: '2-digit',
-    hour12: false,
-    minute: '2-digit',
-    month: '2-digit',
-    timeZone: 'Asia/Seoul',
-    year: 'numeric',
-  })
-    .formatToParts(new Date(value))
-    .reduce<Record<string, string>>((result, part) => {
-      result[part.type] = part.value
-      return result
-    }, {})
-  return `${parts.year}-${parts.month}-${parts.day}T${parts.hour}:${parts.minute}`
-}
-
-export function toKoreanIso(value: string) {
-  const date = new Date(`${value}:00+09:00`)
-  return Number.isNaN(date.valueOf()) ? null : date.toISOString()
-}

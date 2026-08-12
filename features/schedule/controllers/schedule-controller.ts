@@ -1,11 +1,6 @@
 import 'server-only'
 
 import { requireRole } from '@/shared/auth/session'
-import { isPortfolioDemoEnabled } from '@/shared/demo/portfolio-demo-config'
-import {
-  containsPortfolioDemoWorkerId,
-  getPortfolioDemoWorkers,
-} from '@/shared/demo/portfolio-fixtures'
 import { POSITION_CATALOG, type PositionId } from '@/shared/domain/positions'
 
 import {
@@ -79,25 +74,11 @@ export async function getAdminMonthScheduleController(
         )
         .map((application) => application.work_date),
       id: profile.id,
-      isDemo: false,
       name: profile.name,
       positionIds,
-      summary: formatScheduleWorkerSummary(positionIds, workerAssignments),
+      summary: formatScheduleWorkerSummary(workerAssignments),
     }
   })
-
-  if (isPortfolioDemoEnabled()) {
-    workers.push(
-      ...getPortfolioDemoWorkers(month).map((worker) => ({
-        appliedDates: worker.appliedDates,
-        id: worker.id,
-        isDemo: true,
-        name: worker.name,
-        positionIds: worker.positionIds,
-        summary: worker.summary,
-      })),
-    )
-  }
 
   return {
     hasScheduleHistory: records.shifts.length > 0,
@@ -234,8 +215,6 @@ const domainErrorMessages = {
 const safeErrorMessages = {
   APPLICATION_PERIOD_OPEN: '신청 기간을 마감한 뒤 일정을 게시해 주세요.',
   DATE_ALREADY_REGISTERED: '이미 등록된 날짜가 있습니다. 최신 일정을 다시 확인해 주세요.',
-  DEMO_WORKER_READ_ONLY:
-    '데모 인원은 화면 시연용입니다. 실제 일정을 저장하려면 등록된 회원만 배정해 주세요.',
   FORBIDDEN: '일정을 등록할 권한이 없습니다.',
   IDEMPOTENCY_KEY_REUSED: '이미 사용한 저장 요청입니다. 페이지를 새로고침해 주세요.',
   INVALID_INPUT: '예식 개수와 근무 시간을 확인해 주세요.',
@@ -254,19 +233,6 @@ export async function saveMonthlyScheduleRegistrationController(
   input: MonthlyRegistrationInput,
 ): Promise<ScheduleActionResult> {
   await requireRole('admin')
-  if (
-    containsPortfolioDemoWorkerId(
-      input.schedules.flatMap((schedule) =>
-        schedule.assignments.map((assignment) => assignment.workerId),
-      ),
-    )
-  ) {
-    return {
-      code: 'DEMO_WORKER_READ_ONLY',
-      message: safeErrorMessages.DEMO_WORKER_READ_ONLY,
-      ok: false,
-    }
-  }
   const ruleErrors = validateMonthlyRegistration(input.month, input.schedules)
   if (ruleErrors.length > 0) {
     const firstError = ruleErrors[0]

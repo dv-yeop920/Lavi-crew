@@ -6,10 +6,6 @@ import { useActionState, useEffect, useRef, useState } from 'react'
 
 import { saveMonthlyScheduleRegistrationAction } from '@/features/schedule/actions/schedule-actions'
 import { createRegistrationSummary } from '@/features/schedule/domain/monthly-registration'
-import {
-  type ScheduleDraft,
-  useAdminScheduleDemoOverlay,
-} from '@/features/schedule/hooks/use-admin-schedule-demo-overlay'
 import { useDirtyNavigationGuard } from '@/features/schedule/hooks/use-dirty-navigation-guard'
 import { useScheduleRegistrationDraft } from '@/features/schedule/hooks/use-schedule-registration-draft'
 import {
@@ -40,10 +36,17 @@ import * as styles from './schedule.css'
 import * as layout from '@/shared/ui/layout/layout.css'
 
 type AdminScheduleRegistrationViewProps = {
-  demoEnabled: boolean
-  editDemoDate?: string
   requestId: string
   viewModel: MonthRegistrationViewModel
+}
+
+type ScheduleDraft = {
+  ceremonyCount: number
+  date: string
+  endTime: string
+  isEnabled: boolean
+  positions: PositionAssignment[]
+  startTime: string
 }
 
 function createDraft(date: string): ScheduleDraft {
@@ -80,8 +83,6 @@ function formatSavedAt(savedAt: string) {
 }
 
 export function AdminScheduleRegistrationView({
-  demoEnabled,
-  editDemoDate,
   requestId,
   viewModel,
 }: AdminScheduleRegistrationViewProps) {
@@ -89,16 +90,6 @@ export function AdminScheduleRegistrationView({
   const { month, period, registeredSchedules, unregisteredWeekendDates, workers } = viewModel
   const storedDeadline = getStoredApplicationDeadline(period.applicationDeadline)
   const [drafts, setDrafts] = useState(() => unregisteredWeekendDates.map(createDraft))
-  const { demoSaveMessage, demoSchedules, editableWeekendDates, saveDemoOverlay } =
-    useAdminScheduleDemoOverlay({
-      demoEnabled,
-      editDemoDate,
-      month,
-      registeredScheduleDates: registeredSchedules.map((schedule) => schedule.date),
-      setDrafts,
-      unregisteredWeekendDates,
-      workers,
-    })
   const { clearDraft, lastSavedAt, saveMonthDrafts } = useScheduleRegistrationDraft({
     month,
     setDrafts,
@@ -110,14 +101,6 @@ export function AdminScheduleRegistrationView({
   const reviewButtonRef = useRef<HTMLButtonElement>(null)
   const monthLabel = formatMonth(month)
   const enabledDrafts = drafts.filter((draft) => draft.isEnabled)
-  const demoWorkerIds = new Set(
-    workers.filter((worker) => worker.isDemo).map((worker) => worker.id),
-  )
-  const hasDemoAssignment = enabledDrafts.some((draft) =>
-    draft.positions.some((position) =>
-      position.assignedWorkerIds.some((workerId) => demoWorkerIds.has(workerId)),
-    ),
-  )
   const isDirty = enabledDrafts.length > 0
   const canPublish = canPublishMonthlySchedule(period)
   const { navigate } = useDirtyNavigationGuard({
@@ -139,12 +122,12 @@ export function AdminScheduleRegistrationView({
     let isCancelled = false
     queueMicrotask(() => {
       if (isCancelled) return
-      setDrafts((current) => reconcileDateDrafts(current, editableWeekendDates, createDraft))
+      setDrafts((current) => reconcileDateDrafts(current, unregisteredWeekendDates, createDraft))
     })
     return () => {
       isCancelled = true
     }
-  }, [editableWeekendDates])
+  }, [unregisteredWeekendDates])
 
   function updateDraft(date: string, changes: Partial<ScheduleDraft>) {
     setDrafts((current) =>
@@ -249,21 +232,6 @@ export function AdminScheduleRegistrationView({
     showToast(result.message, result.ok ? 'positive' : 'negative')
   }
 
-  function handleSaveDemoOverlay() {
-    const result = saveDemoOverlay(payload.schedules)
-    if (!result.ok) {
-      setIsConfirming(false)
-      return
-    }
-    clearDraft()
-    navigate(`/admin/schedules?month=${month}`, true)
-  }
-
-  // 데모 인원이 포함된 일정은 Supabase 저장 대신 브라우저 데모 오버레이에 저장한다.
-  const confirmSubmitProps = hasDemoAssignment
-    ? { onClick: handleSaveDemoOverlay, type: 'button' as const }
-    : { type: 'submit' as const }
-
   return (
     <div className={layout.page}>
       <ToastViewport onDismiss={dismissToast} toasts={toasts} />
@@ -293,198 +261,172 @@ export function AdminScheduleRegistrationView({
       <form action={formAction} className={layout.stack} aria-busy={isPending} noValidate>
         <input name="payload" type="hidden" value={JSON.stringify(payload)} />
 
-        {registeredSchedules.length + demoSchedules.length > 0 ? (
-          <section className={layout.stack} aria-labelledby="registered-month-schedules">
-            <h2 id="registered-month-schedules">등록된 일정</h2>
-            <ul className={layout.list}>
-              {registeredSchedules.map((schedule) => (
-                <li key={schedule.date}>
-                  <RegisteredScheduleCard {...schedule} dateLabel={formatDate(schedule.date)} />
-                </li>
-              ))}
-              {demoSchedules
-                .filter((schedule) => schedule.date !== editDemoDate)
-                .map((schedule) => (
-                  <li key={schedule.date}>
-                    <RegisteredScheduleCard
-                      assignedCount={schedule.assignments.length}
-                      ceremonyCount={schedule.ceremonyCount}
-                      date={schedule.date}
-                      dateLabel={formatDate(schedule.date)}
-                      isDemo
-                      time={`${schedule.startTime}–${schedule.endTime}`}
-                    />
-                  </li>
-                ))}
-            </ul>
-          </section>
-        ) : null}
-
         <section className={layout.stack} aria-labelledby="unregistered-schedule-dates">
           <div className={layout.row}>
             <h2 id="unregistered-schedule-dates">미등록 날짜</h2>
-            <StatusBadge tone="neutral">{editableWeekendDates.length}일</StatusBadge>
+            <StatusBadge tone="neutral">{unregisteredWeekendDates.length}일</StatusBadge>
           </div>
           <p className={styles.meta}>
             임시 저장 버튼은 날짜마다 있지만, 누르면 현재 작성 중인 모든 날짜가 함께 저장됩니다.
             {lastSavedAt ? ` 마지막 임시 저장: ${formatSavedAt(lastSavedAt)}` : ''}
           </p>
-          {drafts.length ? (
-            drafts.map((draft) => {
-              const schedulePath = `dates.${draft.date}`
-              const ceremonyError = getFirstFieldError(fieldErrors, `${schedulePath}.ceremonyCount`)
-              const startTimeError = getFirstFieldError(fieldErrors, `${schedulePath}.startTime`)
-              const endTimeError = getFirstFieldError(fieldErrors, `${schedulePath}.endTime`)
-              const dateError = getFirstFieldError(fieldErrors, `${schedulePath}.workDate`)
-              return (
-                <ContentCard key={draft.date}>
-                  <section aria-labelledby={`schedule-${draft.date}`}>
-                    <div className={layout.row}>
-                      <h3 id={`schedule-${draft.date}`}>{formatDate(draft.date)}</h3>
-                      {draft.isEnabled ? (
-                        <StatusBadge tone="warning">작성 중</StatusBadge>
-                      ) : (
-                        <Button
-                          variant="secondary"
-                          onClick={() => updateDraft(draft.date, { isEnabled: true })}
-                        >
-                          일정 설정
-                        </Button>
-                      )}
-                    </div>
-                    {dateError ? (
-                      <p className={styles.fieldError} role="alert">
-                        {dateError}
-                      </p>
-                    ) : null}
-                    {draft.isEnabled ? (
-                      <>
-                        <div className={styles.scheduleInfoGrid}>
-                          <label className={styles.fieldLabel}>
-                            <span>예식 개수</span>
-                            <input
-                              required
-                              aria-describedby={
-                                ceremonyError ? `${draft.date}-ceremony-error` : undefined
-                              }
-                              aria-invalid={ceremonyError ? true : undefined}
-                              className={styles.compactInput}
-                              min="1"
-                              type="number"
-                              value={draft.ceremonyCount}
-                              onChange={(event) =>
-                                updateDraft(draft.date, {
-                                  ceremonyCount: Number(event.target.value),
-                                })
-                              }
-                            />
-                            {ceremonyError ? (
-                              <span
-                                className={styles.fieldError}
-                                id={`${draft.date}-ceremony-error`}
-                              >
-                                {ceremonyError}
-                              </span>
-                            ) : null}
-                          </label>
-                          <label className={styles.fieldLabel}>
-                            <span>근무 시작</span>
-                            <input
-                              required
-                              aria-describedby={
-                                startTimeError ? `${draft.date}-start-time-error` : undefined
-                              }
-                              aria-invalid={startTimeError ? true : undefined}
-                              className={styles.compactInput}
-                              type="time"
-                              value={draft.startTime}
-                              onChange={(event) =>
-                                updateDraft(draft.date, { startTime: event.target.value })
-                              }
-                            />
-                            {startTimeError ? (
-                              <span
-                                className={styles.fieldError}
-                                id={`${draft.date}-start-time-error`}
-                              >
-                                {startTimeError}
-                              </span>
-                            ) : null}
-                          </label>
-                          <label className={styles.fieldLabel}>
-                            <span>근무 종료</span>
-                            <input
-                              required
-                              aria-describedby={
-                                endTimeError ? `${draft.date}-end-time-error` : undefined
-                              }
-                              aria-invalid={endTimeError ? true : undefined}
-                              className={styles.compactInput}
-                              type="time"
-                              value={draft.endTime}
-                              onChange={(event) =>
-                                updateDraft(draft.date, { endTime: event.target.value })
-                              }
-                            />
-                            {endTimeError ? (
-                              <span
-                                className={styles.fieldError}
-                                id={`${draft.date}-end-time-error`}
-                              >
-                                {endTimeError}
-                              </span>
-                            ) : null}
-                          </label>
-                        </div>
-                        <ScheduleAssignmentTable
-                          getWorkerError={(positionId, personIndex) => {
-                            return (
-                              getFirstFieldError(
-                                fieldErrors,
-                                `${schedulePath}.positions.${positionId}.slots.${personIndex}.workerId`,
-                              ) ??
-                              getFirstFieldError(
-                                fieldErrors,
-                                `${schedulePath}.positions.${positionId}`,
-                              )
-                            )
-                          }}
-                          positions={draft.positions}
-                          selectedDate={draft.date}
-                          workers={workers satisfies AssignmentWorkerOption[]}
-                          onAddPerson={(positionId) => addTrainingWorker(draft.date, positionId)}
-                          onRemovePerson={(positionId, index) =>
-                            removeTrainingWorker(draft.date, positionId, index)
-                          }
-                          onToggleTraining={(positionId, index, value) =>
-                            toggleTraining(draft.date, positionId, index, value)
-                          }
-                          onUpdateWorker={(positionId, index, workerId) =>
-                            updateWorker(draft.date, positionId, index, workerId)
-                          }
-                        />
-                        <div className={layout.wrapEnd}>
-                          <Button disabled={isPending} onClick={handleSaveMonthDrafts}>
-                            임시 저장
-                          </Button>
+          {drafts.length > 0
+            ? drafts.map((draft) => {
+                const schedulePath = `dates.${draft.date}`
+                const ceremonyError = getFirstFieldError(
+                  fieldErrors,
+                  `${schedulePath}.ceremonyCount`,
+                )
+                const startTimeError = getFirstFieldError(fieldErrors, `${schedulePath}.startTime`)
+                const endTimeError = getFirstFieldError(fieldErrors, `${schedulePath}.endTime`)
+                const dateError = getFirstFieldError(fieldErrors, `${schedulePath}.workDate`)
+                return (
+                  <ContentCard key={draft.date}>
+                    <section aria-labelledby={`schedule-${draft.date}`}>
+                      <div className={layout.row}>
+                        <h3 id={`schedule-${draft.date}`}>{formatDate(draft.date)}</h3>
+                        {draft.isEnabled ? (
+                          <StatusBadge tone="warning">작성 중</StatusBadge>
+                        ) : (
                           <Button
                             variant="secondary"
-                            onClick={() => updateDraft(draft.date, { isEnabled: false })}
+                            onClick={() => updateDraft(draft.date, { isEnabled: true })}
                           >
-                            접기
+                            일정 설정
                           </Button>
-                        </div>
-                      </>
-                    ) : null}
-                  </section>
-                </ContentCard>
-              )
-            })
-          ) : (
-            <ContentCard>
-              <p className={styles.emptyState}>이 달의 모든 주말 일정이 등록되어 있습니다.</p>
-            </ContentCard>
-          )}
+                        )}
+                      </div>
+                      {dateError ? (
+                        <p className={styles.fieldError} role="alert">
+                          {dateError}
+                        </p>
+                      ) : null}
+                      {draft.isEnabled ? (
+                        <>
+                          <div className={styles.scheduleInfoGrid}>
+                            <label className={styles.fieldLabel}>
+                              <span>예식 개수</span>
+                              <input
+                                required
+                                aria-describedby={
+                                  ceremonyError ? `${draft.date}-ceremony-error` : undefined
+                                }
+                                aria-invalid={ceremonyError ? true : undefined}
+                                className={styles.compactInput}
+                                min="1"
+                                type="number"
+                                value={draft.ceremonyCount}
+                                onChange={(event) => {
+                                  const nextValue = Number(event.target.value)
+                                  updateDraft(draft.date, {
+                                    ceremonyCount:
+                                      Number.isInteger(nextValue) && nextValue >= 1 ? nextValue : 1,
+                                  })
+                                }}
+                              />
+                              {ceremonyError ? (
+                                <span
+                                  className={styles.fieldError}
+                                  id={`${draft.date}-ceremony-error`}
+                                >
+                                  {ceremonyError}
+                                </span>
+                              ) : null}
+                            </label>
+                            <label className={styles.fieldLabel}>
+                              <span>근무 시작</span>
+                              <input
+                                required
+                                aria-describedby={
+                                  startTimeError ? `${draft.date}-start-time-error` : undefined
+                                }
+                                aria-invalid={startTimeError ? true : undefined}
+                                className={styles.compactInput}
+                                type="time"
+                                value={draft.startTime}
+                                onChange={(event) =>
+                                  updateDraft(draft.date, { startTime: event.target.value })
+                                }
+                              />
+                              {startTimeError ? (
+                                <span
+                                  className={styles.fieldError}
+                                  id={`${draft.date}-start-time-error`}
+                                >
+                                  {startTimeError}
+                                </span>
+                              ) : null}
+                            </label>
+                            <label className={styles.fieldLabel}>
+                              <span>근무 종료</span>
+                              <input
+                                required
+                                aria-describedby={
+                                  endTimeError ? `${draft.date}-end-time-error` : undefined
+                                }
+                                aria-invalid={endTimeError ? true : undefined}
+                                className={styles.compactInput}
+                                type="time"
+                                value={draft.endTime}
+                                onChange={(event) =>
+                                  updateDraft(draft.date, { endTime: event.target.value })
+                                }
+                              />
+                              {endTimeError ? (
+                                <span
+                                  className={styles.fieldError}
+                                  id={`${draft.date}-end-time-error`}
+                                >
+                                  {endTimeError}
+                                </span>
+                              ) : null}
+                            </label>
+                          </div>
+                          <ScheduleAssignmentTable
+                            getWorkerError={(positionId, personIndex) => {
+                              return (
+                                getFirstFieldError(
+                                  fieldErrors,
+                                  `${schedulePath}.positions.${positionId}.slots.${personIndex}.workerId`,
+                                ) ??
+                                getFirstFieldError(
+                                  fieldErrors,
+                                  `${schedulePath}.positions.${positionId}`,
+                                )
+                              )
+                            }}
+                            positions={draft.positions}
+                            selectedDate={draft.date}
+                            workers={workers satisfies AssignmentWorkerOption[]}
+                            onAddPerson={(positionId) => addTrainingWorker(draft.date, positionId)}
+                            onRemovePerson={(positionId, index) =>
+                              removeTrainingWorker(draft.date, positionId, index)
+                            }
+                            onToggleTraining={(positionId, index, value) =>
+                              toggleTraining(draft.date, positionId, index, value)
+                            }
+                            onUpdateWorker={(positionId, index, workerId) =>
+                              updateWorker(draft.date, positionId, index, workerId)
+                            }
+                          />
+                          <div className={layout.wrapEnd}>
+                            <Button disabled={isPending} onClick={handleSaveMonthDrafts}>
+                              임시 저장
+                            </Button>
+                            <Button
+                              variant="secondary"
+                              onClick={() => updateDraft(draft.date, { isEnabled: false })}
+                            >
+                              접기
+                            </Button>
+                          </div>
+                        </>
+                      ) : null}
+                    </section>
+                  </ContentCard>
+                )
+              })
+            : null}
         </section>
 
         {state ? (
@@ -509,11 +451,6 @@ export function AdminScheduleRegistrationView({
                 최신 상태 다시 불러오기
               </Button>
             ) : null}
-          </div>
-        ) : null}
-        {demoSaveMessage ? (
-          <div className={styles.errorMessage} role="alert">
-            <p>{demoSaveMessage}</p>
           </div>
         ) : null}
         {drafts.length > 0 && !isConfirming ? (
@@ -541,7 +478,7 @@ export function AdminScheduleRegistrationView({
             </p>
             <p className={styles.meta}>저장 즉시 일정이 게시되고 배정이 확정됩니다.</p>
             <div className={layout.wrap}>
-              <Button disabled={!canPublish || isPending} {...confirmSubmitProps}>
+              <Button disabled={!canPublish || isPending} type="submit">
                 {isPending ? '확정 중…' : `${summary.dateCount}일 일정 등록·배정 확정`}
               </Button>
               <Button
@@ -555,6 +492,19 @@ export function AdminScheduleRegistrationView({
                 취소
               </Button>
             </div>
+          </section>
+        ) : null}
+
+        {registeredSchedules.length > 0 ? (
+          <section className={layout.stack} aria-labelledby="registered-month-schedules">
+            <h2 id="registered-month-schedules">등록된 일정</h2>
+            <ul className={layout.list}>
+              {registeredSchedules.map((schedule) => (
+                <li key={schedule.date}>
+                  <RegisteredScheduleCard {...schedule} dateLabel={formatDate(schedule.date)} />
+                </li>
+              ))}
+            </ul>
           </section>
         ) : null}
       </form>

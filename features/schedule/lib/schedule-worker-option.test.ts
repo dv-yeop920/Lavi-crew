@@ -50,10 +50,6 @@ describe('schedule worker option availability', () => {
     expect(getWorkerAvailabilityLabel(wageMissing)).toBe('시급 미설정 · 신규 선택 불가')
   })
 
-  it('does not surface a demo/browser-only description for demo workers', () => {
-    expect(getWorkerAvailabilityLabel({ id: 'demo-worker-01', isDemo: true })).toBeNull()
-  })
-
   it('hides workers who cannot fill the position, but keeps an existing assignee', () => {
     const workers = [
       { id: 'scan-capable', positionIds: ['scan'] },

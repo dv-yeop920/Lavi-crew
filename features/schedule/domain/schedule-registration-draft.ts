@@ -71,29 +71,36 @@ function isDraftEntry(value: unknown): value is ScheduleRegistrationDraftEntry {
   )
 }
 
-function isMonthRecord(value: unknown): value is ScheduleRegistrationDraftMonthRecord {
-  if (!isRecord(value)) return false
-  return (
-    Array.isArray(value.drafts) &&
-    value.drafts.every(isDraftEntry) &&
-    typeof value.savedAt === 'string' &&
-    !Number.isNaN(Date.parse(value.savedAt))
-  )
+function sanitizeMonthRecord(value: unknown): ScheduleRegistrationDraftMonthRecord | null {
+  if (!isRecord(value)) return null
+  if (
+    !Array.isArray(value.drafts) ||
+    typeof value.savedAt !== 'string' ||
+    Number.isNaN(Date.parse(value.savedAt))
+  ) {
+    return null
+  }
+  const drafts = value.drafts.filter(isDraftEntry)
+  if (drafts.length === 0) return null
+  return { drafts, savedAt: value.savedAt }
 }
 
+/**
+ * 월 하나 또는 날짜 하나의 데이터가 깨져도 다른 달·다른 날짜의 임시 저장 내용까지
+ * 함께 사라지지 않도록, 유효하지 않은 항목만 걸러내고 나머지는 그대로 복원한다.
+ */
 export function parseScheduleRegistrationDraft(
   value: unknown,
 ): ScheduleRegistrationDraftDocument | null {
   if (!isRecord(value) || value.version !== SCHEDULE_REGISTRATION_DRAFT_VERSION) return null
   if (!isRecord(value.monthDrafts)) return null
-  const entries = Object.entries(value.monthDrafts)
-  if (!entries.every(([month, record]) => monthPattern.test(month) && isMonthRecord(record))) {
-    return null
+  const monthDrafts: Record<string, ScheduleRegistrationDraftMonthRecord> = {}
+  for (const [month, record] of Object.entries(value.monthDrafts)) {
+    if (!monthPattern.test(month)) continue
+    const sanitized = sanitizeMonthRecord(record)
+    if (sanitized) monthDrafts[month] = sanitized
   }
-  return {
-    monthDrafts: value.monthDrafts as Record<string, ScheduleRegistrationDraftMonthRecord>,
-    version: SCHEDULE_REGISTRATION_DRAFT_VERSION,
-  }
+  return { monthDrafts, version: SCHEDULE_REGISTRATION_DRAFT_VERSION }
 }
 
 export function getScheduleRegistrationDraftForMonth(
@@ -110,7 +117,10 @@ export function upsertScheduleRegistrationDraftMonth(
   savedAt: string,
 ): ScheduleRegistrationDraftDocument {
   return {
-    monthDrafts: { ...document.monthDrafts, [month]: { drafts, savedAt } },
+    monthDrafts: {
+      ...document.monthDrafts,
+      [month]: { drafts: drafts.filter(isDraftEntry), savedAt },
+    },
     version: SCHEDULE_REGISTRATION_DRAFT_VERSION,
   }
 }
@@ -120,15 +130,16 @@ export type ScheduleRegistrationDraftOverlaySchedule = {
   cancellationReason: null
   ceremonyCount: number
   date: string
-  isDemo?: boolean
   isDraft: true
   status: 'published'
   time: string
 }
 
 /**
- * 관리자 일정 달력 개요에 "미확정" 배지로 함께 보여줄 브라우저 임시 저장 일정을 계산한다.
- * 이미 Supabase에 등록됐거나 데모 오버레이로 저장된 날짜는 excludedDates로 제외한다.
+ * 관리자 일정 달력 개요에 등록된 일정과 함께 보여줄 브라우저 임시 저장 일정을 계산한다.
+ * 카드에는 확정 일정과 구분 없이 표시하되, 아직 DB에 행이 없으므로 카드 링크는
+ * 상세 화면이 아니라 그 달의 등록 화면으로 보낸다. 이미 Supabase에 등록된 날짜는
+ * excludedDates로 제외한다.
  */
 export function getScheduleRegistrationDraftOverlayForMonth(
   document: ScheduleRegistrationDraftDocument,
@@ -151,6 +162,26 @@ export function getScheduleRegistrationDraftOverlayForMonth(
       status: 'published' as const,
       time: `${draft.startTime}–${draft.endTime}`,
     }))
+}
+
+/**
+ * 화면에 이미 표시 중인 초안 목록(current)에 로컬스토리지에서 복원한 임시 저장 항목
+ * (stored)을 합친다. 날짜가 이미 current에 있으면 저장된 값으로 덮어쓰고, current에는
+ * 없지만 저장돼 있던 날짜(예: 서버가 이번 방문에는 미등록 주말로 계산하지 않은 날짜)는
+ * 새 항목으로 추가한다 — 조회 시점의 목록에 없다는 이유로 임시 저장한 내용을 조용히
+ * 버리지 않기 위함이다. stored는 ScheduleRegistrationDraftEntry이고 T는 이를 확장하는
+ * 타입이므로, current에 없던 날짜에는 그 값을 T로 취급해도 구조적으로 안전하다.
+ */
+export function mergeRestoredScheduleRegistrationDrafts<T extends ScheduleRegistrationDraftEntry>(
+  current: T[],
+  stored: ScheduleRegistrationDraftEntry[],
+): T[] {
+  const byDate = new Map(current.map((draft) => [draft.date, draft]))
+  for (const entry of stored) {
+    const existing = byDate.get(entry.date)
+    byDate.set(entry.date, existing ? { ...existing, ...entry } : (entry as T))
+  }
+  return Array.from(byDate.values()).sort((left, right) => left.date.localeCompare(right.date))
 }
 
 export function removeScheduleRegistrationDraftMonth(

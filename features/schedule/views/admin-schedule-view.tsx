@@ -2,8 +2,6 @@
 
 import { useRouter } from 'next/navigation'
 
-import { getDemoSchedulesForMonth } from '@/features/schedule/domain/demo-schedule-overlay'
-import { useDemoScheduleOverlay } from '@/features/schedule/hooks/use-demo-schedule-overlay'
 import { useScheduleRegistrationDraftOverlay } from '@/features/schedule/hooks/use-schedule-registration-draft-overlay'
 import type { MonthRegistrationViewModel } from '@/features/schedule/schemas/schedule-view-model'
 import { Button, ButtonLink } from '@/shared/ui/button/button'
@@ -11,7 +9,12 @@ import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 
 import { RegisteredScheduleCard } from '../components/registered-schedule-card'
-import { getDaysInMonth, getLeadingBlankCount, getWeekendType } from '../lib/calendar'
+import {
+  getDaysInMonth,
+  getLeadingBlankCount,
+  getWeekendDateValues,
+  getWeekendType,
+} from '../lib/calendar'
 
 import { ScheduleApplicationPeriodCard } from './schedule-application-period-card'
 
@@ -33,48 +36,32 @@ function formatDateLabel(date: string) {
 }
 
 export function AdminScheduleView({
-  demoEnabled,
   requestId,
   viewModel,
 }: {
-  demoEnabled: boolean
   requestId: string
   viewModel: MonthRegistrationViewModel
 }) {
   const router = useRouter()
-  const { document } = useDemoScheduleOverlay(demoEnabled)
   const [year, monthNumber] = viewModel.month.split('-').map(Number)
   const monthIndex = monthNumber - 1
   const monthValue = viewModel.month
   const monthLabel = `${year}년 ${monthIndex + 1}월`
   const days = Array.from({ length: getDaysInMonth(year, monthIndex) }, (_, index) => index + 1)
   const firstWeekday = getLeadingBlankCount(year, monthIndex)
-  const demoSchedules = getDemoSchedulesForMonth(
-    document,
-    viewModel.month,
-    viewModel.registeredSchedules.map((schedule) => schedule.date),
-  ).map((schedule) => ({
-    assignedCount: schedule.assignments.length,
-    cancellationReason: null,
-    ceremonyCount: schedule.ceremonyCount,
-    date: schedule.date,
-    isDemo: true,
-    isDraft: false as const,
-    status: 'published' as const,
-    time: `${schedule.startTime}–${schedule.endTime}`,
-  }))
   const { draftSchedules } = useScheduleRegistrationDraftOverlay({
-    excludedDates: [...viewModel.registeredSchedules, ...demoSchedules].map(
-      (schedule) => schedule.date,
-    ),
+    excludedDates: viewModel.registeredSchedules.map((schedule) => schedule.date),
     month: viewModel.month,
   })
-  const monthSchedules = [
-    ...viewModel.registeredSchedules,
-    ...demoSchedules,
-    ...draftSchedules,
-  ].sort((left, right) => left.date.localeCompare(right.date))
+  const monthSchedules = [...viewModel.registeredSchedules, ...draftSchedules].sort((left, right) =>
+    left.date.localeCompare(right.date),
+  )
   const registeredDays = new Set(monthSchedules.map((schedule) => Number(schedule.date.slice(-2))))
+  // 임시 저장(미확정) 초안은 제외하고, 실제로 확정된 일정만 등록 완료로 센다.
+  const confirmedDates = new Set(viewModel.registeredSchedules.map((schedule) => schedule.date))
+  const isMonthFullyRegistered = getWeekendDateValues(year, monthIndex).every((date) =>
+    confirmedDates.has(date),
+  )
 
   function moveMonth(offset: number) {
     const nextMonth = new Date(year, monthIndex + offset, 1)
@@ -158,7 +145,17 @@ export function AdminScheduleView({
         requestId={requestId}
       />
 
-      {viewModel.period.id ? (
+      {isMonthFullyRegistered ? (
+        <div className={layout.stack}>
+          <Button disabled variant="secondary">
+            {monthLabel} 일정 등록 완료
+          </Button>
+          <p className={styles.meta}>
+            이번 달 스케줄이 모두 확정되었습니다. 수정이 필요하면 아래 등록된 일정에서 날짜를
+            선택하세요.
+          </p>
+        </div>
+      ) : viewModel.period.id ? (
         <ButtonLink href={`/admin/schedules/new?month=${monthValue}`}>
           {monthLabel} 일정 등록하기
         </ButtonLink>
@@ -180,7 +177,6 @@ export function AdminScheduleView({
                   ceremonyCount={schedule.ceremonyCount}
                   date={schedule.date}
                   dateLabel={formatDateLabel(schedule.date)}
-                  isDemo={schedule.isDemo}
                   isDraft={schedule.isDraft}
                   time={schedule.time}
                   status={schedule.status}

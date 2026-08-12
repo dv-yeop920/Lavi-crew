@@ -15,7 +15,6 @@ export type ScheduleWorkerOption = {
   appliedDates?: string[]
   id: string
   isActive?: boolean
-  isDemo?: boolean
   isSelectable?: boolean
   name: string
   positionIds?: PositionId[]

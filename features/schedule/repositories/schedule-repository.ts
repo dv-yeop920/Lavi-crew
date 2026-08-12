@@ -44,7 +44,7 @@ export async function getAdminMonthScheduleRecords(monthStart: string, monthEnd:
       .lt('work_date', monthEnd),
     supabase
       .from('shift_assignments')
-      .select('worker_id, position_id, status, shifts!inner(work_date), attendance_records(status)')
+      .select('worker_id, position_id, status, shifts!inner(work_date)')
       .eq('status', 'confirmed')
       .gte('shifts.work_date', previousMonthStartValue)
       .lt('shifts.work_date', previousMonthEnd),

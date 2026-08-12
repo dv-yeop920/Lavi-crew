@@ -1,4 +1,4 @@
-export type AdminDashboardViewModel = {
+export type AdminDashboardMonth = {
   applicationPeriod: {
     deadline: string
     effectiveStatus: 'closed' | 'effectively_closed' | 'open'
@@ -8,11 +8,12 @@ export type AdminDashboardViewModel = {
     updatedAt: string
     yearMonth: string
   } | null
+  unregisteredWeekendCount: number
+  yearMonth: string
+}
+
+export type AdminDashboardViewModel = {
   asOfDate: string
-  currentMonth: {
-    unregisteredWeekendCount: number
-    yearMonth: string
-  }
   currentWeek: {
     endExclusive: string
     schedules: Array<{
@@ -25,4 +26,6 @@ export type AdminDashboardViewModel = {
     }>
     start: string
   }
+  /** 이번 달과 다음 달 순서. 신청 기간은 전달에 미리 여므로 두 달을 함께 보여준다. */
+  months: AdminDashboardMonth[]
 }

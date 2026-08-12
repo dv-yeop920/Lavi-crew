@@ -1,10 +1,6 @@
 import Link from 'next/link'
 
-import {
-  formatActualPayrollTime,
-  formatFullWeekLabel,
-  formatPayrollDate,
-} from '@/features/payroll/lib/payroll-display'
+import { formatFullWeekLabel, formatPayrollDate } from '@/features/payroll/lib/payroll-display'
 import { movePayrollMonth } from '@/features/payroll/lib/payroll-navigation'
 import type { WorkerPayrollViewModel } from '@/features/payroll/schemas/payroll-view-model'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
@@ -42,9 +38,9 @@ export function PayrollView({ viewModel }: { viewModel: ReadyWorkerPayroll }) {
   return (
     <div className={layout.page}>
       <PageHeader
-        eyebrow="확정 출석 기준"
+        eyebrow="스케줄 확정 기준"
         title={`${formatMonth(viewModel.month)} 급여`}
-        description="관리자가 확정한 실제 출석 시간만 반영됩니다."
+        description="확정된 스케줄의 근무 시간을 기준으로 반영됩니다."
       />
       <nav className={styles.monthNavigator} aria-label="급여 조회 월">
         <Link
@@ -69,7 +65,7 @@ export function PayrollView({ viewModel }: { viewModel: ReadyWorkerPayroll }) {
           <span>이번 달 확정 급여</span>
           <strong className={styles.amount}>{formatCurrency(viewModel.totalAmount)}</strong>
           <StatusBadge tone={viewModel.details.length > 0 ? 'positive' : 'neutral'}>
-            {viewModel.details.length > 0 ? '출석 확정분' : '확정 내역 없음'}
+            {viewModel.details.length > 0 ? '스케줄 확정분' : '확정 내역 없음'}
           </StatusBadge>
         </div>
       </ContentCard>
@@ -94,8 +90,7 @@ export function PayrollView({ viewModel }: { viewModel: ReadyWorkerPayroll }) {
                     <span>{formatCurrency(week.amount)}</span>
                   </div>
                   <p className={styles.meta}>
-                    월–일 전체 · 출석 확정 {week.shiftCount}회 · 실제 근무{' '}
-                    {formatMinutes(week.workedMinutes)}
+                    월–일 전체 · 확정 {week.shiftCount}회 · 근무 {formatMinutes(week.workedMinutes)}
                   </p>
                 </ContentCard>
               </li>
@@ -112,32 +107,25 @@ export function PayrollView({ viewModel }: { viewModel: ReadyWorkerPayroll }) {
         <h2 id="payroll-detail-title">근무 내역</h2>
         {viewModel.details.length > 0 ? (
           <ul className={layout.list}>
-            {viewModel.details.map((detail) => {
-              const actualStartedAt = formatActualPayrollTime(detail.actualStartedAt)
-              const actualEndedAt = formatActualPayrollTime(detail.actualEndedAt)
-
-              return (
-                <li key={detail.id}>
-                  <ContentCard>
-                    <div className={styles.responsiveRow}>
-                      <strong>
-                        {formatPayrollDate(detail.workDate)} · {detail.positionName}
-                      </strong>
-                      <span>{formatCurrency(detail.amount)}</span>
-                    </div>
-                    <p className={styles.meta}>
-                      {actualStartedAt && actualEndedAt
-                        ? `실제 ${actualStartedAt}–${actualEndedAt}`
-                        : '실제 출퇴근 시각 확인 필요'}{' '}
-                      · 기본 {formatMinutes(detail.regularMinutes)}
-                      {detail.overtimeMinutes > 0
-                        ? ` · 연장 ${formatMinutes(detail.overtimeMinutes)}`
-                        : ''}
-                    </p>
-                  </ContentCard>
-                </li>
-              )
-            })}
+            {viewModel.details.map((detail) => (
+              <li key={detail.id}>
+                <ContentCard>
+                  <div className={styles.responsiveRow}>
+                    <strong>
+                      {formatPayrollDate(detail.workDate)} · {detail.positionName}
+                    </strong>
+                    <span>{formatCurrency(detail.amount)}</span>
+                  </div>
+                  <p className={styles.meta}>
+                    {detail.shiftStartTime}–{detail.shiftEndTime} · 기본{' '}
+                    {formatMinutes(detail.regularMinutes)}
+                    {detail.overtimeMinutes > 0
+                      ? ` · 연장 ${formatMinutes(detail.overtimeMinutes)}`
+                      : ''}
+                  </p>
+                </ContentCard>
+              </li>
+            ))}
           </ul>
         ) : (
           <ContentCard>
@@ -153,7 +141,7 @@ export function PayrollView({ viewModel }: { viewModel: ReadyWorkerPayroll }) {
         </div>
         <p className={styles.meta}>
           {viewModel.averagePaidMonthAmount > 0
-            ? '실제 출석 시각이 있는 확정 급여 월만 계산했습니다.'
+            ? '확정된 스케줄 급여 월만 계산했습니다.'
             : '아직 평균을 계산할 확정 급여 월이 없습니다.'}
         </p>
       </ContentCard>

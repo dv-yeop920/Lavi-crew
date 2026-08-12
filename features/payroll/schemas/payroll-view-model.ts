@@ -1,14 +1,14 @@
 export type WorkerPayrollViewModel = {
   averagePaidMonthAmount: number
   details: Array<{
-    actualEndedAt: string
-    actualStartedAt: string
     amount: number
     id: string
     overtimeMinutes: number
     positionName: string
     regularMinutes: number
+    shiftEndTime: string
     shiftId: string
+    shiftStartTime: string
     workDate: string
   }>
   month: string

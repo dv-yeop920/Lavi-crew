@@ -340,36 +340,6 @@ export const textArea = style({
   },
 })
 
-export const attendanceList = style({
-  display: 'grid',
-  gap: '0.75rem',
-  margin: 0,
-  padding: 0,
-  listStyle: 'none',
-})
-
-export const attendanceItem = style({
-  display: 'grid',
-  gap: '0.75rem',
-  minWidth: 0,
-  padding: '1rem',
-  border: `1px solid ${semanticVars.color.lineNormal}`,
-  borderRadius: '1rem',
-  background: semanticVars.color.surface,
-  boxShadow: `0 0.25rem 1rem ${semanticVars.color.primarySubtle}`,
-})
-
-export const attendanceTimeGrid = style({
-  display: 'grid',
-  gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
-  gap: '0.75rem',
-  '@media': {
-    'screen and (max-width: 34rem)': {
-      gridTemplateColumns: '1fr',
-    },
-  },
-})
-
 export const saveMessage = style({
   padding: '0.75rem',
   borderRadius: '0.75rem',
@@ -392,6 +362,54 @@ export const fieldError = style({
   color: semanticVars.color.negative,
   fontSize: semanticVars.font.size.captionSmall,
   lineHeight: semanticVars.font.lineHeight.normal,
+})
+
+export const historyTableWrapper = style({
+  overflowX: 'auto',
+})
+
+export const historyTable = style({
+  width: '100%',
+  minWidth: '48rem',
+  borderCollapse: 'collapse',
+})
+
+export const historyTableHeadCell = style({
+  padding: '0.75rem',
+  borderBottom: `1px solid ${semanticVars.color.lineStrong}`,
+  color: semanticVars.color.labelNeutral,
+  textAlign: 'left',
+  whiteSpace: 'nowrap',
+  fontSize: semanticVars.font.size.labelSmall,
+  fontWeight: semanticVars.font.weight.semibold,
+})
+
+export const historyTableCell = style({
+  padding: '0.75rem',
+  borderBottom: `1px solid ${semanticVars.color.lineNormal}`,
+  color: semanticVars.color.labelNormal,
+  verticalAlign: 'top',
+  fontSize: semanticVars.font.size.bodySmall,
+  lineHeight: semanticVars.font.lineHeight.normal,
+})
+
+export const historyDateLink = style({
+  color: semanticVars.color.primaryStrong,
+  fontWeight: semanticVars.font.weight.bold,
+  textDecoration: 'none',
+  whiteSpace: 'nowrap',
+  selectors: {
+    '&:focus-visible': {
+      outline: `2px solid ${semanticVars.color.primaryNormal}`,
+      outlineOffset: '2px',
+    },
+  },
+})
+
+export const historyDateText = style({
+  color: semanticVars.color.labelNormal,
+  fontWeight: semanticVars.font.weight.bold,
+  whiteSpace: 'nowrap',
 })
 
 export const confirmation = style({

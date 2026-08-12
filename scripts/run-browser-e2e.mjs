@@ -25,7 +25,6 @@ const environment = {
   SUPABASE_SERVICE_ROLE_KEY: supabaseStatus.SERVICE_ROLE_KEY,
   SUPABASE_DB_URL: supabaseStatus.DB_URL,
   LAVI_ALLOW_LOCAL_SEED: '1',
-  LAVI_ENABLE_DEMO_FIXTURES: 'true',
   LAVI_E2E_PASSWORD: randomBytes(24).toString('base64url'),
   LAVI_E2E_RUN_ID: randomBytes(8).toString('hex'),
   LAVI_E2E_MAILPIT_URL: supabaseStatus.MAILPIT_URL,

@@ -2,7 +2,6 @@ type WorkerAvailability = {
   appliedDates?: string[]
   id: string
   isActive?: boolean
-  isDemo?: boolean
   isSelectable?: boolean
   positionIds?: string[]
 }

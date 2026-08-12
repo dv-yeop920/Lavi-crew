@@ -6,12 +6,10 @@ import { requireRole } from '@/shared/auth/session'
 
 import {
   cancelDailyScheduleController,
-  confirmAttendanceController,
   updateDailyScheduleController,
 } from '../controllers/daily-schedule-controller'
 import {
   cancelDailyScheduleSchema,
-  confirmAttendanceSchema,
   type DailyScheduleActionResult,
   parseDailyScheduleFormData,
   updateDailyScheduleSchema,
@@ -52,22 +50,6 @@ export async function cancelDailyScheduleAction(
   if (result.ok) {
     revalidatePath('/admin/schedules')
     revalidatePath('/admin/schedules/[date]', 'page')
-  }
-  return result
-}
-
-export async function confirmAttendanceAction(
-  _: DailyScheduleActionResult | null,
-  formData: FormData,
-): Promise<DailyScheduleActionResult> {
-  await requireRole('admin')
-  const parsed = parseDailyScheduleFormData(formData, confirmAttendanceSchema)
-  if (!parsed.success) return invalidResult(parsed.error)
-  const result = await confirmAttendanceController(parsed.data)
-  if (result.ok) {
-    revalidatePath('/admin/schedules')
-    revalidatePath('/admin/schedules/[date]', 'page')
-    revalidatePath('/payroll')
   }
   return result
 }

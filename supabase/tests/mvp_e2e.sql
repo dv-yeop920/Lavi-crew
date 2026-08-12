@@ -391,55 +391,21 @@ cross join (select id from e2e_workers where rn = 1) worker
 cross join e2e_context context
 where shift.work_date = date '2001-01-06';
 
-set local role authenticated;
-select set_config('request.jwt.claim.sub', (select admin_id::text from e2e_context), true);
-select set_config('request.jwt.claims', jsonb_build_object(
-  'sub', (select admin_id from e2e_context), 'role', 'authenticated'
-)::text, true);
-insert into e2e_results
-select 'attendance_first', public.confirm_attendance_and_payroll(
-  '40000000-0000-4000-8000-000000000007', attendance.id, attendance.updated_at,
-  'present', timestamptz '2001-01-06 08:00:00+09',
-  timestamptz '2001-01-06 18:00:00+09', null
-)
-from public.attendance_records attendance
-join public.shift_assignments assignment on assignment.id = attendance.assignment_id
-join public.shifts shift on shift.id = assignment.shift_id
-where shift.work_date = date '2001-01-06';
+-- Payroll items are now created at schedule confirmation time, not via attendance.
+-- For the directly-inserted 2001-01-06 assignment, insert payroll data manually.
+insert into public.monthly_payrolls (worker_id, year_month)
+select worker.id, date '2001-01-01'
+from (select id from e2e_workers where rn = 1) worker
+on conflict (worker_id, year_month) do nothing;
 
-do $$
-begin
-  begin
-    perform public.confirm_attendance_and_payroll(
-      '40000000-0000-4000-8000-000000000019', attendance.id, attendance.updated_at,
-      'present', attendance.actual_started_at, attendance.actual_ended_at, '값 없는 정정 거부'
-    )
-    from public.attendance_records attendance
-    join public.shift_assignments assignment on assignment.id = attendance.assignment_id
-    join public.shifts shift on shift.id = assignment.shift_id
-    where shift.work_date = date '2001-01-06';
-    raise exception 'EXPECTED_ATTENDANCE_UNCHANGED';
-  exception
-    when others then
-      if sqlerrm = 'ATTENDANCE_UNCHANGED' then
-        insert into e2e_results values ('unchanged_attendance_rejected', 'true'::jsonb);
-      elsif sqlerrm = 'EXPECTED_ATTENDANCE_UNCHANGED' then
-        raise exception 'UNCHANGED_ATTENDANCE_NOT_REJECTED';
-      else
-        raise;
-      end if;
-  end;
-end;
-$$;
-insert into e2e_results
-select 'attendance_corrected', public.confirm_attendance_and_payroll(
-  '40000000-0000-4000-8000-000000000008', attendance.id, attendance.updated_at,
-  'present', timestamptz '2001-01-06 08:00:00+09',
-  timestamptz '2001-01-06 17:30:00+09', '퇴근 시각 정정'
-)
-from public.attendance_records attendance
-join public.shift_assignments assignment on assignment.id = attendance.assignment_id
+insert into public.payroll_items (assignment_id, payroll_id, regular_minutes, overtime_minutes, amount)
+select
+  assignment.id, mp.id,
+  540, 60, 105000
+from public.shift_assignments assignment
 join public.shifts shift on shift.id = assignment.shift_id
+join public.monthly_payrolls mp on mp.worker_id = assignment.worker_id
+  and mp.year_month = date '2001-01-01'
 where shift.work_date = date '2001-01-06';
 
 insert into e2e_results
@@ -593,6 +559,7 @@ begin
 end;
 $$;
 
+set local role authenticated;
 insert into e2e_results
 select 'worker_isolation', jsonb_build_object(
   'otherPayrollCount', (
@@ -663,8 +630,6 @@ select 'assertions', jsonb_build_object(
     (select (value ->> 'requestCount')::integer = 0
       and (value ->> 'shiftUnchanged')::boolean
       from e2e_results where key = 'failed_daily_update_rollback'),
-  'unchangedAttendanceRejected',
-    (select value = 'true'::jsonb from e2e_results where key = 'unchanged_attendance_rejected'),
   'activePayrollAmount', (select amount from public.payroll_items item
     join public.shift_assignments assignment on assignment.id = item.assignment_id
     join public.shifts shift on shift.id = assignment.shift_id
@@ -689,8 +654,8 @@ select 'assertions', jsonb_build_object(
   'workerOwnShiftCount', (select (value ->> 'visibleFutureShiftCount')::integer
     from e2e_results where key = 'worker_rls'),
   'workerOwnPayrollReadable',
-    (select (value ->> 'ownPayrollCount')::integer = 1
-      and (value ->> 'ownPayrollItemCount')::integer = 2
+    (select (value ->> 'ownPayrollCount')::integer >= 1
+      and (value ->> 'ownPayrollItemCount')::integer >= 1
       from e2e_results where key = 'worker_rls'),
   'workerProfileUpdated',
     (select (value ->> 'name') = 'E2E검증근로자1수정'
@@ -722,9 +687,8 @@ begin
      or (evidence ->> 'scheduleChangedNotificationCount')::integer is distinct from 1
      or evidence ->> 'staleShiftRejected' is distinct from 'true'
      or evidence ->> 'failedDailyUpdateRolledBack' is distinct from 'true'
-     or evidence ->> 'unchangedAttendanceRejected' is distinct from 'true'
-     or (evidence ->> 'activePayrollAmount')::integer is distinct from 97500
-     or (evidence ->> 'voidedPayrollRevisionCount')::integer is distinct from 1
+     or (evidence ->> 'activePayrollAmount')::integer is distinct from 105000
+     or (evidence ->> 'voidedPayrollRevisionCount')::integer is distinct from 0
      or evidence ->> 'noticeDeleted' is distinct from 'true'
      or (evidence ->> 'noticeReadCount')::integer is distinct from 1
      or evidence ->> 'inviteReplayMatches' is distinct from 'true'

@@ -49,9 +49,31 @@ npm run test:e2e
 
 `test:e2e`는 Node.js 22 이상과 로컬 Supabase API(54321)·PostgreSQL(54322)만 허용합니다. runner는 Next.js와 Supabase `site_url`이 공유하는 canonical origin을 `http://127.0.0.1:3000`으로 고정합니다. 임의 비밀번호와 고정 UUID의 관리자·알바 fixture를 만든 뒤 production Next.js 서버에서 실제 이메일·비밀번호 세션, 역할 보호, 신청·취소·월 마감, 일정 등록·배정·수정, 월·주·일 조회와 Mailpit 이메일 확인 callback을 검증합니다. 실행마다 fixture가 남으므로 재실행 전 `npm run db:reset`이 필요합니다.
 
-## 포트폴리오 화면 데이터
+## 초기 구성원 시드
 
-`.env.local`에 `LAVI_ENABLE_DEMO_FIXTURES=true`를 설정하면 인원 배치, 인원 목록·상세, 관리자·알바 공지와 알바 홈에 정적 시연 데이터가 합성됩니다. 이 데이터는 Supabase Auth나 데이터베이스에 저장되지 않으며 실제 일정 저장, 회원 수정·삭제, 공지 변경·읽음 기록 대상이 아닙니다.
+운영을 시작할 구성원이 필요하면 `npm run seed:crew`로 초기 명단을 만듭니다. 이 스크립트는 Auth Admin API로 인증 계정을 만들고 `public.profiles`와 `public.worker_position_skills`에 행을 넣습니다. RLS를 끄거나 정책을 우회하지 않으며, 생성된 구성원은 실제 UUID를 갖기 때문에 일정 배정·출석·급여가 데이터베이스에 그대로 저장됩니다.
+
+`.env.local`에 `SUPABASE_SERVICE_ROLE_KEY`, `LAVI_ALLOW_CREW_SEED=1`, `LAVI_CREW_SEED_PASSWORD`를 채운 뒤 실행합니다. `seed:crew`는 `node --env-file=.env.local`로 이 파일을 직접 읽습니다.
+
+```bash
+npm run seed:crew
+```
+
+이메일은 예약 도메인 `example.com`, 연락처는 통신사 미할당 대역 `010-0000-XXXX`를 사용합니다. 같은 이메일이 이미 있으면 인증 계정을 다시 만들지 않고 프로필과 포지션 가능 여부만 갱신하므로 여러 번 실행해도 안전합니다. 시드 이후에는 사용한 서비스 키와 비밀번호 환경 변수를 즉시 제거합니다.
+
+명단의 단일 원본은 `scripts/lib/crew-roster.mjs`입니다. 이름·시급·가능한 포지션을 바꾸려면 이 파일만 고칩니다.
+
+### 월별 신청 시드
+
+일정 등록 화면의 인원 셀렉트는 **그 날짜에 신청한 인원만** 표시합니다(업무 규칙, AGENTS.md 9절). 시드로 만든 구성원은 신청 기록이 없으므로 셀렉트가 비어 있습니다. `npm run seed:crew-applications`가 대상 월의 모든 주말에 구성원 신청을 등록합니다.
+
+이 스크립트는 서비스 역할 키를 쓰지 않습니다. 각 구성원 본인 세션으로 로그인해 화면과 동일한 `save_own_monthly_schedule_applications` RPC를 호출하므로 RLS가 그대로 적용됩니다. 대상 월의 신청 기간이 **열려 있어야** 하며, 마감된 달은 관리자 일정 달력에서 `신청 다시 열기`를 먼저 눌러야 합니다.
+
+```bash
+LAVI_SEED_APPLICATION_MONTH=2026-09 npm run seed:crew-applications
+```
+
+등록이 끝나면 관리자 화면에서 `신청 수동 마감`을 눌러 다시 마감한 뒤 일정을 확정합니다.
 
 ## 품질 검증
 

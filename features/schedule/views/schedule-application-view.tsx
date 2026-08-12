@@ -139,7 +139,7 @@ export function ScheduleApplicationView({
     : period.status === 'open'
       ? '신청 중'
       : period.closedReason === 'manual'
-        ? '관리자 마감'
+        ? null
         : '신청 마감'
 
   return (
@@ -177,9 +177,11 @@ export function ScheduleApplicationView({
               ? `신청 마감 · ${formatDeadline(period.applicationDeadline)}`
               : '신청 기간 미설정'}
           </span>
-          <StatusBadge tone={period?.status === 'open' ? 'positive' : 'neutral'}>
-            {statusLabel}
-          </StatusBadge>
+          {statusLabel ? (
+            <StatusBadge tone={period?.status === 'open' ? 'positive' : 'neutral'}>
+              {statusLabel}
+            </StatusBadge>
+          ) : null}
         </div>
         {!period ? (
           <p className={styles.emptyState}>

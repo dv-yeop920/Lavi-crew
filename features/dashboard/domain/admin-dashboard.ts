@@ -1,6 +1,8 @@
 export type DashboardDateRange = {
   monthEndExclusive: string
   monthStart: string
+  nextMonthEndExclusive: string
+  nextMonthStart: string
   today: string
   weekEndExclusive: string
   weekStart: string
@@ -28,9 +30,13 @@ export function getKstDashboardDateRange(asOf: Date): DashboardDateRange {
   const weekday = new Date(`${today}T00:00:00Z`).getUTCDay()
   const weekStart = addUtcDays(today, -((weekday + 6) % 7))
   const monthStart = `${today.slice(0, 7)}-01`
+  // 스케줄 신청은 전달에 미리 여는 업무라 관리자 홈은 이번 달과 다음 달을 함께 본다.
+  const followingMonthStart = nextMonthStart(monthStart)
   return {
-    monthEndExclusive: nextMonthStart(monthStart),
+    monthEndExclusive: followingMonthStart,
     monthStart,
+    nextMonthEndExclusive: nextMonthStart(followingMonthStart),
+    nextMonthStart: followingMonthStart,
     today,
     weekEndExclusive: addUtcDays(weekStart, 7),
     weekStart,

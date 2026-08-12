@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   calculateAverageMonthlyApplicationDays,
   getPreviousMonthRange,
-  summarizePreviousMonthAttendance,
+  summarizePreviousMonthAssignments,
 } from './worker-stats'
 
 describe('worker presentation and statistics', () => {
@@ -19,16 +19,15 @@ describe('worker presentation and statistics', () => {
     ).toBe(1.5)
   })
 
-  it('counts only present attendance inside the previous calendar month', () => {
+  it('counts confirmed assignments inside the previous calendar month', () => {
     const range = getPreviousMonthRange(new Date('2026-07-24T00:00:00Z'))
     expect(range).toEqual({ end: '2026-07-01', start: '2026-06-01' })
     expect(
-      summarizePreviousMonthAttendance(
+      summarizePreviousMonthAssignments(
         [
-          { positionId: 'main', status: 'present', workDate: '2026-06-07' },
-          { positionId: 'main', status: 'absent', workDate: '2026-06-14' },
-          { positionId: 'scan', status: 'present', workDate: '2026-06-21' },
-          { positionId: 'scan', status: 'present', workDate: '2026-07-05' },
+          { positionId: 'main', workDate: '2026-06-07' },
+          { positionId: 'scan', workDate: '2026-06-21' },
+          { positionId: 'scan', workDate: '2026-07-05' },
         ],
         range,
         [
@@ -37,7 +36,7 @@ describe('worker presentation and statistics', () => {
         ],
       ),
     ).toEqual({
-      attendanceCount: 2,
+      assignmentCount: 2,
       positionCounts: [
         { count: 1, name: '스캔' },
         { count: 1, name: '메인' },

@@ -38,29 +38,19 @@ export async function getWorkerPayrollController(month: string): Promise<WorkerP
     weekStart: weekBounds.start,
     workerId: profile.id,
   })
-  const safeDetails = records.details.filter(
-    (detail) =>
-      detail.attendance_records.actual_started_at !== null &&
-      detail.attendance_records.actual_ended_at !== null,
-  )
-  const details = safeDetails.map((detail) => ({
-    actualEndedAt: detail.attendance_records.actual_ended_at as string,
-    actualStartedAt: detail.attendance_records.actual_started_at as string,
+  const details = records.details.map((detail) => ({
     amount: detail.amount,
     id: detail.id,
     overtimeMinutes: detail.overtime_minutes,
     positionName: detail.shift_assignments.positions.name,
     regularMinutes: detail.regular_minutes,
+    shiftEndTime: detail.shift_assignments.shifts.end_time,
     shiftId: detail.shift_assignments.shifts.id,
+    shiftStartTime: detail.shift_assignments.shifts.start_time,
     workDate: detail.shift_assignments.shifts.work_date,
   }))
   const paidMonthTotals = new Map<string, { activeItemCount: number; totalAmount: number }>()
   records.paidItems.forEach((item) => {
-    if (
-      item.attendance_records.actual_started_at === null ||
-      item.attendance_records.actual_ended_at === null
-    )
-      return
     const monthKey = item.monthly_payrolls.year_month
     const current = paidMonthTotals.get(monthKey) ?? { activeItemCount: 0, totalAmount: 0 }
     current.activeItemCount += 1
@@ -74,17 +64,11 @@ export async function getWorkerPayrollController(month: string): Promise<WorkerP
     state: 'ready',
     totalAmount: details.reduce((sum, detail) => sum + detail.amount, 0),
     weeks: groupPayrollDetailsByWeek(
-      records.weekDetails
-        .filter(
-          (detail) =>
-            detail.attendance_records.actual_started_at !== null &&
-            detail.attendance_records.actual_ended_at !== null,
-        )
-        .map((detail) => ({
-          amount: detail.amount,
-          workDate: detail.shift_assignments.shifts.work_date,
-          workedMinutes: detail.regular_minutes + detail.overtime_minutes,
-        })),
+      records.weekDetails.map((detail) => ({
+        amount: detail.amount,
+        workDate: detail.shift_assignments.shifts.work_date,
+        workedMinutes: detail.regular_minutes + detail.overtime_minutes,
+      })),
     ).map((week) => ({ ...week, coverage: 'full-week' as const })),
   }
 }

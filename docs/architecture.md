@@ -69,7 +69,9 @@ shared/
 └─ lib/
 ```
 
-포트폴리오 촬영용 표시 데이터는 `shared/demo`의 단일 fixture에서 관리한다. `LAVI_ENABLE_DEMO_FIXTURES=true`인 서버 렌더링에서만 Controller가 실제 조회 결과와 합성하며 Repository, Supabase Auth, PostgreSQL, RLS에는 전달하거나 저장하지 않는다. 더미 인원·공지 ID는 실제 UUID와 구분하고 모든 쓰기 Controller가 Repository 호출 전에 거부한다. 데모 인원이 포함된 일정은 Server Action을 호출하지 않고 버전이 명시된 브라우저 `localStorage` 오버레이에만 저장한다. Domain이 오버레이 구조 검증·날짜별 병합·근무자별 조회를 담당하고 Adapter와 Hook이 브라우저 저장소 접근을 격리한다. 같은 날짜에 실제 DB 일정이 있으면 DB 일정을 우선하며, 플래그가 꺼진 환경에서는 저장소를 읽지 않는다.
+화면에 보이는 인원·공지·일정은 모두 Supabase 조회 결과다. 초기 구성원은 `scripts/seed-crew-members.mjs`가 Auth Admin API로 실제 인증 계정과 `public.profiles` 행을 만들어 채우며, 이후 모든 배정·출석·급여는 실제 UUID를 통해 RLS가 적용된 경로로만 저장한다.
+
+관리자 일정 등록 화면의 임시 저장은 아직 확정하지 않은 초안만 버전이 명시된 브라우저 `localStorage`에 보관한다. Domain이 문서 구조 검증과 월 단위 병합을 담당하고 Adapter와 Hook이 브라우저 저장소 접근을 격리한다. 확정(스케줄 확정)은 항상 Server Action → Controller → RPC 경로로 저장하며, 저장에 성공하면 해당 월의 초안을 지운다.
 
 ## 권한과 보안
 

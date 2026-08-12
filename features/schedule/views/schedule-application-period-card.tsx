@@ -48,8 +48,26 @@ function getDeadlineInputs(month: string, value: string | null) {
 
   const [year, monthNumber] = month.split('-').map(Number)
   const candidate = new Date(Date.UTC(year, monthNumber - 2, 25))
+
+  const todayParts = new Intl.DateTimeFormat('en-CA', {
+    day: '2-digit',
+    month: '2-digit',
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+  })
+    .formatToParts(new Date())
+    .reduce<Record<string, string>>((result, part) => {
+      result[part.type] = part.value
+      return result
+    }, {})
+  const earliestAllowed = new Date(
+    Date.UTC(Number(todayParts.year), Number(todayParts.month) - 1, Number(todayParts.day) + 1),
+  )
+  const effectiveCandidate =
+    candidate.getTime() > earliestAllowed.getTime() ? candidate : earliestAllowed
+
   return {
-    date: candidate.toISOString().slice(0, 10),
+    date: effectiveCandidate.toISOString().slice(0, 10),
     time: '18:00',
   }
 }
@@ -119,7 +137,7 @@ export function ScheduleApplicationPeriodCard({
     : period.status === 'open'
       ? '신청 중'
       : period.closedReason === 'manual'
-        ? '관리자 마감'
+        ? null
         : '기한 만료'
   const deadlineError = getFirstFieldError(periodState?.fieldErrors, 'applicationDeadline')
 
@@ -127,9 +145,11 @@ export function ScheduleApplicationPeriodCard({
     <ContentCard aria-labelledby="application-period-title">
       <div className={layout.row}>
         <h2 id="application-period-title">신청 기간 운영</h2>
-        <StatusBadge tone={period.status === 'open' && period.id ? 'positive' : 'neutral'}>
-          {statusLabel}
-        </StatusBadge>
+        {statusLabel ? (
+          <StatusBadge tone={period.status === 'open' && period.id ? 'positive' : 'neutral'}>
+            {statusLabel}
+          </StatusBadge>
+        ) : null}
       </div>
       <p className={styles.meta}>
         마감 시각 전까지 구성원이 월별 주말 가능일을 신청할 수 있습니다.

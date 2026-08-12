@@ -11,6 +11,11 @@ const menuItems = [
     href: '/admin/workers',
     label: '인원 관리',
   },
+  {
+    description: '월별 스케줄 이력 조회',
+    href: '/admin/schedules/history',
+    label: '스케줄',
+  },
   { description: '등록 · 고정 · 읽음 현황', href: '/admin/notices', label: '공지 관리' },
   { description: '코드 · 만료일 · 사용 가능 횟수', href: '/admin/invites', label: '초대 코드' },
 ]

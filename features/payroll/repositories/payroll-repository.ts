@@ -11,7 +11,7 @@ export async function getWorkerPayrollRecords(input: {
 }) {
   const supabase = await createServerSupabaseClient()
   const detailSelect =
-    'id, amount, regular_minutes, overtime_minutes, voided_at, monthly_payrolls!inner(worker_id, year_month), attendance_records!inner(status, actual_started_at, actual_ended_at), shift_assignments!inner(worker_id, position_id, status, positions(name), shifts!inner(id, work_date))'
+    'id, amount, regular_minutes, overtime_minutes, voided_at, monthly_payrolls!inner(worker_id, year_month), shift_assignments!inner(worker_id, position_id, status, positions(name), shifts!inner(id, work_date, start_time, end_time))'
   const [details, weekDetails, paidItems] = await Promise.all([
     supabase
       .from('payroll_items')
@@ -19,9 +19,6 @@ export async function getWorkerPayrollRecords(input: {
       .eq('monthly_payrolls.worker_id', input.workerId)
       .eq('shift_assignments.worker_id', input.workerId)
       .eq('shift_assignments.status', 'confirmed')
-      .eq('attendance_records.status', 'present')
-      .not('attendance_records.actual_started_at', 'is', null)
-      .not('attendance_records.actual_ended_at', 'is', null)
       .is('voided_at', null)
       .gte('shift_assignments.shifts.work_date', input.monthStart)
       .lt('shift_assignments.shifts.work_date', input.monthEnd)
@@ -32,22 +29,14 @@ export async function getWorkerPayrollRecords(input: {
       .eq('monthly_payrolls.worker_id', input.workerId)
       .eq('shift_assignments.worker_id', input.workerId)
       .eq('shift_assignments.status', 'confirmed')
-      .eq('attendance_records.status', 'present')
-      .not('attendance_records.actual_started_at', 'is', null)
-      .not('attendance_records.actual_ended_at', 'is', null)
       .is('voided_at', null)
       .gte('shift_assignments.shifts.work_date', input.weekStart)
       .lt('shift_assignments.shifts.work_date', input.weekEnd)
       .order('created_at'),
     supabase
       .from('payroll_items')
-      .select(
-        'id, amount, voided_at, monthly_payrolls!inner(worker_id, year_month), attendance_records!inner(status, actual_started_at, actual_ended_at)',
-      )
+      .select('id, amount, voided_at, monthly_payrolls!inner(worker_id, year_month)')
       .eq('monthly_payrolls.worker_id', input.workerId)
-      .eq('attendance_records.status', 'present')
-      .not('attendance_records.actual_started_at', 'is', null)
-      .not('attendance_records.actual_ended_at', 'is', null)
       .is('voided_at', null),
   ])
   if (details.error || weekDetails.error || paidItems.error)

@@ -1,9 +1,5 @@
-'use client'
-
 import Link from 'next/link'
 
-import { getDemoWorkerShifts } from '@/features/schedule/domain/demo-schedule-overlay'
-import { useDemoScheduleOverlay } from '@/features/schedule/hooks/use-demo-schedule-overlay'
 import { moveWorkerScheduleAnchor } from '@/features/schedule/lib/worker-schedule-navigation'
 import type { WorkerScheduleViewModel } from '@/features/schedule/schemas/worker-schedule-view-model'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
@@ -39,23 +35,8 @@ function getRangeLabel(viewModel: ReadyWorkerSchedule) {
   return `${formatDate(viewModel.range.start)}–${formatDate(viewModel.range.end)}`
 }
 
-export function WorkerScheduleView({
-  demoEnabled,
-  viewModel,
-}: {
-  demoEnabled: boolean
-  viewModel: ReadyWorkerSchedule
-}) {
-  const { document } = useDemoScheduleOverlay(demoEnabled)
-  const demoShifts = getDemoWorkerShifts(document, {
-    databaseDates: viewModel.shifts.map((shift) => shift.date),
-    end: viewModel.range.end,
-    start: viewModel.range.start,
-    workerId: viewModel.workerId,
-  })
-  const shifts = [...viewModel.shifts, ...demoShifts].sort((left, right) =>
-    left.date.localeCompare(right.date),
-  )
+export function WorkerScheduleView({ viewModel }: { viewModel: ReadyWorkerSchedule }) {
+  const shifts = [...viewModel.shifts].sort((left, right) => left.date.localeCompare(right.date))
   const rangeLabel = getRangeLabel(viewModel)
   const previousAnchor = moveWorkerScheduleAnchor(viewModel.mode, viewModel.anchor, -1)
   const nextAnchor = moveWorkerScheduleAnchor(viewModel.mode, viewModel.anchor, 1)
@@ -106,7 +87,6 @@ export function WorkerScheduleView({
                   <div className={styles.responsiveRow}>
                     <strong>{formatDate(shift.date, { weekday: 'long' })}</strong>
                     <StatusBadge tone="accent">{shift.positionName}</StatusBadge>
-                    {shift.isDemo ? <StatusBadge tone="warning">브라우저 데모</StatusBadge> : null}
                   </div>
                   <p className={styles.meta}>
                     {shift.startTime}–{shift.endTime}

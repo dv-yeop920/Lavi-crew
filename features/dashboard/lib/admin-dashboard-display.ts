@@ -1,4 +1,7 @@
-import type { AdminDashboardViewModel } from '../schemas/admin-dashboard-view-model'
+import type {
+  AdminDashboardMonth,
+  AdminDashboardViewModel,
+} from '../schemas/admin-dashboard-view-model'
 
 export type AdminDashboardTask = {
   href: string
@@ -24,42 +27,46 @@ function formatDeadline(value: string) {
   }).format(date)
 }
 
-export function getAdminDashboardTasks(viewModel: AdminDashboardViewModel): AdminDashboardTask[] {
-  const month = viewModel.currentMonth.yearMonth
-  const scheduleHref = `/admin/schedules/new?month=${month}`
+function getMonthTasks(month: AdminDashboardMonth): AdminDashboardTask[] {
+  const periodHref = `/admin/schedules?month=${month.yearMonth}`
+  const monthLabel = formatMonth(month.yearMonth)
   const tasks: AdminDashboardTask[] = []
 
-  if (!viewModel.applicationPeriod) {
+  if (!month.applicationPeriod) {
     tasks.push({
-      href: scheduleHref,
-      label: `${formatMonth(month)} 신청 기간 설정`,
+      href: periodHref,
+      label: `${monthLabel} 신청 기간 설정`,
       status: '미설정',
       tone: 'warning',
     })
-  } else if (viewModel.applicationPeriod.requiresClose) {
+  } else if (month.applicationPeriod.requiresClose) {
     tasks.push({
-      href: scheduleHref,
-      label: `${formatMonth(viewModel.applicationPeriod.yearMonth)} 신청 마감 반영`,
+      href: periodHref,
+      label: `${monthLabel} 신청 마감 반영`,
       status: '기한 종료',
       tone: 'warning',
     })
-  } else if (viewModel.applicationPeriod.effectiveStatus === 'open') {
+  } else if (month.applicationPeriod.effectiveStatus === 'open') {
     tasks.push({
-      href: scheduleHref,
-      label: `${formatMonth(viewModel.applicationPeriod.yearMonth)} 신청 마감 예정`,
-      status: formatDeadline(viewModel.applicationPeriod.deadline),
+      href: periodHref,
+      label: `${monthLabel} 신청 마감 예정`,
+      status: formatDeadline(month.applicationPeriod.deadline),
       tone: 'accent',
     })
   }
 
-  if (viewModel.currentMonth.unregisteredWeekendCount > 0) {
+  if (month.unregisteredWeekendCount > 0) {
     tasks.push({
-      href: scheduleHref,
-      label: `${formatMonth(month)} 스케줄 등록 필요`,
-      status: `${viewModel.currentMonth.unregisteredWeekendCount}일`,
+      href: `/admin/schedules/new?month=${month.yearMonth}`,
+      label: `${monthLabel} 스케줄 등록 필요`,
+      status: `${month.unregisteredWeekendCount}일`,
       tone: 'accent',
     })
   }
 
   return tasks
+}
+
+export function getAdminDashboardTasks(viewModel: AdminDashboardViewModel): AdminDashboardTask[] {
+  return viewModel.months.flatMap(getMonthTasks)
 }

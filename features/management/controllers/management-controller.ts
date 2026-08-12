@@ -1,12 +1,6 @@
 import 'server-only'
 
 import { requireRole } from '@/shared/auth/session'
-import { isPortfolioDemoEnabled } from '@/shared/demo/portfolio-demo-config'
-import {
-  getPortfolioDemoWorker,
-  getPortfolioDemoWorkers,
-  isPortfolioDemoWorkerId,
-} from '@/shared/demo/portfolio-fixtures'
 import { POSITION_CATALOG, type PositionId } from '@/shared/domain/positions'
 import { maskEmail, maskPhone } from '@/shared/lib/mask-contact'
 import { getProfileUniqueConflict } from '@/shared/lib/postgres-conflict'
@@ -16,7 +10,7 @@ import { getInviteStatus } from '../domain/invite-status'
 import {
   calculateAverageMonthlyApplicationDays,
   getPreviousMonthRange,
-  summarizePreviousMonthAttendance,
+  summarizePreviousMonthAssignments,
 } from '../domain/worker-stats'
 import {
   createInviteRecord,
@@ -42,18 +36,16 @@ function buildHistory(
   asOf: Date,
 ) {
   const range = getPreviousMonthRange(asOf)
-  const summary = summarizePreviousMonthAttendance(
+  const summary = summarizePreviousMonthAssignments(
     assignments
       .filter(
         (assignment) =>
           assignment.worker_id === workerId &&
           assignment.shifts &&
-          assignment.attendance_records &&
           positionIds.has(assignment.position_id),
       )
       .map((assignment) => ({
         positionId: assignment.position_id as PositionId,
-        status: assignment.attendance_records!.status,
         workDate: assignment.shifts!.work_date,
       })),
     range,
@@ -61,7 +53,7 @@ function buildHistory(
   )
   return {
     history: [
-      `지난달 출근 ${summary.attendanceCount}회`,
+      `지난달 배정 ${summary.assignmentCount}회`,
       ...summary.positionCounts.map((position) => `${position.name} ${position.count}회`),
     ].join(' · '),
   }
@@ -86,7 +78,6 @@ export async function getManagedWorkersController(asOf = new Date()) {
       hourlyWage: profile.hourly_wage,
       id: profile.id,
       isActive: profile.is_active,
-      isDemo: false,
       joinedAt: profile.hired_at,
       name: profile.name,
       phone: maskPhone(profile.phone),
@@ -98,48 +89,11 @@ export async function getManagedWorkersController(asOf = new Date()) {
       role: profile.role,
     }
   })
-  if (!isPortfolioDemoEnabled()) return managedWorkers
-
-  return [
-    ...managedWorkers,
-    ...getPortfolioDemoWorkers(asOf.toISOString().slice(0, 7)).map((worker) => ({
-      averageMonthlyApplicationDays: worker.applicationAverage,
-      email: maskEmail(worker.email),
-      history: worker.history,
-      hourlyWage: worker.hourlyWage,
-      id: worker.id,
-      isActive: worker.isActive,
-      isDemo: worker.isDemo,
-      joinedAt: worker.joinedAt,
-      name: worker.name,
-      phone: maskPhone(worker.phone),
-      positionIds: worker.positionIds,
-      role: worker.role,
-    })),
-  ]
+  return managedWorkers
 }
 
 export async function getManagedWorkerController(workerId: string, asOf = new Date()) {
   await requireRole('admin')
-  if (isPortfolioDemoEnabled() && isPortfolioDemoWorkerId(workerId)) {
-    const worker = getPortfolioDemoWorker(workerId, asOf.toISOString().slice(0, 7))
-    return worker
-      ? {
-          averageMonthlyApplicationDays: worker.applicationAverage,
-          email: maskEmail(worker.email),
-          history: worker.history,
-          hourlyWage: worker.hourlyWage,
-          id: worker.id,
-          isActive: worker.isActive,
-          isDemo: worker.isDemo,
-          joinedAt: worker.joinedAt,
-          name: worker.name,
-          phone: maskPhone(worker.phone),
-          positionIds: worker.positionIds,
-          role: worker.role,
-        }
-      : null
-  }
   const [detail, records] = await Promise.all([
     getWorkerProfileRecord(workerId),
     getWorkerHistoryRecords(workerId),
@@ -161,7 +115,6 @@ export async function getManagedWorkerController(workerId: string, asOf = new Da
     hourlyWage: profile.hourly_wage,
     id: profile.id,
     isActive: profile.is_active,
-    isDemo: false,
     joinedAt: profile.hired_at,
     name: profile.name,
     phone: maskPhone(profile.phone),
@@ -178,13 +131,6 @@ export async function updateManagedWorkerController(input: {
   workerId: string
 }): Promise<ManagementActionResult> {
   await requireRole('admin')
-  if (isPortfolioDemoWorkerId(input.workerId)) {
-    return {
-      code: 'DEMO_DATA_READ_ONLY',
-      message: '데모 인원은 화면 시연용 데이터라 수정할 수 없습니다.',
-      ok: false,
-    }
-  }
   if (input.positionIds.some((positionId) => !positionIds.has(positionId))) {
     return {
       code: 'INVALID_POSITION',
@@ -211,13 +157,6 @@ export async function deactivateManagedWorkerController(
   workerId: string,
 ): Promise<ManagementActionResult> {
   await requireRole('admin')
-  if (isPortfolioDemoWorkerId(workerId)) {
-    return {
-      code: 'DEMO_DATA_READ_ONLY',
-      message: '데모 인원은 화면 시연용 데이터라 삭제할 수 없습니다.',
-      ok: false,
-    }
-  }
   const { error } = await deactivateWorkerProfileRecord(workerId)
   return error
     ? {

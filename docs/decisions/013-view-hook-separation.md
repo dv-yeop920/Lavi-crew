@@ -6,7 +6,7 @@
 
 ## 배경
 
-View가 표시만 담당해야 한다는 규칙(AGENTS.md 5절)이 있음에도, 로컬 상태·파생 계산·이벤트 핸들러·브라우저 전용 API 접근이 JSX와 함께 View 파일에 쌓이는 사례가 늘고 있다. 예를 들어 `features/schedule/views/admin-schedule-registration-view.tsx`는 데모 오버레이 저장을 위해 여러 `useMemo`/`useEffect`와 포지션·근무자 조회를 포함한 데이터 조립 로직을 컴포넌트 본문에 직접 담고 있어 600줄을 넘는다. `features/schedule/hooks/use-demo-schedule-overlay.ts`처럼 이미 비공식적으로 커스텀 훅을 쓰는 선례가 있지만 문서화된 규칙은 없었다.
+View가 표시만 담당해야 한다는 규칙(AGENTS.md 5절)이 있음에도, 로컬 상태·파생 계산·이벤트 핸들러·브라우저 전용 API 접근이 JSX와 함께 View 파일에 쌓이는 사례가 늘고 있다. 예를 들어 `features/schedule/views/admin-schedule-registration-view.tsx`는 초안 임시 저장·복원을 위해 여러 `useEffect`와 포지션·근무자 조회를 포함한 데이터 조립 로직을 컴포넌트 본문에 직접 담고 있어 600줄을 넘었다. `features/schedule/hooks/use-schedule-registration-draft.ts`처럼 이미 비공식적으로 커스텀 훅을 쓰는 선례가 있지만 문서화된 규칙은 없었다.
 
 ## 결정
 

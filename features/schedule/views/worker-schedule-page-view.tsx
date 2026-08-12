@@ -1,7 +1,5 @@
 import { redirect } from 'next/navigation'
 
-import { isPortfolioDemoEnabled } from '@/shared/demo/portfolio-demo-config'
-
 import { getWorkerScheduleController } from '../controllers/worker-schedule-controller'
 
 import { WorkerScheduleView } from './worker-schedule-view'
@@ -28,10 +26,5 @@ export async function WorkerSchedulePageView({
   if (viewModel.state === 'invalid') {
     redirect(`/schedule?mode=month&anchor=${getCurrentKoreanDate()}`)
   }
-  return (
-    <WorkerScheduleView
-      demoEnabled={isPortfolioDemoEnabled()}
-      viewModel={{ ...viewModel, state: 'ready' }}
-    />
-  )
+  return <WorkerScheduleView viewModel={{ ...viewModel, state: 'ready' }} />
 }

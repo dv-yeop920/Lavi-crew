@@ -3,11 +3,7 @@ import 'server-only'
 import type { Json } from '@/shared/supabase/database.types'
 import { createServerSupabaseClient } from '@/shared/supabase/server'
 
-import type {
-  CancelDailyScheduleInput,
-  ConfirmAttendanceInput,
-  UpdateDailyScheduleInput,
-} from '../schemas/daily-schedule'
+import type { CancelDailyScheduleInput, UpdateDailyScheduleInput } from '../schemas/daily-schedule'
 
 export async function getDailyScheduleRecords(workDate: string) {
   const supabase = await createServerSupabaseClient()
@@ -19,7 +15,7 @@ export async function getDailyScheduleRecords(workDate: string) {
     supabase
       .from('shifts')
       .select(
-        'id, work_date, start_time, end_time, ceremony_count, status, updated_at, cancelled_at, cancellation_reason, shift_assignments(id, worker_id, position_id, slot_index, is_training, status, updated_at, attendance_records(id, status, actual_started_at, actual_ended_at, confirmed_at, correction_reason, updated_at))',
+        'id, work_date, start_time, end_time, ceremony_count, status, updated_at, cancelled_at, cancellation_reason, shift_assignments(id, worker_id, position_id, slot_index, is_training, status, updated_at)',
       )
       .eq('work_date', workDate)
       .maybeSingle(),
@@ -31,7 +27,7 @@ export async function getDailyScheduleRecords(workDate: string) {
       .eq('work_date', workDate),
     supabase
       .from('shift_assignments')
-      .select('worker_id, position_id, status, shifts!inner(work_date), attendance_records(status)')
+      .select('worker_id, position_id, status, shifts!inner(work_date)')
       .eq('status', 'confirmed')
       .gte('shifts.work_date', previousMonthStartValue)
       .lt('shifts.work_date', monthStart),
@@ -44,17 +40,7 @@ export async function getDailyScheduleRecords(workDate: string) {
     previousAssignments.error
   )
     throw new Error('일별 일정 데이터를 조회하지 못했습니다.')
-  const confirmedAttendance = shift.data
-    ? await supabase
-        .from('attendance_records')
-        .select('id, shift_assignments!inner(shift_id)')
-        .eq('shift_assignments.shift_id', shift.data.id)
-        .not('confirmed_at', 'is', null)
-        .limit(1)
-    : { data: [], error: null }
-  if (confirmedAttendance.error) throw new Error('출석 확정 상태를 조회하지 못했습니다.')
   return {
-    hasConfirmedAttendance: (confirmedAttendance.data?.length ?? 0) > 0,
     applications: applications.data ?? [],
     previousAssignments: previousAssignments.data ?? [],
     profiles: profiles.data ?? [],
@@ -83,18 +69,5 @@ export async function cancelDailyScheduleRecord(input: CancelDailyScheduleInput)
     p_reason: input.reason,
     p_request_id: input.requestId,
     p_shift_id: input.shiftId,
-  })
-}
-
-export async function confirmAttendanceRecord(input: ConfirmAttendanceInput) {
-  const supabase = await createServerSupabaseClient()
-  return supabase.rpc('confirm_attendance_and_payroll', {
-    p_actual_end: input.actualEndedAt ?? undefined,
-    p_actual_start: input.actualStartedAt ?? undefined,
-    p_correction_note: input.correctionReason ?? undefined,
-    p_expected_attendance_updated_at: input.expectedAttendanceUpdatedAt,
-    p_next_status: input.status,
-    p_record_id: input.attendanceId,
-    p_request_id: input.requestId,
   })
 }

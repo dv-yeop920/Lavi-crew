@@ -24,24 +24,10 @@ describe('daily schedule migration contract', () => {
     expect(migration).not.toMatch(/delete\s+from\s+public\.(shifts|shift_assignments)/i)
   })
 
-  it('locks schedule structure and blocks changes after confirmed attendance', () => {
-    expect(migration).toContain('from public.shifts where id = p_shift_id for update')
-    expect(migration).toContain('for update of attendance')
-    expect(migration).toContain("raise exception 'ATTENDANCE_ALREADY_CONFIRMED'")
-  })
-
   it('preserves exact assignments and cancels only removed or replaced rows', () => {
     expect(migration).toContain('and not exists (')
     expect(migration).toContain("set status = 'cancelled', cancelled_at = now()")
     expect(migration).toContain("status = 'confirmed'")
-  })
-
-  it('adds request id and stale attendance protection around the legacy calculation', () => {
-    expect(migration).toContain(
-      "operation in ('update_schedule', 'cancel_schedule', 'confirm_attendance')",
-    )
-    expect(migration).toContain('attendance_record.updated_at <> p_expected_attendance_updated_at')
-    expect(migration).toContain('perform private.confirm_attendance_and_payroll(')
   })
 
   it('retains the existing nine-hour and 1.5x payroll formula', () => {

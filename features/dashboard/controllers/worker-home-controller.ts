@@ -1,8 +1,6 @@
 import 'server-only'
 
 import { requireRole } from '@/shared/auth/session'
-import { isPortfolioDemoEnabled } from '@/shared/demo/portfolio-demo-config'
-import { PORTFOLIO_DEMO_NOTICES } from '@/shared/demo/portfolio-fixtures'
 
 import { getWorkerHomeRecords } from '../repositories/worker-home-repository'
 import type { WorkerHomeViewModel } from '../schemas/worker-home-view-model'
@@ -38,18 +36,6 @@ export async function getWorkerHomeController(asOf = new Date()): Promise<Worker
     isRead: notice.notice_reads.some((read) => read.worker_id === profile.id),
     title: notice.title,
   }))
-  if (isPortfolioDemoEnabled()) {
-    notices.push(
-      ...PORTFOLIO_DEMO_NOTICES.map((notice) => ({
-        contentPreview: notice.content.slice(0, 120),
-        createdAt: notice.createdAt,
-        id: notice.id,
-        isPinned: notice.isPinned,
-        isRead: true,
-        title: notice.title,
-      })),
-    )
-  }
   const visibleNotices = notices
     .sort((left, right) => {
       if (left.isPinned !== right.isPinned) return left.isPinned ? -1 : 1

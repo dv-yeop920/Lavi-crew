@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   getScheduleRegistrationDraftForMonth,
   getScheduleRegistrationDraftOverlayForMonth,
+  mergeRestoredScheduleRegistrationDrafts,
   parseScheduleRegistrationDraft,
   removeScheduleRegistrationDraftMonth,
   SCHEDULE_REGISTRATION_DRAFT_VERSION,
@@ -33,20 +34,23 @@ describe('schedule registration draft domain', () => {
       monthDrafts: { '2099-02': { drafts: [entry], savedAt: '2099-01-01T00:00:00.000Z' } },
       version: 1,
     }
-    expect(parseScheduleRegistrationDraft(document)).not.toBeNull()
+    expect(parseScheduleRegistrationDraft(document)).toEqual(document)
     expect(parseScheduleRegistrationDraft({ ...document, version: 2 })).toBeNull()
-    expect(
-      parseScheduleRegistrationDraft({
-        monthDrafts: {
-          '2099-02': {
-            drafts: [{ ...entry, endTime: 'invalid' }],
-            savedAt: document.monthDrafts['2099-02'].savedAt,
-          },
-        },
-        version: 1,
-      }),
-    ).toBeNull()
     expect(parseScheduleRegistrationDraft(null)).toBeNull()
+  })
+
+  it('drops only the month with corrupted entries, keeping other months intact', () => {
+    const validMonth = { drafts: [entry], savedAt: '2099-01-01T00:00:00.000Z' }
+    const invalidMonth = {
+      drafts: [{ ...entry, endTime: 'invalid' }],
+      savedAt: '2099-01-02T00:00:00.000Z',
+    }
+    const parsed = parseScheduleRegistrationDraft({
+      monthDrafts: { '2099-02': validMonth, '2099-03': invalidMonth },
+      version: 1,
+    })
+    expect(parsed?.monthDrafts['2099-02']).toEqual(validMonth)
+    expect(parsed?.monthDrafts['2099-03']).toBeUndefined()
   })
 
   it('upserts and removes a month, leaving other months untouched', () => {
@@ -71,9 +75,34 @@ describe('schedule registration draft domain', () => {
     expect(getScheduleRegistrationDraftForMonth(withoutFebruary, '2099-03')).not.toBeNull()
   })
 
+  it('never persists a structurally invalid entry, such as a cleared ceremony count', () => {
+    const empty = { monthDrafts: {}, version: SCHEDULE_REGISTRATION_DRAFT_VERSION }
+    const withInvalidEntry = upsertScheduleRegistrationDraftMonth(
+      empty,
+      '2099-02',
+      [{ ...entry, ceremonyCount: 0 }],
+      '2099-01-01T00:00:00.000Z',
+    )
+    expect(getScheduleRegistrationDraftForMonth(withInvalidEntry, '2099-02')?.drafts).toEqual([])
+  })
+
   it('returns the same document when removing a month that was never saved', () => {
     const empty = { monthDrafts: {}, version: SCHEDULE_REGISTRATION_DRAFT_VERSION }
     expect(removeScheduleRegistrationDraftMonth(empty, '2099-02')).toBe(empty)
+  })
+
+  it('adds a stored draft whose date is missing from the current list instead of dropping it', () => {
+    const current = [{ ...entry, date: '2099-02-14', isEnabled: false }]
+    const storedOnly: ScheduleRegistrationDraftEntry = { ...entry, date: '2099-02-07' }
+    const result = mergeRestoredScheduleRegistrationDrafts(current, [storedOnly])
+    expect(result).toEqual([storedOnly, current[0]])
+  })
+
+  it('overwrites a matching current entry with the stored values instead of duplicating it', () => {
+    const current = [{ ...entry, isEnabled: false }]
+    const stored: ScheduleRegistrationDraftEntry = { ...entry, isEnabled: true }
+    const result = mergeRestoredScheduleRegistrationDrafts(current, [stored])
+    expect(result).toEqual([stored])
   })
 
   it('maps enabled month drafts to overlay schedules and excludes already-registered dates', () => {

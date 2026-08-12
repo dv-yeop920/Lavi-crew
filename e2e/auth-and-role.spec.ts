@@ -60,27 +60,6 @@ async function applyScheduleDates(email: string, dates: string[], month = schedu
   await client.auth.signOut()
 }
 
-async function getScheduleDatabaseCounts() {
-  const databaseUrl = process.env.SUPABASE_DB_URL
-  if (!databaseUrl) throw new Error('로컬 Supabase DB URL이 없습니다.')
-  const output = execFileSync(
-    'psql',
-    [
-      databaseUrl,
-      '-At',
-      '-v',
-      'ON_ERROR_STOP=1',
-      '-c',
-      `select json_build_object(
-        'shifts', (select count(*) from public.shifts),
-        'assignments', (select count(*) from public.shift_assignments)
-      )::text`,
-    ],
-    { encoding: 'utf8' },
-  )
-  return JSON.parse(output.trim()) as { assignments: number; shifts: number }
-}
-
 function createRoleContext(browser: Browser) {
   return browser.newContext(roleContextOptions)
 }
@@ -108,9 +87,6 @@ const scheduleMonth = '2099-01'
 const scheduleMonthLabel = '2099년 1월'
 const firstScheduleDate = '2099-01-03'
 const secondScheduleDate = '2099-01-04'
-const demoScheduleMonth = '2099-02'
-const demoScheduleMonthLabel = '2099년 2월'
-const demoScheduleDate = '2099-02-07'
 
 function formatScheduleDate(date: string) {
   return new Intl.DateTimeFormat('ko-KR', {
@@ -242,10 +218,9 @@ test('관리자 마감·배정·수정과 알바 신청·조회가 실제 DB에�
     await adminPage.getByRole('button', { name: '신청 수동 마감' }).click()
     await expect(adminPage.getByRole('heading', { name: '지금 신청을 마감할까요?' })).toBeVisible()
     await adminPage.getByRole('button', { name: '신청 마감 확정' }).click()
-    await expect(adminPage.getByText('관리자 마감', { exact: true })).toBeVisible()
+    await expect(adminPage.getByRole('button', { name: '신청 다시 열기' })).toBeVisible()
 
     await workerPage.reload()
-    await expect(workerPage.getByText('관리자 마감', { exact: true })).toBeVisible()
     await expect(workerPage.getByRole('button', { name: '신청 변경 없음' })).toBeDisabled()
   })
 
@@ -335,90 +310,6 @@ test('관리자 마감·배정·수정과 알바 신청·조회가 실제 DB에�
   expect(workerErrors).toEqual([])
   await adminContext.close()
   await workerContext.close()
-})
-
-test('실제 신청자와 데모 인원의 혼합 일정은 브라우저에만 저장되고 역할 전환 뒤 조회된다', async ({
-  browser,
-}) => {
-  const context = await createRoleContext(browser)
-  const page = await context.newPage()
-  const browserErrors = captureUnexpectedBrowserErrors(page)
-  const actualWorker = fixtures.workers[0]
-  const demoAssignments = [
-    ['스캔 1번째 인원', 'demo-worker-05'],
-    ['메인 1번째 인원', 'demo-worker-06'],
-    ['드레스 1번째 인원', 'demo-worker-07'],
-    ['축가 1번째 인원', 'demo-worker-02'],
-    ['매니저 1번째 인원', 'demo-worker-10'],
-    ['매니저 2번째 인원', 'demo-worker-11'],
-    ['안내 1번째 인원', 'demo-worker-01'],
-    ['안내 2번째 인원', 'demo-worker-04'],
-    ['대기실 1번째 인원', 'demo-worker-08'],
-  ] as const
-
-  await login(page, fixtures.admin.email, '/admin')
-
-  await test.step('관리자가 데모 월의 신청 기간을 열고 실제 회원 한 명이 신청한다', async () => {
-    await page.goto(`/admin/schedules?month=${demoScheduleMonth}`)
-    await page.getByLabel('마감 날짜', { exact: true }).fill('2099-01-15')
-    await page.getByLabel('마감 시간', { exact: true }).fill('18:00')
-    await page.getByRole('button', { name: '신청 기간 열기' }).click()
-    await expect(page.getByText('신청 중', { exact: true })).toBeVisible()
-
-    await applyScheduleDates(actualWorker.email, [demoScheduleDate], demoScheduleMonth)
-    await page.reload()
-    await page.getByRole('button', { name: '신청 수동 마감' }).click()
-    await page.getByRole('button', { name: '신청 마감 확정' }).click()
-    await expect(page.getByText('관리자 마감', { exact: true })).toBeVisible()
-
-    await page.getByRole('link', { name: `${demoScheduleMonthLabel} 일정 등록하기` }).click()
-    await expect(page).toHaveURL(`/admin/schedules/new?month=${demoScheduleMonth}`)
-  })
-
-  const countsBeforeOverlaySave = await getScheduleDatabaseCounts()
-
-  await test.step('실제 신청자 한 명과 데모 인원 아홉 명을 함께 배정한다', async () => {
-    const dateRegion = page.getByRole('region', { name: formatScheduleDate(demoScheduleDate) })
-    await dateRegion.getByRole('button', { name: '일정 설정' }).click()
-    await dateRegion.getByLabel('예식 개수', { exact: true }).fill('3')
-    await dateRegion.getByLabel('팀장 1번째 인원', { exact: true }).selectOption(actualWorker.id)
-    for (const [label, workerId] of demoAssignments) {
-      await dateRegion.getByLabel(label, { exact: true }).selectOption(workerId)
-    }
-
-    await page.getByRole('button', { name: '스케줄 확정' }).click()
-    await page.getByRole('button', { name: '1일 일정 등록·배정 확정' }).click()
-    await expect(page).toHaveURL(`/admin/schedules?month=${demoScheduleMonth}`)
-  })
-
-  const demoCardName = `${formatScheduleDate(demoScheduleDate)} 데모 일정 상세 관리`
-  await test.step('관리자 카드가 즉시 보이고 새로고침과 월 왕복 뒤에도 유지된다', async () => {
-    await expect(page.getByRole('link', { name: demoCardName })).toContainText('브라우저 데모')
-    await page.reload()
-    await expect(page.getByRole('link', { name: demoCardName })).toBeVisible()
-    await page.getByRole('button', { name: '이전 달 보기' }).click()
-    await expect(page.getByText('2099년 1월', { exact: true })).toBeVisible()
-    await page.getByRole('button', { name: '다음 달 보기' }).click()
-    await expect(page.getByRole('link', { name: demoCardName })).toBeVisible()
-  })
-
-  await test.step('브라우저 저장은 실제 일정과 배정 테이블을 변경하지 않는다', async () => {
-    expect(await getScheduleDatabaseCounts()).toEqual(countsBeforeOverlaySave)
-  })
-
-  await test.step('같은 브라우저에서 실제 신청자로 전환하면 월·주·일 모두 본인 배정이 보인다', async () => {
-    await page.getByRole('button', { name: '로그아웃' }).click()
-    await login(page, actualWorker.email, '/home')
-    for (const mode of ['month', 'week', 'day']) {
-      await page.goto(`/schedule?mode=${mode}&anchor=${demoScheduleDate}`)
-      await expect(page.getByRole('heading', { name: '1회 확정' })).toBeVisible()
-      await expect(page.getByText('브라우저 데모', { exact: true })).toBeVisible()
-      await expect(page.getByText('팀장', { exact: true })).toBeVisible()
-    }
-  })
-
-  expect(browserErrors).toEqual([])
-  await context.close()
 })
 
 test('회원가입 확인 메일과 PKCE callback이 실제 계정을 활성화한다', async ({ page, request }) => {

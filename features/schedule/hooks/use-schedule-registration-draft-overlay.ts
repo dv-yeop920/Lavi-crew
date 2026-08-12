@@ -15,8 +15,8 @@ type UseScheduleRegistrationDraftOverlayOptions = {
 
 /**
  * 관리자 일정 달력 개요 화면에서 아직 최종 저장하지 않은 브라우저 임시 저장 초안을
- * "미확정" 배지가 있는 카드로 함께 보여주기 위해 로컬스토리지에서 읽어온다.
- * 이미 Supabase에 등록됐거나 데모 오버레이로 저장된 날짜는 excludedDates로 제외한다.
+ * 등록된 일정과 같은 카드로 함께 보여주기 위해 로컬스토리지에서 읽어온다.
+ * 이미 Supabase에 등록된 날짜는 excludedDates로 제외한다.
  */
 export function useScheduleRegistrationDraftOverlay({
   excludedDates,

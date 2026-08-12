@@ -1,11 +1,6 @@
 import 'server-only'
 
 import { requireRole } from '@/shared/auth/session'
-import { isPortfolioDemoEnabled } from '@/shared/demo/portfolio-demo-config'
-import {
-  containsPortfolioDemoWorkerId,
-  getPortfolioDemoWorkers,
-} from '@/shared/demo/portfolio-fixtures'
 import { POSITION_CATALOG, type PositionId } from '@/shared/domain/positions'
 
 import { getDailyScheduleAssignments, getDailyWorkerCandidates } from '../domain/daily-schedule'
@@ -13,13 +8,11 @@ import { validateScheduleStructure } from '../domain/monthly-registration'
 import { formatScheduleWorkerSummary } from '../lib/schedule-worker-summary'
 import {
   cancelDailyScheduleRecord,
-  confirmAttendanceRecord,
   getDailyScheduleRecords,
   updateDailyScheduleRecord,
 } from '../repositories/daily-schedule-repository'
 import type {
   CancelDailyScheduleInput,
-  ConfirmAttendanceInput,
   DailyScheduleActionResult,
   UpdateDailyScheduleInput,
 } from '../schemas/daily-schedule'
@@ -28,18 +21,7 @@ import type { DailyScheduleViewModel } from '../schemas/daily-schedule-view-mode
 const positionIds = new Set<string>(POSITION_CATALOG.map((position) => position.id))
 
 const errorMessages = {
-  ABSENCE_CANNOT_HAVE_WORK_TIME: '결근에는 근무 시각을 입력할 수 없습니다.',
-  ACTUAL_WORK_DATE_MISMATCH: '실제 근무 시각은 일정 날짜 안에 있어야 합니다.',
-  ACTUAL_WORK_TIME_IN_FUTURE: '미래 시각으로 출석을 확정할 수 없습니다.',
-  ACTUAL_WORK_TIME_REQUIRED: '출근과 퇴근 시각을 확인해 주세요.',
-  ATTENDANCE_ALREADY_CONFIRMED: '출석이 확정된 일정은 구조를 변경하거나 취소할 수 없습니다.',
-  ATTENDANCE_NOT_CONFIRMABLE: '이 출석은 확정할 수 없습니다.',
-  ATTENDANCE_NOT_FOUND: '출석 기록을 찾지 못했습니다.',
-  ATTENDANCE_UNCHANGED: '출석 상태나 실제 근무 시간을 변경해 주세요.',
-  CORRECTION_REASON_REQUIRED: '확정된 출석을 정정하려면 사유가 필요합니다.',
   DUPLICATE_WORKER: '한 일정에 같은 인원을 중복 배정할 수 없습니다.',
-  DEMO_WORKER_READ_ONLY:
-    '데모 인원은 화면 시연용입니다. 실제 일정을 저장하려면 등록된 회원만 배정해 주세요.',
   EXTRA_SLOT_MUST_BE_TRAINING: '추가 슬롯은 교육 인원만 사용할 수 있습니다.',
   FORBIDDEN: '이 작업을 수행할 권한이 없습니다.',
   IDEMPOTENCY_KEY_REUSED: '이미 사용한 요청입니다. 화면을 새로고침해 주세요.',
@@ -51,7 +33,6 @@ const errorMessages = {
   SHIFT_NOT_CANCELLABLE: '이 일정은 취소할 수 없습니다.',
   SHIFT_NOT_EDITABLE: '이 일정은 수정할 수 없습니다.',
   SHIFT_NOT_FOUND: '일정을 찾지 못했습니다.',
-  STALE_ATTENDANCE: '출석 정보가 변경되었습니다. 최신 상태를 다시 불러와 주세요.',
   STALE_SHIFT: '일정 정보가 변경되었습니다. 최신 상태를 다시 불러와 주세요.',
   WORKER_INACTIVE_OR_WAGE_MISSING: '비활성 인원이거나 시급이 설정되지 않은 인원이 있습니다.',
   WORKER_NOT_APPLIED: '선택한 날짜에 신청하지 않은 신규 배정 인원이 있습니다.',
@@ -90,17 +71,6 @@ export async function getAdminDailyScheduleController(
   const candidateProfiles = getDailyWorkerCandidates(records.profiles, currentWorkerIds)
   const viewModel: DailyScheduleViewModel = {
     assignments: assignments.map((assignment) => ({
-      attendance: assignment.attendance_records
-        ? {
-            actualEndedAt: assignment.attendance_records.actual_ended_at,
-            actualStartedAt: assignment.attendance_records.actual_started_at,
-            confirmedAt: assignment.attendance_records.confirmed_at,
-            correctionReason: assignment.attendance_records.correction_reason,
-            id: assignment.attendance_records.id,
-            status: assignment.attendance_records.status,
-            updatedAt: assignment.attendance_records.updated_at,
-          }
-        : null,
       id: assignment.id,
       isTraining: assignment.is_training,
       positionId: assignment.position_id as PositionId,
@@ -108,7 +78,7 @@ export async function getAdminDailyScheduleController(
       status: assignment.status,
       workerId: assignment.worker_id,
     })),
-    canEditStructure: records.shift.status === 'published' && !records.hasConfirmedAttendance,
+    canEditStructure: records.shift.status === 'published',
     date,
     shift: {
       cancellationReason: records.shift.cancellation_reason,
@@ -134,30 +104,14 @@ export async function getAdminDailyScheduleController(
           .map((application) => application.work_date),
         id: profile.id,
         isActive: profile.is_active,
-        isDemo: false,
         isSelectable: profile.isSelectable,
         name: profile.name,
         positionIds: workerPositions,
         summary: formatScheduleWorkerSummary(
-          workerPositions,
           records.previousAssignments.filter((assignment) => assignment.worker_id === profile.id),
         ),
       }
     }),
-  }
-  if (viewModel.state === 'ready' && isPortfolioDemoEnabled()) {
-    viewModel.workers.push(
-      ...getPortfolioDemoWorkers(date.slice(0, 7)).map((worker) => ({
-        appliedDates: worker.appliedDates,
-        id: worker.id,
-        isActive: true,
-        isDemo: true,
-        isSelectable: true,
-        name: worker.name,
-        positionIds: worker.positionIds,
-        summary: worker.summary,
-      })),
-    )
   }
   return viewModel
 }
@@ -166,13 +120,6 @@ export async function updateDailyScheduleController(
   input: UpdateDailyScheduleInput,
 ): Promise<DailyScheduleActionResult> {
   await requireRole('admin')
-  if (containsPortfolioDemoWorkerId(input.assignments.map((assignment) => assignment.workerId))) {
-    return {
-      code: 'DEMO_WORKER_READ_ONLY',
-      message: errorMessages.DEMO_WORKER_READ_ONLY,
-      ok: false,
-    }
-  }
   const errors = validateScheduleStructure({
     assignments: input.assignments,
     ceremonyCount: input.ceremonyCount,
@@ -207,22 +154,6 @@ export async function cancelDailyScheduleController(
     mapMutationError(result.error) ?? {
       data: result.data as Record<string, unknown>,
       message: '일정을 취소하고 이력을 보존했습니다.',
-      ok: true,
-    }
-  )
-}
-
-export async function confirmAttendanceController(
-  input: ConfirmAttendanceInput,
-): Promise<DailyScheduleActionResult> {
-  await requireRole('admin')
-  const result = await confirmAttendanceRecord(input)
-  return (
-    mapMutationError(result.error) ?? {
-      data: result.data as Record<string, unknown>,
-      message: input.correctionReason
-        ? '출석과 급여를 정정했습니다.'
-        : '출석과 급여를 확정했습니다.',
       ok: true,
     }
   )

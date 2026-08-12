@@ -16,7 +16,8 @@ export async function getWorkerManagementRecords() {
       .order('created_at'),
     supabase
       .from('shift_assignments')
-      .select('worker_id, position_id, shifts(work_date), attendance_records(status)'),
+      .select('worker_id, position_id, status, shifts(work_date)')
+      .eq('status', 'confirmed'),
   ])
   const error =
     profilesResult.error ||
@@ -63,8 +64,9 @@ export async function getWorkerHistoryRecords(workerId: string) {
       .order('created_at'),
     supabase
       .from('shift_assignments')
-      .select('worker_id, position_id, shifts(work_date), attendance_records(status)')
-      .eq('worker_id', workerId),
+      .select('worker_id, position_id, status, shifts(work_date)')
+      .eq('worker_id', workerId)
+      .eq('status', 'confirmed'),
   ])
   const error = applicationsResult.error || assignmentsResult.error
   if (error) throw new Error('회원 근무 이력을 조회하지 못했습니다.')

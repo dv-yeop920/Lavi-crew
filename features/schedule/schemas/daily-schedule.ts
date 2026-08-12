@@ -24,36 +24,8 @@ export const cancelDailyScheduleSchema = z.object({
   shiftId: z.uuid(),
 })
 
-export const confirmAttendanceSchema = z
-  .object({
-    actualEndedAt: versionSchema.nullable(),
-    actualStartedAt: versionSchema.nullable(),
-    attendanceId: z.uuid(),
-    correctionReason: z.string().trim().min(2).max(500).nullable(),
-    expectedAttendanceUpdatedAt: versionSchema,
-    requestId: z.uuid(),
-    status: z.enum(['present', 'absent']),
-  })
-  .superRefine((value, context) => {
-    if (value.status === 'present' && (!value.actualStartedAt || !value.actualEndedAt)) {
-      context.addIssue({
-        code: 'custom',
-        message: '출근과 퇴근 시각을 입력해 주세요.',
-        path: ['actualStartedAt'],
-      })
-    }
-    if (value.status === 'absent' && (value.actualStartedAt || value.actualEndedAt)) {
-      context.addIssue({
-        code: 'custom',
-        message: '결근에는 근무 시각을 입력할 수 없습니다.',
-        path: ['actualStartedAt'],
-      })
-    }
-  })
-
 export type UpdateDailyScheduleInput = z.infer<typeof updateDailyScheduleSchema>
 export type CancelDailyScheduleInput = z.infer<typeof cancelDailyScheduleSchema>
-export type ConfirmAttendanceInput = z.infer<typeof confirmAttendanceSchema>
 export type DailyScheduleActionResult = FormActionResult & { data?: Record<string, unknown> }
 
 export function parseDailyScheduleFormData<T extends z.ZodType>(formData: FormData, schema: T) {

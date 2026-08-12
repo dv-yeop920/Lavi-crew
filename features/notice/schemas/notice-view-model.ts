@@ -3,7 +3,6 @@ export type WorkerNoticeViewModel = {
     content: string
     createdAt: string
     id: string
-    isDemo: boolean
     isPinned: boolean
     isRead: boolean
     title: string
@@ -18,7 +17,6 @@ export type AdminNoticeViewModel = {
     content: string
     createdAt: string
     id: string
-    isDemo: boolean
     isPinned: boolean
     readCount: number
     title: string

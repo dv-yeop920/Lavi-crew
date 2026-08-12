@@ -26,7 +26,7 @@ function WorkerNoticeCard({
   const isRead = notice.isRead || state?.ok === true
 
   function handleToggle(event: React.SyntheticEvent<HTMLDetailsElement>) {
-    if (notice.isDemo || !event.currentTarget.open || isRead || isPending || state) return
+    if (!event.currentTarget.open || isRead || isPending || state) return
     event.currentTarget.querySelector('form')?.requestSubmit()
   }
 
@@ -40,7 +40,6 @@ function WorkerNoticeCard({
           </span>
           <span className={layout.wrap}>
             {notice.isPinned ? <StatusBadge tone="warning">고정</StatusBadge> : null}
-            {notice.isDemo ? <StatusBadge tone="accent">데모</StatusBadge> : null}
             <StatusBadge tone={isRead ? 'positive' : 'accent'}>
               {isRead ? '읽음' : '읽지 않음'}
             </StatusBadge>

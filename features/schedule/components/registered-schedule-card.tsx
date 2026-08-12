@@ -14,7 +14,6 @@ type RegisteredScheduleCardProps = {
   dateLabel: string
   time: string
   status?: 'cancelled' | 'published'
-  isDemo?: boolean
   isDraft?: boolean
   variant?: 'management' | 'summary'
 }
@@ -27,29 +26,19 @@ export function RegisteredScheduleCard({
   dateLabel,
   time,
   status = 'published',
-  isDemo = false,
   isDraft = false,
   variant = 'management',
 }: RegisteredScheduleCardProps) {
-  const isDemoOrDraft = isDemo || isDraft
   return (
     <Link
-      aria-label={`${dateLabel} ${status === 'cancelled' ? '취소된 ' : ''}${isDraft ? '임시 저장 ' : isDemo ? '데모 ' : ''}일정 상세 관리`}
+      aria-label={`${dateLabel} ${status === 'cancelled' ? '취소된 ' : ''}일정 상세 관리`}
       className={styles.registeredScheduleCardLink}
-      href={
-        isDemoOrDraft
-          ? `/admin/schedules/new?month=${date.slice(0, 7)}${isDemo ? `&demoDate=${date}` : ''}`
-          : `/admin/schedules/${date}`
-      }
+      href={isDraft ? `/admin/schedules/new?month=${date.slice(0, 7)}` : `/admin/schedules/${date}`}
     >
       <ContentCard>
         <div className={layout.row}>
           <strong>{dateLabel}</strong>
           {status === 'cancelled' ? <StatusBadge tone="neutral">취소됨</StatusBadge> : null}
-          {isDemo ? <StatusBadge tone="warning">브라우저 데모</StatusBadge> : null}
-          {isDraft ? (
-            <StatusBadge tone="accent">임시 저장 · 미확정(이 브라우저)</StatusBadge>
-          ) : null}
         </div>
         <p className={styles.meta}>
           예식 {ceremonyCount}개 · {time}
@@ -60,9 +49,7 @@ export function RegisteredScheduleCard({
         {variant === 'management' ? (
           <div className={layout.row}>
             <span className={styles.meta}>배정 {assignedCount}명</span>
-            <span className={styles.cardAction}>
-              {isDraft ? '이어 작성' : isDemo ? '다시 편집' : '상세 보기'}
-            </span>
+            <span className={styles.cardAction}>상세 보기</span>
           </div>
         ) : null}
       </ContentCard>

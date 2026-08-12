@@ -3,9 +3,8 @@ export type ApplicationRecord = {
   workDate: string
 }
 
-export type AttendanceRecord = {
+export type AssignmentRecord = {
   positionId: string
-  status: 'pending' | 'present' | 'absent'
   workDate: string
 }
 
@@ -40,18 +39,17 @@ export function calculateAverageMonthlyApplicationDays(records: ApplicationRecor
   return Math.round((totalDays / daysByMonth.size) * 10) / 10
 }
 
-export function summarizePreviousMonthAttendance(
-  records: AttendanceRecord[],
+export function summarizePreviousMonthAssignments(
+  records: AssignmentRecord[],
   range: { end: string; start: string },
   positions: readonly { id: string; name: string }[],
 ) {
-  const presentRecords = records.filter(
-    (record) =>
-      record.status === 'present' && record.workDate >= range.start && record.workDate < range.end,
+  const rangeRecords = records.filter(
+    (record) => record.workDate >= range.start && record.workDate < range.end,
   )
   const positionCounts = positions.flatMap((position) => {
-    const count = presentRecords.filter((record) => record.positionId === position.id).length
+    const count = rangeRecords.filter((record) => record.positionId === position.id).length
     return count > 0 ? [{ count, name: position.name }] : []
   })
-  return { attendanceCount: presentRecords.length, positionCounts }
+  return { assignmentCount: rangeRecords.length, positionCounts }
 }

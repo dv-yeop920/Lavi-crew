@@ -11,9 +11,19 @@ describe('admin dashboard date models', () => {
     expect(getKstDashboardDateRange(new Date('2026-07-26T16:00:00Z'))).toEqual({
       monthEndExclusive: '2026-08-01',
       monthStart: '2026-07-01',
+      nextMonthEndExclusive: '2026-09-01',
+      nextMonthStart: '2026-08-01',
       today: '2026-07-27',
       weekEndExclusive: '2026-08-03',
       weekStart: '2026-07-27',
+    })
+  })
+
+  it('rolls the next month range over into the following year in December', () => {
+    expect(getKstDashboardDateRange(new Date('2026-12-15T00:00:00Z'))).toMatchObject({
+      monthStart: '2026-12-01',
+      nextMonthEndExclusive: '2027-02-01',
+      nextMonthStart: '2027-01-01',
     })
   })
 

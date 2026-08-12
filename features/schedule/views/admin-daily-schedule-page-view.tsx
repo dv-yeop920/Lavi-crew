@@ -12,9 +12,6 @@ export async function AdminDailySchedulePageView({ date }: { date: string }) {
   return (
     <AdminDailyScheduleView
       requestIds={{
-        attendance: Object.fromEntries(
-          viewModel.assignments.map((assignment) => [assignment.id, randomUUID()]),
-        ),
         cancel: randomUUID(),
         update: randomUUID(),
       }}

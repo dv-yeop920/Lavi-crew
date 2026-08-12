@@ -1,10 +1,30 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: '14.5'
+  graphql_public: {
+    Tables: {
+      [_ in never]: never
+    }
+    Views: {
+      [_ in never]: never
+    }
+    Functions: {
+      graphql: {
+        Args: {
+          extensions?: Json
+          operationName?: string
+          query?: string
+          variables?: Json
+        }
+        Returns: Json
+      }
+    }
+    Enums: {
+      [_ in never]: never
+    }
+    CompositeTypes: {
+      [_ in never]: never
+    }
   }
   public: {
     Tables: {
@@ -336,7 +356,7 @@ export type Database = {
         Row: {
           amount: number
           assignment_id: string
-          attendance_record_id: string
+          attendance_record_id: string | null
           created_at: string
           id: string
           overtime_minutes: number
@@ -349,7 +369,7 @@ export type Database = {
         Insert: {
           amount: number
           assignment_id: string
-          attendance_record_id: string
+          attendance_record_id?: string | null
           created_at?: string
           id?: string
           overtime_minutes: number
@@ -362,7 +382,7 @@ export type Database = {
         Update: {
           amount?: number
           assignment_id?: string
-          attendance_record_id?: string
+          attendance_record_id?: string | null
           created_at?: string
           id?: string
           overtime_minutes?: number
@@ -808,18 +828,6 @@ export type Database = {
         }
         Returns: Json
       }
-      confirm_attendance_and_payroll: {
-        Args: {
-          p_actual_end?: string
-          p_actual_start?: string
-          p_correction_note?: string
-          p_expected_attendance_updated_at: string
-          p_next_status: Database['public']['Enums']['attendance_status']
-          p_record_id: string
-          p_request_id: string
-        }
-        Returns: Json
-      }
       create_invite_code: {
         Args: {
           p_code: string
@@ -879,7 +887,7 @@ export type Database = {
       }
       save_own_monthly_schedule_applications: {
         Args: {
-          p_expected_period_updated_at: string
+          p_expected_period_updated_at: string | null
           p_period_id: string
           p_request_id: string
           p_selected_dates: string[]
@@ -1071,6 +1079,9 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
+  graphql_public: {
+    Enums: {},
+  },
   public: {
     Enums: {
       app_role: ['worker', 'admin'],
