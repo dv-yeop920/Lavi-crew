@@ -32,16 +32,13 @@ const positionById = new Map<PositionId, (typeof POSITION_CATALOG)[number]>(
   POSITION_CATALOG.map((position) => [position.id, position]),
 )
 
-export function getUnregisteredWeekendDates(month: string, existingShiftDates: string[]) {
+export function getUnregisteredDates(month: string, existingShiftDates: string[]) {
   const [year, monthNumber] = month.split('-').map(Number)
   const existingDates = new Set(existingShiftDates)
   const lastDay = new Date(Date.UTC(year, monthNumber, 0)).getUTCDate()
   return Array.from({ length: lastDay }, (_, index) => index + 1)
     .map((day) => `${month}-${String(day).padStart(2, '0')}`)
-    .filter((date) => {
-      const weekday = new Date(`${date}T00:00:00Z`).getUTCDay()
-      return (weekday === 0 || weekday === 6) && !existingDates.has(date)
-    })
+    .filter((date) => !existingDates.has(date))
 }
 
 export function createRegistrationSummary(schedules: ScheduleInput[]) {
@@ -95,10 +92,10 @@ export function getScheduleSummaries(
     }))
 }
 
-function isWeekendInMonth(month: string, workDate: string) {
+function isDateInMonth(month: string, workDate: string) {
   if (!workDate.startsWith(`${month}-`)) return false
   const date = new Date(`${workDate}T00:00:00Z`)
-  return !Number.isNaN(date.valueOf()) && (date.getUTCDay() === 0 || date.getUTCDay() === 6)
+  return !Number.isNaN(date.valueOf())
 }
 
 export function validateMonthlyRegistration(
@@ -109,7 +106,7 @@ export function validateMonthlyRegistration(
 
   schedules.forEach((schedule, scheduleIndex) => {
     const schedulePath = `dates.${schedule.workDate || scheduleIndex}`
-    if (!isWeekendInMonth(month, schedule.workDate)) {
+    if (!isDateInMonth(month, schedule.workDate)) {
       errors.push({ code: 'INVALID_DATE', path: `${schedulePath}.workDate` })
     }
     errors.push(...validateScheduleStructure(schedule, schedulePath))

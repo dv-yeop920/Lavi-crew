@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   createRegistrationSummary,
   getScheduleSummaries,
-  getUnregisteredWeekendDates,
+  getUnregisteredDates,
   type ScheduleInput,
   validateMonthlyRegistration,
 } from './monthly-registration'
@@ -46,12 +46,18 @@ describe('validateMonthlyRegistration', () => {
     expect(validateMonthlyRegistration('2026-08', [validSchedule()])).toEqual([])
   })
 
-  it('rejects a weekday outside the target weekend policy', () => {
+  it('rejects a date outside the target month', () => {
     const schedule = validSchedule()
-    schedule.workDate = '2026-08-03'
+    schedule.workDate = '2026-09-01'
     expect(validateMonthlyRegistration('2026-08', [schedule])).toContainEqual(
       expect.objectContaining({ code: 'INVALID_DATE' }),
     )
+  })
+
+  it('accepts a weekday date within the target month', () => {
+    const schedule = validSchedule()
+    schedule.workDate = '2026-08-03'
+    expect(validateMonthlyRegistration('2026-08', [schedule])).toEqual([])
   })
 
   it('rejects a duplicate worker on the same date', () => {
@@ -97,12 +103,17 @@ describe('validateMonthlyRegistration', () => {
 
 describe('monthly schedule registration view rules', () => {
   it('excludes every existing shift date including cancelled history', () => {
-    expect(getUnregisteredWeekendDates('2026-08', ['2026-08-01', '2026-08-02'])).not.toContain(
+    expect(getUnregisteredDates('2026-08', ['2026-08-01', '2026-08-02'])).not.toContain(
       '2026-08-01',
     )
-    expect(getUnregisteredWeekendDates('2026-08', ['2026-08-01', '2026-08-02'])).not.toContain(
+    expect(getUnregisteredDates('2026-08', ['2026-08-01', '2026-08-02'])).not.toContain(
       '2026-08-02',
     )
+  })
+
+  it('includes weekday dates alongside weekend dates', () => {
+    expect(getUnregisteredDates('2026-08', [])).toContain('2026-08-03')
+    expect(getUnregisteredDates('2026-08', [])).toContain('2026-08-01')
   })
 
   it('summarizes dates, assignments, and training assignments before confirmation', () => {

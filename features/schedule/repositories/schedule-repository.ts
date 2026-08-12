@@ -102,8 +102,8 @@ export async function saveScheduleApplicationPeriodRecord(input: ScheduleApplica
   const supabase = await createServerSupabaseClient()
   return supabase.rpc('save_schedule_application_period', {
     p_application_deadline: input.applicationDeadline,
-    p_expected_updated_at: input.expectedPeriodUpdatedAt,
-    p_period_id: input.periodId,
+    p_expected_updated_at: input.expectedPeriodUpdatedAt as string,
+    p_period_id: input.periodId as string,
     p_request_id: input.requestId,
     p_year_month: `${input.month}-01`,
   })
@@ -131,7 +131,7 @@ export async function saveMonthlyScheduleRegistrationRecord(input: {
   const supabase = await createServerSupabaseClient()
   return supabase.rpc('save_monthly_schedule_registration', {
     p_application_deadline: input.applicationDeadline,
-    p_expected_period_updated_at: input.expectedPeriodUpdatedAt,
+    p_expected_period_updated_at: input.expectedPeriodUpdatedAt as string,
     p_request_id: input.requestId,
     p_schedules: input.schedules as unknown as Json,
     p_year_month: input.monthStart,

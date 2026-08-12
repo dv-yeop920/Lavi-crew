@@ -1,20 +1,17 @@
 'use client'
 
 import { useRouter } from 'next/navigation'
+import { useState } from 'react'
 
 import { useScheduleRegistrationDraftOverlay } from '@/features/schedule/hooks/use-schedule-registration-draft-overlay'
+import { formatDateLabel } from '@/features/schedule/lib/date-format'
 import type { MonthRegistrationViewModel } from '@/features/schedule/schemas/schedule-view-model'
 import { Button, ButtonLink } from '@/shared/ui/button/button'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 
 import { RegisteredScheduleCard } from '../components/registered-schedule-card'
-import {
-  getDaysInMonth,
-  getLeadingBlankCount,
-  getWeekendDateValues,
-  getWeekendType,
-} from '../lib/calendar'
+import { getDaysInMonth, getLeadingBlankCount, getWeekendType } from '../lib/calendar'
 
 import { ScheduleApplicationPeriodCard } from './schedule-application-period-card'
 
@@ -27,14 +24,6 @@ function formatMonthValue(year: number, monthIndex: number) {
   return `${year}-${String(monthIndex + 1).padStart(2, '0')}`
 }
 
-function formatDateLabel(date: string) {
-  return new Intl.DateTimeFormat('ko-KR', {
-    day: 'numeric',
-    month: 'long',
-    weekday: 'long',
-  }).format(new Date(`${date}T00:00:00`))
-}
-
 export function AdminScheduleView({
   requestId,
   viewModel,
@@ -43,6 +32,7 @@ export function AdminScheduleView({
   viewModel: MonthRegistrationViewModel
 }) {
   const router = useRouter()
+  const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set())
   const [year, monthNumber] = viewModel.month.split('-').map(Number)
   const monthIndex = monthNumber - 1
   const monthValue = viewModel.month
@@ -57,11 +47,11 @@ export function AdminScheduleView({
     left.date.localeCompare(right.date),
   )
   const registeredDays = new Set(monthSchedules.map((schedule) => Number(schedule.date.slice(-2))))
-  // 임시 저장(미확정) 초안은 제외하고, 실제로 확정된 일정만 등록 완료로 센다.
-  const confirmedDates = new Set(viewModel.registeredSchedules.map((schedule) => schedule.date))
-  const isMonthFullyRegistered = getWeekendDateValues(year, monthIndex).every((date) =>
-    confirmedDates.has(date),
-  )
+  const [selectedMonth, setSelectedMonth] = useState(viewModel.month)
+  if (selectedMonth !== viewModel.month) {
+    setSelectedMonth(viewModel.month)
+    setSelectedDates(new Set())
+  }
 
   function moveMonth(offset: number) {
     const nextMonth = new Date(year, monthIndex + offset, 1)
@@ -75,7 +65,7 @@ export function AdminScheduleView({
       <PageHeader
         eyebrow="일정 관리"
         title="일정 달력"
-        description="월별 일정을 확인하고 해당 월의 스케줄 등록 화면으로 이동하세요."
+        description="날짜를 선택한 뒤 일정을 등록하세요."
       />
 
       <ContentCard>
@@ -119,23 +109,60 @@ export function AdminScheduleView({
               role="presentation"
             />
           ))}
-          {days.map((day) => (
-            <span
-              aria-label={
-                registeredDays.has(day)
-                  ? `${monthIndex + 1}월 ${day}일 일정 등록됨`
-                  : `${monthIndex + 1}월 ${day}일 일정 없음`
-              }
-              className={styles.adminCalendarDay}
-              data-registered={registeredDays.has(day) || undefined}
-              data-weekday={getWeekendType(year, monthIndex, day)}
-              key={day}
-            >
-              {day}
-            </span>
-          ))}
+          {days.map((day) => {
+            const dateValue = `${monthValue}-${String(day).padStart(2, '0')}`
+            const isRegistered = registeredDays.has(day)
+            const isSelected = selectedDates.has(dateValue)
+            if (isRegistered) {
+              return (
+                <span
+                  aria-label={`${monthNumber}월 ${day}일 일정 등록됨`}
+                  className={styles.adminCalendarDay}
+                  data-registered
+                  data-weekday={getWeekendType(year, monthIndex, day)}
+                  key={day}
+                >
+                  {day}
+                </span>
+              )
+            }
+            return (
+              <button
+                aria-label={`${monthNumber}월 ${day}일${isSelected ? ' 선택됨' : ''}`}
+                aria-pressed={isSelected}
+                className={styles.day}
+                data-weekday={getWeekendType(year, monthIndex, day)}
+                key={day}
+                type="button"
+                onClick={() => {
+                  setSelectedDates((prev) => {
+                    const next = new Set(prev)
+                    if (next.has(dateValue)) {
+                      next.delete(dateValue)
+                    } else {
+                      next.add(dateValue)
+                    }
+                    return next
+                  })
+                }}
+              >
+                {day}
+              </button>
+            )
+          })}
         </div>
       </ContentCard>
+
+      {selectedDates.size > 0 ? (
+        <div className={layout.row}>
+          <p className={styles.meta}>{selectedDates.size}일 선택됨</p>
+          <Button variant="secondary" onClick={() => setSelectedDates(new Set())}>
+            선택 해제
+          </Button>
+        </div>
+      ) : (
+        <p className={styles.meta}>등록할 날짜를 달력에서 선택하세요.</p>
+      )}
 
       <ScheduleApplicationPeriodCard
         hasScheduleHistory={viewModel.hasScheduleHistory}
@@ -145,25 +172,17 @@ export function AdminScheduleView({
         requestId={requestId}
       />
 
-      {isMonthFullyRegistered ? (
-        <div className={layout.stack}>
-          <Button disabled variant="secondary">
-            {monthLabel} 일정 등록 완료
-          </Button>
-          <p className={styles.meta}>
-            이번 달 스케줄이 모두 확정되었습니다. 수정이 필요하면 아래 등록된 일정에서 날짜를
-            선택하세요.
-          </p>
-        </div>
-      ) : viewModel.period.id ? (
-        <ButtonLink href={`/admin/schedules/new?month=${monthValue}`}>
-          {monthLabel} 일정 등록하기
+      {selectedDates.size > 0 && viewModel.period.id ? (
+        <ButtonLink
+          href={`/admin/schedules/new?month=${monthValue}&dates=${[...selectedDates].sort().join(',')}`}
+        >
+          {selectedDates.size}일 일정 등록하기
         </ButtonLink>
-      ) : (
+      ) : selectedDates.size > 0 ? (
         <Button disabled variant="secondary">
           먼저 신청 기간을 열어주세요
         </Button>
-      )}
+      ) : null}
 
       <section className={layout.stack} aria-labelledby="registered-schedule-title">
         <h2 id="registered-schedule-title">{monthLabel} 등록된 일정</h2>

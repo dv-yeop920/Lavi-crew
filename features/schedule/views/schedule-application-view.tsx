@@ -11,7 +11,7 @@ import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
 
-import { getDaysInMonth, getLeadingBlankCount, getWeekendType, isWeekend } from '../lib/calendar'
+import { getDaysInMonth, getLeadingBlankCount, getWeekendType } from '../lib/calendar'
 
 import * as styles from './schedule.css'
 import * as layout from '@/shared/ui/layout/layout.css'
@@ -148,7 +148,7 @@ export function ScheduleApplicationView({
       <PageHeader
         eyebrow={`${monthNumber}월 일정 신청`}
         title="근무 가능한 날을 선택하세요"
-        description="월별 주말 가능일을 선택해 한 번에 저장하고, 마감 전에는 다시 변경할 수 있어요."
+        description="월별 가능일을 선택해 한 번에 저장하고, 마감 전에는 다시 변경할 수 있어요."
       />
 
       <ContentCard>
@@ -185,7 +185,7 @@ export function ScheduleApplicationView({
         </div>
         {!period ? (
           <p className={styles.emptyState}>
-            관리자가 아직 이 달의 신청 기간을 열지 않았습니다. 기간이 열리면 주말을 선택할 수
+            관리자가 아직 이 달의 신청 기간을 열지 않았습니다. 기간이 열리면 날짜를 선택할 수
             있어요.
           </p>
         ) : null}
@@ -210,26 +210,23 @@ export function ScheduleApplicationView({
           ))}
           {days.map((day) => {
             const date = formatDateValue(viewModel.month, day)
-            const weekend = isWeekend(year, monthIndex, day)
             const selected = selectedDates.has(date)
-            const stateLabel = !weekend
-              ? ''
-              : !period
-                ? ' 신청 기간 미설정'
-                : !canEdit
-                  ? selected
-                    ? ' 신청 완료, 변경 불가'
-                    : ' 신청 마감'
-                  : selected
-                    ? ' 신청 취소'
-                    : ' 신청'
+            const stateLabel = !period
+              ? ' 신청 기간 미설정'
+              : !canEdit
+                ? selected
+                  ? ' 신청 완료, 변경 불가'
+                  : ' 신청 마감'
+                : selected
+                  ? ' 신청 취소'
+                  : ' 신청'
             return (
               <button
                 aria-label={`${monthNumber}월 ${day}일${stateLabel}`}
-                aria-pressed={weekend ? selected : undefined}
+                aria-pressed={selected}
                 className={styles.day}
                 data-weekday={getWeekendType(year, monthIndex, day)}
-                disabled={!weekend || !canEdit || isPending}
+                disabled={!canEdit || isPending}
                 key={date}
                 type="button"
                 onClick={() => toggleDate(date)}

@@ -1,30 +1,10 @@
 export type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[]
 
 export type Database = {
-  graphql_public: {
-    Tables: {
-      [_ in never]: never
-    }
-    Views: {
-      [_ in never]: never
-    }
-    Functions: {
-      graphql: {
-        Args: {
-          extensions?: Json
-          operationName?: string
-          query?: string
-          variables?: Json
-        }
-        Returns: Json
-      }
-    }
-    Enums: {
-      [_ in never]: never
-    }
-    CompositeTypes: {
-      [_ in never]: never
-    }
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: '14.5'
   }
   public: {
     Tables: {
@@ -860,6 +840,13 @@ export type Database = {
         }
         Returns: Json
       }
+      get_active_profile_names: {
+        Args: never
+        Returns: {
+          id: string
+          name: string
+        }[]
+      }
       is_admin: { Args: never; Returns: boolean }
       mark_notice_read: {
         Args: { p_notice_id: string; p_request_id: string }
@@ -878,7 +865,7 @@ export type Database = {
       save_monthly_schedule_registration: {
         Args: {
           p_application_deadline: string
-          p_expected_period_updated_at: string | null
+          p_expected_period_updated_at: string
           p_request_id: string
           p_schedules: Json
           p_year_month: string
@@ -887,7 +874,7 @@ export type Database = {
       }
       save_own_monthly_schedule_applications: {
         Args: {
-          p_expected_period_updated_at: string | null
+          p_expected_period_updated_at: string
           p_period_id: string
           p_request_id: string
           p_selected_dates: string[]
@@ -897,8 +884,8 @@ export type Database = {
       save_schedule_application_period: {
         Args: {
           p_application_deadline: string
-          p_expected_updated_at: string | null
-          p_period_id: string | null
+          p_expected_updated_at: string
+          p_period_id: string
           p_request_id: string
           p_year_month: string
         }
@@ -1079,9 +1066,6 @@ export type CompositeTypes<
     : never
 
 export const Constants = {
-  graphql_public: {
-    Enums: {},
-  },
   public: {
     Enums: {
       app_role: ['worker', 'admin'],

@@ -23,7 +23,14 @@
 
 ## Database read boundary
 
-Workers may read only their own confirmed assignments whose shifts remain published; admins retain
-full assignment visibility. Attendance status now enforces actual-time invariants. Legacy
-`present` rows without actual times are reset to pending only when they have no active payroll
-item; an active payroll conflict blocks migration for manual review.
+Workers may read all published shifts, all confirmed assignments on those shifts, and all
+profiles. This allows the "전체 일정 조회" view to display the full roster (every position and
+assigned worker name) identically to the admin schedule history view. Prior to migration
+`20260812100736_allow_worker_full_schedule_reads`, workers could only read shifts where they held
+a confirmed assignment and only their own profile row; that restriction was relaxed because the
+team schedule is shared operational information in a small wedding-hall crew.
+
+Admins retain full visibility including cancelled shifts and non-confirmed assignments.
+Attendance status enforces actual-time invariants. Legacy `present` rows without actual times
+are reset to pending only when they have no active payroll item; an active payroll conflict
+blocks migration for manual review.

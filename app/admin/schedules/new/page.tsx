@@ -1,12 +1,12 @@
 import { AdminScheduleRegistrationPageView } from '@/features/schedule/views/admin-schedule-registration-page-view'
 
 type AdminScheduleRegistrationPageProps = {
-  searchParams: Promise<{ month?: string }>
+  searchParams: Promise<{ dates?: string; month?: string }>
 }
 
 export default async function AdminScheduleRegistrationPage({
   searchParams,
 }: AdminScheduleRegistrationPageProps) {
-  const { month: monthQuery } = await searchParams
-  return <AdminScheduleRegistrationPageView monthQuery={monthQuery} />
+  const { dates, month: monthQuery } = await searchParams
+  return <AdminScheduleRegistrationPageView datesQuery={dates} monthQuery={monthQuery} />
 }

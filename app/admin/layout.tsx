@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 
 import { LogoutButton } from '@/features/auth/components/logout-button'
-import { requireRole } from '@/shared/auth/session'
 import { AppShell } from '@/shared/ui/app-shell/app-shell'
 
 const navigationItems = [
@@ -10,8 +9,7 @@ const navigationItems = [
   { href: '/admin/more', icon: 'management' as const, label: '관리' },
 ]
 
-export default async function AdminLayout({ children }: Readonly<{ children: ReactNode }>) {
-  await requireRole('admin')
+export default function AdminLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <AppShell headerAction={<LogoutButton />} navigationItems={navigationItems}>
       {children}

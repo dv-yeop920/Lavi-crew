@@ -33,20 +33,16 @@ export function getApplicationPeriodViewState(
   }
 }
 
-function isWeekendInMonth(month: string, dateValue: string) {
+function isDateInMonth(month: string, dateValue: string) {
   if (!dateValue.startsWith(`${month}-`)) return false
   const date = new Date(`${dateValue}T00:00:00Z`)
-  return (
-    !Number.isNaN(date.valueOf()) &&
-    date.toISOString().slice(0, 10) === dateValue &&
-    (date.getUTCDay() === 0 || date.getUTCDay() === 6)
-  )
+  return !Number.isNaN(date.valueOf()) && date.toISOString().slice(0, 10) === dateValue
 }
 
 export function normalizeMonthlyApplicationDates(month: string, selectedDates: string[]) {
   const dates = [...new Set(selectedDates)].sort()
   const errors = dates
-    .filter((date) => !isWeekendInMonth(month, date))
+    .filter((date) => !isDateInMonth(month, date))
     .map<MonthlyApplicationDateError>((date) => ({
       code: 'INVALID_APPLICATION_DATE',
       date,

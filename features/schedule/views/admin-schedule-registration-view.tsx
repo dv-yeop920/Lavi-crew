@@ -37,6 +37,7 @@ import * as layout from '@/shared/ui/layout/layout.css'
 
 type AdminScheduleRegistrationViewProps = {
   requestId: string
+  selectedDates: string[]
   viewModel: MonthRegistrationViewModel
 }
 
@@ -84,12 +85,13 @@ function formatSavedAt(savedAt: string) {
 
 export function AdminScheduleRegistrationView({
   requestId,
+  selectedDates,
   viewModel,
 }: AdminScheduleRegistrationViewProps) {
   const router = useRouter()
-  const { month, period, registeredSchedules, unregisteredWeekendDates, workers } = viewModel
+  const { month, period, registeredSchedules, workers } = viewModel
   const storedDeadline = getStoredApplicationDeadline(period.applicationDeadline)
-  const [drafts, setDrafts] = useState(() => unregisteredWeekendDates.map(createDraft))
+  const [drafts, setDrafts] = useState(() => selectedDates.map(createDraft))
   const { clearDraft, lastSavedAt, saveMonthDrafts } = useScheduleRegistrationDraft({
     month,
     setDrafts,
@@ -122,12 +124,12 @@ export function AdminScheduleRegistrationView({
     let isCancelled = false
     queueMicrotask(() => {
       if (isCancelled) return
-      setDrafts((current) => reconcileDateDrafts(current, unregisteredWeekendDates, createDraft))
+      setDrafts((current) => reconcileDateDrafts(current, selectedDates, createDraft))
     })
     return () => {
       isCancelled = true
     }
-  }, [unregisteredWeekendDates])
+  }, [selectedDates])
 
   function updateDraft(date: string, changes: Partial<ScheduleDraft>) {
     setDrafts((current) =>
@@ -263,11 +265,11 @@ export function AdminScheduleRegistrationView({
 
         <section className={layout.stack} aria-labelledby="unregistered-schedule-dates">
           <div className={layout.row}>
-            <h2 id="unregistered-schedule-dates">미등록 날짜</h2>
-            <StatusBadge tone="neutral">{unregisteredWeekendDates.length}일</StatusBadge>
+            <h2 id="unregistered-schedule-dates">선택한 날짜</h2>
+            <StatusBadge tone="neutral">{selectedDates.length}일</StatusBadge>
           </div>
           <p className={styles.meta}>
-            임시 저장 버튼은 날짜마다 있지만, 누르면 현재 작성 중인 모든 날짜가 함께 저장됩니다.
+            날짜별 예식 개수, 근무 시간, 포지션 배정을 설정하세요.
             {lastSavedAt ? ` 마지막 임시 저장: ${formatSavedAt(lastSavedAt)}` : ''}
           </p>
           {drafts.length > 0

@@ -2,6 +2,7 @@ import Link from 'next/link'
 
 import { moveWorkerScheduleAnchor } from '@/features/schedule/lib/worker-schedule-navigation'
 import type { WorkerScheduleViewModel } from '@/features/schedule/schemas/worker-schedule-view-model'
+import { ButtonLink } from '@/shared/ui/button/button'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
@@ -102,6 +103,12 @@ export function WorkerScheduleView({ viewModel }: { viewModel: ReadyWorkerSchedu
           </ContentCard>
         )}
       </section>
+      <ButtonLink
+        href={`/schedule/all?month=${viewModel.range.start.slice(0, 7)}`}
+        variant="secondary"
+      >
+        전체 일정 조회하기
+      </ButtonLink>
     </div>
   )
 }

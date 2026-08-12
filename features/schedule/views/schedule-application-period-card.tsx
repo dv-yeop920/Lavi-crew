@@ -151,9 +151,7 @@ export function ScheduleApplicationPeriodCard({
           </StatusBadge>
         ) : null}
       </div>
-      <p className={styles.meta}>
-        마감 시각 전까지 구성원이 월별 주말 가능일을 신청할 수 있습니다.
-      </p>
+      <p className={styles.meta}>마감 시각 전까지 구성원이 월별 가능일을 신청할 수 있습니다.</p>
 
       {hasScheduleHistory ? (
         <div className={layout.stack}>

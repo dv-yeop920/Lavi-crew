@@ -7,7 +7,13 @@ import { getCanonicalMonth } from '../lib/month-query'
 
 import { AdminScheduleRegistrationView } from './admin-schedule-registration-view'
 
-export async function AdminScheduleRegistrationPageView({ monthQuery }: { monthQuery?: string }) {
+export async function AdminScheduleRegistrationPageView({
+  datesQuery,
+  monthQuery,
+}: {
+  datesQuery?: string
+  monthQuery?: string
+}) {
   const month = getCanonicalMonth(monthQuery)
   if (!month) {
     const currentMonth = new Intl.DateTimeFormat('en-CA', {
@@ -18,5 +24,17 @@ export async function AdminScheduleRegistrationPageView({ monthQuery }: { monthQ
     redirect(`/admin/schedules/new?month=${currentMonth}`)
   }
   const viewModel = await getAdminMonthScheduleController(month)
-  return <AdminScheduleRegistrationView requestId={randomUUID()} viewModel={viewModel} />
+  const selectedDates = datesQuery
+    ? datesQuery
+        .split(',')
+        .filter((date) => viewModel.unregisteredDates.includes(date))
+        .sort()
+    : viewModel.unregisteredDates
+  return (
+    <AdminScheduleRegistrationView
+      requestId={randomUUID()}
+      selectedDates={selectedDates}
+      viewModel={viewModel}
+    />
+  )
 }

@@ -9,7 +9,7 @@ import {
 } from '../domain/monthly-application'
 import {
   getScheduleSummaries,
-  getUnregisteredWeekendDates,
+  getUnregisteredDates,
   type RegistrationRuleErrorCode,
   validateMonthlyRegistration,
 } from '../domain/monthly-registration'
@@ -92,7 +92,7 @@ export async function getAdminMonthScheduleController(
       updatedAt: records.period?.updated_at ?? null,
     },
     registeredSchedules,
-    unregisteredWeekendDates: getUnregisteredWeekendDates(
+    unregisteredDates: getUnregisteredDates(
       month,
       records.shifts.map((shift) => shift.work_date),
     ),
@@ -104,7 +104,7 @@ const applicationErrorMessages = {
   APPLICATION_PERIOD_CLOSED: '신청 기간이 마감되었습니다.',
   FORBIDDEN: '이 작업을 수행할 권한이 없습니다.',
   IDEMPOTENCY_KEY_REUSED: '이미 사용한 요청입니다. 화면을 새로고침해 주세요.',
-  INVALID_APPLICATION_DATE: '해당 월의 주말 날짜만 신청할 수 있습니다.',
+  INVALID_APPLICATION_DATE: '해당 월의 날짜만 신청할 수 있습니다.',
   INVALID_INPUT: '입력 내용을 확인해 주세요.',
   PERIOD_CANNOT_BE_REOPENED: '게시된 일정이 있거나 마감 시각이 지나 다시 열 수 없습니다.',
   PERIOD_HAS_SCHEDULE_HISTORY: '일정이 등록된 월의 신청 마감 시각은 변경할 수 없습니다.',
@@ -163,7 +163,7 @@ export async function saveWorkerMonthlyApplicationsController(
   if (errors.length > 0) {
     return {
       code: errors[0].code,
-      fieldErrors: { selectedDates: ['해당 월의 주말 날짜만 선택해 주세요.'] },
+      fieldErrors: { selectedDates: ['해당 월의 날짜만 선택할 수 있습니다.'] },
       message: '신청 날짜를 확인해 주세요.',
       ok: false,
     }
@@ -208,7 +208,7 @@ const domainErrorMessages = {
   DUPLICATE_WORKER: '같은 날짜에 한 인원을 두 번 배정할 수 없습니다.',
   EXTRA_SLOT_MUST_BE_TRAINING: '추가 슬롯은 교육 인원으로만 등록할 수 있습니다.',
   INVALID_CAPACITY: '포지션별 기본 인원과 교육 추가 인원을 확인해 주세요.',
-  INVALID_DATE: '등록할 주말 날짜를 확인해 주세요.',
+  INVALID_DATE: '등록할 날짜를 확인해 주세요.',
   INVALID_TIME: '근무 종료 시간은 시작 시간보다 늦어야 합니다.',
 } satisfies Record<RegistrationRuleErrorCode, string>
 

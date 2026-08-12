@@ -30,7 +30,7 @@ export type MonthRegistrationViewModel = {
     updatedAt: string | null
   }
   registeredSchedules: RegisteredScheduleSummary[]
-  unregisteredWeekendDates: string[]
+  unregisteredDates: string[]
   workers: AssignmentWorkerOption[]
 }
 

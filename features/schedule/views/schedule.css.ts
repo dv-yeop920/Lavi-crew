@@ -36,6 +36,7 @@ export const periodNavigator = style({
   gridTemplateColumns: '2.75rem minmax(0, 1fr) 2.75rem',
   alignItems: 'center',
   gap: '0.75rem',
+  scrollMarginTop: 'calc(3.5rem + env(safe-area-inset-top))',
   textAlign: 'center',
 })
 
@@ -59,7 +60,18 @@ export const monthArrowButton = style({
       outline: `2px solid ${semanticVars.color.primaryNormal}`,
       outlineOffset: '2px',
     },
+    '&:disabled': {
+      cursor: 'default',
+      opacity: 0.4,
+    },
   },
+})
+
+export const periodCounter = style({
+  marginTop: '0.25rem',
+  color: semanticVars.color.labelNeutral,
+  fontSize: semanticVars.font.size.captionSmall,
+  lineHeight: semanticVars.font.lineHeight.normal,
 })
 
 export const weekday = style({
@@ -364,52 +376,26 @@ export const fieldError = style({
   lineHeight: semanticVars.font.lineHeight.normal,
 })
 
-export const historyTableWrapper = style({
-  overflowX: 'auto',
+export const positionAssignmentList = style({
+  display: 'grid',
+  gap: '0.5rem',
+  margin: '0.75rem 0 0',
+  padding: 0,
+  listStyle: 'none',
 })
 
-export const historyTable = style({
-  width: '100%',
-  minWidth: '48rem',
-  borderCollapse: 'collapse',
-})
-
-export const historyTableHeadCell = style({
-  padding: '0.75rem',
-  borderBottom: `1px solid ${semanticVars.color.lineStrong}`,
-  color: semanticVars.color.labelNeutral,
-  textAlign: 'left',
-  whiteSpace: 'nowrap',
-  fontSize: semanticVars.font.size.labelSmall,
-  fontWeight: semanticVars.font.weight.semibold,
-})
-
-export const historyTableCell = style({
-  padding: '0.75rem',
+export const positionAssignmentRow = style({
+  display: 'grid',
+  gridTemplateColumns: 'minmax(0, 6rem) minmax(0, 1fr)',
+  alignItems: 'start',
+  gap: '0.75rem',
+  paddingBlock: '0.5rem',
   borderBottom: `1px solid ${semanticVars.color.lineNormal}`,
-  color: semanticVars.color.labelNormal,
-  verticalAlign: 'top',
-  fontSize: semanticVars.font.size.bodySmall,
-  lineHeight: semanticVars.font.lineHeight.normal,
-})
-
-export const historyDateLink = style({
-  color: semanticVars.color.primaryStrong,
-  fontWeight: semanticVars.font.weight.bold,
-  textDecoration: 'none',
-  whiteSpace: 'nowrap',
-  selectors: {
-    '&:focus-visible': {
-      outline: `2px solid ${semanticVars.color.primaryNormal}`,
-      outlineOffset: '2px',
+  '@media': {
+    'screen and (max-width: 22rem)': {
+      gridTemplateColumns: '1fr',
     },
   },
-})
-
-export const historyDateText = style({
-  color: semanticVars.color.labelNormal,
-  fontWeight: semanticVars.font.weight.bold,
-  whiteSpace: 'nowrap',
 })
 
 export const confirmation = style({

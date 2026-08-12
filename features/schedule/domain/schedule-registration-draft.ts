@@ -167,7 +167,7 @@ export function getScheduleRegistrationDraftOverlayForMonth(
 /**
  * 화면에 이미 표시 중인 초안 목록(current)에 로컬스토리지에서 복원한 임시 저장 항목
  * (stored)을 합친다. 날짜가 이미 current에 있으면 저장된 값으로 덮어쓰고, current에는
- * 없지만 저장돼 있던 날짜(예: 서버가 이번 방문에는 미등록 주말로 계산하지 않은 날짜)는
+ * 없지만 저장돼 있던 날짜(예: 서버가 이번 방문에는 미등록 날짜로 계산하지 않은 날짜)는
  * 새 항목으로 추가한다 — 조회 시점의 목록에 없다는 이유로 임시 저장한 내용을 조용히
  * 버리지 않기 위함이다. stored는 ScheduleRegistrationDraftEntry이고 T는 이를 확장하는
  * 타입이므로, current에 없던 날짜에는 그 값을 T로 취급해도 구조적으로 안전하다.
