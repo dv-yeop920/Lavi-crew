@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
 import {
-  countUnregisteredWeekendDates,
   getEffectiveApplicationPeriodStatus,
   getKstDashboardDateRange,
 } from './admin-dashboard'
@@ -25,16 +24,6 @@ describe('admin dashboard date models', () => {
       nextMonthEndExclusive: '2027-02-01',
       nextMonthStart: '2027-01-01',
     })
-  })
-
-  it('counts only weekends without a published schedule', () => {
-    expect(
-      countUnregisteredWeekendDates('2026-08-01', '2026-09-01', [
-        '2026-08-01',
-        '2026-08-02',
-        '2026-08-08',
-      ]),
-    ).toBe(7)
   })
 
   it('treats an expired open period as effectively closed', () => {

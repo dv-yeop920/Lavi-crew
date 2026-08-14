@@ -55,15 +55,6 @@ function getMonthTasks(month: AdminDashboardMonth): AdminDashboardTask[] {
     })
   }
 
-  if (month.unregisteredWeekendCount > 0) {
-    tasks.push({
-      href: `/admin/schedules/new?month=${month.yearMonth}`,
-      label: `${monthLabel} 스케줄 등록 필요`,
-      status: `${month.unregisteredWeekendCount}일`,
-      tone: 'accent',
-    })
-  }
-
   return tasks
 }
 

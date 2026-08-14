@@ -3,7 +3,6 @@ import 'server-only'
 import { requireRole } from '@/shared/auth/session'
 
 import {
-  countUnregisteredWeekendDates,
   getEffectiveApplicationPeriodStatus,
   getKstDashboardDateRange,
 } from '../domain/admin-dashboard'
@@ -16,9 +15,7 @@ export async function getAdminDashboardController(
   await requireRole('admin')
   const range = getKstDashboardDateRange(asOf)
   const records = await getAdminDashboardRecords(range)
-  const registeredDates = records.monthSchedules.map((schedule) => schedule.work_date)
-
-  function buildMonth(monthStart: string, monthEndExclusive: string) {
+  function buildMonth(monthStart: string) {
     const record = records.periods.find((period) => period.year_month === monthStart) ?? null
     const effectiveStatus = record
       ? getEffectiveApplicationPeriodStatus(record.status, record.application_deadline, asOf)
@@ -36,11 +33,6 @@ export async function getAdminDashboardController(
               yearMonth: record.year_month,
             }
           : null,
-      unregisteredWeekendCount: countUnregisteredWeekendDates(
-        monthStart,
-        monthEndExclusive,
-        registeredDates,
-      ),
       yearMonth: monthStart.slice(0, 7),
     }
   }
@@ -48,8 +40,8 @@ export async function getAdminDashboardController(
   return {
     asOfDate: range.today,
     months: [
-      buildMonth(range.monthStart, range.monthEndExclusive),
-      buildMonth(range.nextMonthStart, range.nextMonthEndExclusive),
+      buildMonth(range.monthStart),
+      buildMonth(range.nextMonthStart),
     ],
     currentWeek: {
       endExclusive: range.weekEndExclusive,

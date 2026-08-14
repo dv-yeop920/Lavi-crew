@@ -8,7 +8,6 @@ export type AdminDashboardMonth = {
     updatedAt: string
     yearMonth: string
   } | null
-  unregisteredWeekendCount: number
   yearMonth: string
 }
 

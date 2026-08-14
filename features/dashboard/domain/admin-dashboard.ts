@@ -43,20 +43,6 @@ export function getKstDashboardDateRange(asOf: Date): DashboardDateRange {
   }
 }
 
-export function countUnregisteredWeekendDates(
-  monthStart: string,
-  monthEndExclusive: string,
-  registeredDates: string[],
-) {
-  const registered = new Set(registeredDates)
-  let count = 0
-  for (let date = monthStart; date < monthEndExclusive; date = addUtcDays(date, 1)) {
-    const weekday = new Date(`${date}T00:00:00Z`).getUTCDay()
-    if ((weekday === 0 || weekday === 6) && !registered.has(date)) count += 1
-  }
-  return count
-}
-
 export function getEffectiveApplicationPeriodStatus(
   status: 'closed' | 'open',
   deadline: string,

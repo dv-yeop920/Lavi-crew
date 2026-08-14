@@ -9,7 +9,6 @@ import { getAdminDashboardTasks } from './admin-dashboard-display'
 
 const currentMonth: AdminDashboardMonth = {
   applicationPeriod: null,
-  unregisteredWeekendCount: 2,
   yearMonth: '2026-07',
 }
 
@@ -20,19 +19,13 @@ const baseViewModel: AdminDashboardViewModel = {
 }
 
 describe('admin dashboard display', () => {
-  it('creates real setup and unregistered schedule tasks', () => {
+  it('creates application period setup task when period is not set', () => {
     expect(getAdminDashboardTasks(baseViewModel)).toEqual([
       {
         href: '/admin/schedules?month=2026-07',
         label: '2026년 7월 신청 기간 설정',
         status: '미설정',
         tone: 'warning',
-      },
-      {
-        href: '/admin/schedules/new?month=2026-07',
-        label: '2026년 7월 스케줄 등록 필요',
-        status: '2일',
-        tone: 'accent',
       },
     ])
   })
@@ -52,7 +45,6 @@ describe('admin dashboard display', () => {
               updatedAt: '2026-07-29T15:00:00Z',
               yearMonth: '2026-07-01',
             },
-            unregisteredWeekendCount: 0,
             yearMonth: '2026-07',
           },
         ],
@@ -66,7 +58,7 @@ describe('admin dashboard display', () => {
     const tasks = getAdminDashboardTasks({
       ...baseViewModel,
       months: [
-        { ...currentMonth, unregisteredWeekendCount: 0 },
+        currentMonth,
         {
           applicationPeriod: {
             deadline: '2026-08-25T09:00:00Z',
@@ -77,7 +69,6 @@ describe('admin dashboard display', () => {
             updatedAt: '2026-07-30T00:00:00Z',
             yearMonth: '2026-08-01',
           },
-          unregisteredWeekendCount: 10,
           yearMonth: '2026-08',
         },
       ],
@@ -86,7 +77,6 @@ describe('admin dashboard display', () => {
     expect(tasks.map((task) => [task.label, task.href])).toEqual([
       ['2026년 7월 신청 기간 설정', '/admin/schedules?month=2026-07'],
       ['2026년 8월 신청 마감 예정', '/admin/schedules?month=2026-08'],
-      ['2026년 8월 스케줄 등록 필요', '/admin/schedules/new?month=2026-08'],
     ])
   })
 
@@ -105,7 +95,6 @@ describe('admin dashboard display', () => {
               updatedAt: '2026-06-25T09:00:00Z',
               yearMonth: '2026-07-01',
             },
-            unregisteredWeekendCount: 0,
             yearMonth: '2026-07',
           },
           {
@@ -118,7 +107,6 @@ describe('admin dashboard display', () => {
               updatedAt: '2026-07-25T09:00:00Z',
               yearMonth: '2026-08-01',
             },
-            unregisteredWeekendCount: 0,
             yearMonth: '2026-08',
           },
         ],
