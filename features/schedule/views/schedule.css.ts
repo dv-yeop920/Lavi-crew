@@ -16,9 +16,7 @@ export const calendar = style({
 export const applicationCalendar = style({
   '@media': {
     'screen and (max-width: 22rem)': {
-      width: 'calc(100% + 3.375rem)',
-      marginInline: '-1.6875rem',
-      gap: 0,
+      gap: '0.125rem',
     },
   },
 })

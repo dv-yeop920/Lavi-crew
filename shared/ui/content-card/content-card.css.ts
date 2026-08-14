@@ -4,6 +4,7 @@ import { semanticVars } from '@/shared/styles/theme.css'
 
 export const card = style({
   display: 'grid',
+  minWidth: 0,
   gap: '0.75rem',
   padding: '1rem',
   border: `1px solid ${semanticVars.color.lineNormal}`,

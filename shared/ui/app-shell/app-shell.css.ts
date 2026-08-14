@@ -11,6 +11,7 @@ export const shell = style({
   width: 'min(100%, 48rem)',
   minHeight: '100dvh',
   marginInline: 'auto',
+  overflowX: 'hidden',
   background: semanticVars.color.background,
 })
 
