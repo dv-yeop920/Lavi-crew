@@ -12,6 +12,7 @@ import { getFirstFieldError } from '@/shared/forms/form-result'
 import { useActionSuccessEffect } from '@/shared/forms/use-action-success-effect'
 import { useSelectiveFormRecovery } from '@/shared/forms/use-selective-form-recovery'
 import { Button } from '@/shared/ui/button/button'
+import { LoadingDots } from '@/shared/ui/button/loading-dots'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
@@ -158,7 +159,7 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
 
           <div className={layout.wrap}>
             <Button disabled={!worker.isActive || isUpdating} type="submit">
-              {isUpdating ? '저장 중...' : '완료'}
+              {isUpdating ? <>저장 중<LoadingDots /></> : '완료'}
             </Button>
             <Button
               disabled={isUpdating}
@@ -196,7 +197,7 @@ export function WorkerDetailView({ worker }: { worker: WorkerDetailViewModel }) 
           <p>로그인과 신규 신청·배정은 차단되며 기존 근무 및 급여 이력은 삭제되지 않습니다.</p>
           <form action={deactivateFormAction} className={layout.wrap}>
             <Button disabled={isDeactivating} type="submit">
-              {isDeactivating ? '처리 중...' : '회원 삭제 확인'}
+              {isDeactivating ? <>처리 중<LoadingDots /></> : '회원 삭제 확인'}
             </Button>
             <Button variant="secondary" onClick={() => setIsDeleteConfirming(false)}>
               취소

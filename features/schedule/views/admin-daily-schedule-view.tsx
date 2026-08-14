@@ -13,6 +13,7 @@ import type { DailyScheduleViewModel } from '@/features/schedule/schemas/daily-s
 import { getFirstFieldError } from '@/shared/forms/form-result'
 import { useActionSuccessEffect } from '@/shared/forms/use-action-success-effect'
 import { Button } from '@/shared/ui/button/button'
+import { LoadingDots } from '@/shared/ui/button/loading-dots'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
@@ -354,7 +355,7 @@ export function AdminDailyScheduleView({
           {isEditing ? (
             <div className={layout.wrap}>
               <Button disabled={!structureDirty || isUpdating} type="submit">
-                {isUpdating ? '저장 중…' : '수정 저장'}
+                {isUpdating ? <>저장 중<LoadingDots /></> : '수정 저장'}
               </Button>
               <Button
                 disabled={isUpdating}

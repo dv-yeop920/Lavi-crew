@@ -11,6 +11,7 @@ import type { MonthRegistrationViewModel } from '@/features/schedule/schemas/sch
 import { getFirstFieldError } from '@/shared/forms/form-result'
 import { useActionSuccessEffect } from '@/shared/forms/use-action-success-effect'
 import { Button } from '@/shared/ui/button/button'
+import { LoadingDots } from '@/shared/ui/button/loading-dots'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
 
@@ -193,7 +194,7 @@ export function ScheduleApplicationPeriodCard({
               />
             </label>
             <Button disabled={isBusy} type="submit">
-              {isSavingPeriod ? '저장 중…' : period.id ? '마감 시각 변경' : '신청 기간 열기'}
+              {isSavingPeriod ? <>저장 중<LoadingDots /></> : period.id ? '마감 시각 변경' : '신청 기간 열기'}
             </Button>
           </div>
           {deadlineError ? (

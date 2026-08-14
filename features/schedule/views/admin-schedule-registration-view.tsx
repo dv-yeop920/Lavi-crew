@@ -19,6 +19,7 @@ import type {
 } from '@/features/schedule/schemas/schedule-view-model'
 import { getFirstFieldError } from '@/shared/forms/form-result'
 import { Button } from '@/shared/ui/button/button'
+import { LoadingDots } from '@/shared/ui/button/loading-dots'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
@@ -481,7 +482,7 @@ export function AdminScheduleRegistrationView({
             <p className={styles.meta}>저장 즉시 일정이 게시되고 배정이 확정됩니다.</p>
             <div className={layout.wrap}>
               <Button disabled={!canPublish || isPending} type="submit">
-                {isPending ? '확정 중…' : `${summary.dateCount}일 일정 등록·배정 확정`}
+                {isPending ? <>확정 중<LoadingDots /></> : `${summary.dateCount}일 일정 등록·배정 확정`}
               </Button>
               <Button
                 disabled={isPending}

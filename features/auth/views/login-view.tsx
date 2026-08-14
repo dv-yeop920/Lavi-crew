@@ -7,6 +7,7 @@ import { loginAction } from '@/features/auth/actions/auth-actions'
 import { getFirstFieldError } from '@/shared/forms/form-result'
 import { useSelectiveFormRecovery } from '@/shared/forms/use-selective-form-recovery'
 import { Button } from '@/shared/ui/button/button'
+import { LoadingDots } from '@/shared/ui/button/loading-dots'
 import { TextField } from '@/shared/ui/text-field/text-field'
 
 import * as styles from './auth-view.css'
@@ -53,7 +54,7 @@ export function LoginView() {
             </p>
           ) : null}
           <Button className={styles.fullButton} disabled={isPending} type="submit">
-            {isPending ? '로그인 중...' : '로그인'}
+            {isPending ? <>로그인 중<LoadingDots /></> : '로그인'}
           </Button>
           <Link className={styles.resetLink} href="/forgot-password">
             비밀번호를 잊으셨나요?

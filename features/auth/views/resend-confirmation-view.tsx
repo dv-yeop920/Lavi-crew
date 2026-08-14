@@ -7,6 +7,7 @@ import { resendConfirmationAction } from '@/features/auth/actions/auth-actions'
 import { getFirstFieldError } from '@/shared/forms/form-result'
 import { useSelectiveFormRecovery } from '@/shared/forms/use-selective-form-recovery'
 import { Button } from '@/shared/ui/button/button'
+import { LoadingDots } from '@/shared/ui/button/loading-dots'
 import { TextField } from '@/shared/ui/text-field/text-field'
 
 import * as styles from './auth-view.css'
@@ -48,7 +49,7 @@ export function ResendConfirmationView() {
             </p>
           ) : null}
           <Button className={styles.fullButton} disabled={isPending} type="submit">
-            {isPending ? '발송 중...' : '확인 링크 다시 받기'}
+            {isPending ? <>발송 중<LoadingDots /></> : '확인 링크 다시 받기'}
           </Button>
         </form>
         <p className={styles.footer}>

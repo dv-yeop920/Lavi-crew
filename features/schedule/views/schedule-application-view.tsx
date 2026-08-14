@@ -7,6 +7,7 @@ import { saveWorkerMonthlyApplicationsAction } from '@/features/schedule/actions
 import { useDirtyNavigationGuard } from '@/features/schedule/hooks/use-dirty-navigation-guard'
 import type { WorkerMonthApplicationViewModel } from '@/features/schedule/schemas/schedule-view-model'
 import { Button } from '@/shared/ui/button/button'
+import { LoadingDots } from '@/shared/ui/button/loading-dots'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
@@ -298,7 +299,7 @@ export function ScheduleApplicationView({
               : ' · 저장된 상태입니다.'}
         </p>
         <Button disabled={!period || !canEdit || !isDirty || isPending} type="submit">
-          {isPending ? '저장 중…' : isDirty ? '신청 변경 저장' : '신청 변경 없음'}
+          {isPending ? <>저장 중<LoadingDots /></> : isDirty ? '신청 변경 저장' : '신청 변경 없음'}
         </Button>
       </div>
     </form>

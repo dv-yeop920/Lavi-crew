@@ -7,6 +7,7 @@ import { updatePasswordAction } from '@/features/auth/actions/auth-actions'
 import { getFirstFieldError } from '@/shared/forms/form-result'
 import { useSelectiveFormRecovery } from '@/shared/forms/use-selective-form-recovery'
 import { Button } from '@/shared/ui/button/button'
+import { LoadingDots } from '@/shared/ui/button/loading-dots'
 import { TextField } from '@/shared/ui/text-field/text-field'
 
 import * as styles from './auth-view.css'
@@ -54,7 +55,7 @@ export function ResetPasswordView() {
             </p>
           ) : null}
           <Button className={styles.fullButton} disabled={isPending} type="submit">
-            {isPending ? '변경 중...' : '비밀번호 변경'}
+            {isPending ? <>변경 중<LoadingDots /></> : '비밀번호 변경'}
           </Button>
         </form>
         {state?.ok ? (

@@ -13,6 +13,7 @@ import type { NoticeActionResult } from '@/features/notice/schemas/notice-input'
 import type { AdminNoticeViewModel } from '@/features/notice/schemas/notice-view-model'
 import { getFirstFieldError } from '@/shared/forms/form-result'
 import { Button } from '@/shared/ui/button/button'
+import { LoadingDots } from '@/shared/ui/button/loading-dots'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
@@ -127,7 +128,7 @@ function NoticeEditor({
         ) : null}
         <div className={layout.wrap}>
           <Button disabled={isPending} type="submit">
-            {isPending ? '저장 중…' : mode === 'create' ? '공지 등록' : '수정 저장'}
+            {isPending ? <>저장 중<LoadingDots /></> : mode === 'create' ? '공지 등록' : '수정 저장'}
           </Button>
           <Button disabled={isPending} onClick={onCancel} type="button" variant="secondary">
             취소
@@ -203,7 +204,7 @@ function DeleteNoticeDialog({
           ) : null}
           <div className={layout.wrap}>
             <Button disabled={isPending} type="submit">
-              {isPending ? '삭제 중…' : '삭제 확인'}
+              {isPending ? <>삭제 중<LoadingDots /></> : '삭제 확인'}
             </Button>
             <Button
               disabled={isPending}

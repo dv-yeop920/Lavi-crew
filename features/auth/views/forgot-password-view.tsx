@@ -7,6 +7,7 @@ import { passwordResetAction } from '@/features/auth/actions/auth-actions'
 import { getFirstFieldError } from '@/shared/forms/form-result'
 import { useSelectiveFormRecovery } from '@/shared/forms/use-selective-form-recovery'
 import { Button } from '@/shared/ui/button/button'
+import { LoadingDots } from '@/shared/ui/button/loading-dots'
 import { TextField } from '@/shared/ui/text-field/text-field'
 
 import * as styles from './auth-view.css'
@@ -47,7 +48,7 @@ export function ForgotPasswordView() {
             </p>
           ) : null}
           <Button className={styles.fullButton} disabled={isPending} type="submit">
-            {isPending ? '발송 중...' : '재설정 링크 받기'}
+            {isPending ? <>발송 중<LoadingDots /></> : '재설정 링크 받기'}
           </Button>
         </form>
         <p className={styles.footer}>

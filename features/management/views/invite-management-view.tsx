@@ -12,6 +12,7 @@ import { getFirstFieldError } from '@/shared/forms/form-result'
 import { useActionSuccessEffect } from '@/shared/forms/use-action-success-effect'
 import { useSelectiveFormRecovery } from '@/shared/forms/use-selective-form-recovery'
 import { Button } from '@/shared/ui/button/button'
+import { LoadingDots } from '@/shared/ui/button/loading-dots'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
@@ -68,7 +69,7 @@ function InviteItem({ invite, requestId }: { invite: InviteViewModel; requestId:
           type="submit"
           variant="secondary"
         >
-          {isPending ? '처리 중...' : '사용 중지'}
+          {isPending ? <>처리 중<LoadingDots /></> : '사용 중지'}
         </Button>
       </form>
       {state?.message ? (
@@ -161,7 +162,7 @@ export function InviteManagementView({
               type="number"
             />
             <Button disabled={isPending} type="submit">
-              {isPending ? '생성 중...' : '코드 생성'}
+              {isPending ? <>생성 중<LoadingDots /></> : '코드 생성'}
             </Button>
             {state?.message && !state.fieldErrors ? (
               <p

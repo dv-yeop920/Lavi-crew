@@ -6,6 +6,7 @@ import { markNoticeReadAction } from '@/features/notice/actions/notice-actions'
 import { formatNoticeDate } from '@/features/notice/lib/notice-display'
 import type { WorkerNoticeViewModel } from '@/features/notice/schemas/notice-view-model'
 import { Button } from '@/shared/ui/button/button'
+import { LoadingDots } from '@/shared/ui/button/loading-dots'
 import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
@@ -55,7 +56,7 @@ function WorkerNoticeCard({
             />
             {state && !state.ok ? (
               <Button disabled={isPending} type="submit" variant="secondary">
-                {isPending ? '읽음 처리 중…' : '읽음 처리 다시 시도'}
+                {isPending ? <>읽음 처리 중<LoadingDots /></> : '읽음 처리 다시 시도'}
               </Button>
             ) : null}
           </form>
