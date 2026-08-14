@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 
 import { LogoutButton } from '@/features/auth/components/logout-button'
+import { ServiceWorkerRegister } from '@/features/notification/components/service-worker-register'
 import { AppShell } from '@/shared/ui/app-shell/app-shell'
 
 const navigationItems = [
@@ -14,6 +15,7 @@ const navigationItems = [
 export default function WorkerLayout({ children }: Readonly<{ children: ReactNode }>) {
   return (
     <AppShell headerAction={<LogoutButton />} navigationItems={navigationItems}>
+      <ServiceWorkerRegister />
       {children}
     </AppShell>
   )

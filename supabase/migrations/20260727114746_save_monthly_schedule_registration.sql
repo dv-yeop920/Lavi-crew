@@ -439,16 +439,16 @@ begin
         correlation_id
       )
       select
-        profile.id,
+        worker_id_value,
         created_shift_id,
         created_assignment_id,
         'schedule_confirmed',
-        'kakao_alimtalk',
+        'web_push',
         'pending',
         p_request_id
-      from public.profiles profile
-      where profile.id = worker_id_value
-        and profile.kakao_consent
+      where exists (
+        select 1 from public.push_subscriptions ps where ps.user_id = worker_id_value
+      )
       on conflict (assignment_id, type, channel)
         where assignment_id is not null
           and type = 'schedule_confirmed'

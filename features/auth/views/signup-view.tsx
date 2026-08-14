@@ -86,32 +86,6 @@ export function SignupView() {
             name="inviteCode"
             required
           />
-          <div className={styles.checkboxField}>
-            <label className={styles.checkbox}>
-              <input
-                aria-describedby={
-                  getFirstFieldError(state?.fieldErrors, 'kakaoConsent')
-                    ? 'signup-kakao-consent-error'
-                    : undefined
-                }
-                aria-invalid={Boolean(getFirstFieldError(state?.fieldErrors, 'kakaoConsent'))}
-                className={styles.checkboxInput}
-                name="kakaoConsent"
-                required
-                type="checkbox"
-              />
-              <span>[필수] 스케줄 확정·변경 알림을 위한 카카오 알림톡 수신에 동의합니다.</span>
-            </label>
-            {getFirstFieldError(state?.fieldErrors, 'kakaoConsent') ? (
-              <span
-                aria-live="polite"
-                className={styles.fieldError}
-                id="signup-kakao-consent-error"
-              >
-                {getFirstFieldError(state?.fieldErrors, 'kakaoConsent')}
-              </span>
-            ) : null}
-          </div>
           {state?.message && !state.fieldErrors ? (
             <p
               className={state.ok ? styles.message : styles.errorMessage}

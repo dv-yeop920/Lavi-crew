@@ -88,4 +88,4 @@ npm run build
 
 CI는 위 애플리케이션 검증과 별도로 빈 로컬 Supabase의 전체 마이그레이션·DB E2E와 인증된 모바일 Chromium 브라우저 E2E를 실행합니다.
 
-설계와 운영 근거는 `docs/architecture.md`, `docs/decisions/`, `docs/operations/mvp-verification.md`를 참고합니다. 카카오 알림톡 실제 발송은 승인된 템플릿과 운영 자격 증명이 준비된 뒤 별도 검증합니다.
+설계와 운영 근거는 `docs/architecture.md`, `docs/decisions/`, `docs/operations/mvp-verification.md`를 참고합니다. Web Push 실발송은 VAPID 키 설정이 완료된 뒤 별도 검증합니다.

@@ -6,7 +6,7 @@
 - vanilla-extract
 - Zod 폼 입력 검증
 - Supabase Auth, PostgreSQL, Row Level Security(RLS)
-- 카카오 알림톡 API
+- Web Push API (VAPID)
 
 ## VAC 구조
 
@@ -20,7 +20,7 @@ flowchart LR
   C --> D["Domain<br/>급여 계산 · 스케줄 규칙"]
   C --> R["Repository<br/>Supabase 쿼리"]
   R --> S["Supabase<br/>Auth · PostgreSQL · RLS"]
-  C --> K["Kakao Adapter<br/>알림톡 발송"]
+  C --> K["Web Push Adapter<br/>푸시 알림 발송"]
 ```
 
 로컬 상태나 파생 계산이 없는 단순한 View는 Hook 없이 Action을 직접 호출해도 된다.
@@ -35,7 +35,7 @@ flowchart LR
 | Controller | 유스케이스 조합, 역할 확인, 업무 규칙 실행 | 폼 형식 검증, UI 상태와 SQL 세부 구현 |
 | Domain | 급여 계산, 마감·배정 규칙 같은 순수 로직 | 외부 API, DB 접근 |
 | Repository | Supabase 데이터 조회·저장 | 권한 정책과 업무 규칙 판단 |
-| Adapter | 카카오 알림톡 등 외부 API 연동 | 도메인 규칙 판단 |
+| Adapter | Web Push 등 외부 API 연동 | 도메인 규칙 판단 |
 
 ## 폴더 구조
 
@@ -81,7 +81,7 @@ shared/
 - 서버 레이아웃과 Controller에서 역할을 확인한다.
 - Supabase RLS는 최종 데이터 접근 권한을 강제한다.
 - 브라우저에는 Supabase 익명 키만 사용한다.
-- `service_role` 키와 카카오 API 키는 서버 환경 변수에서만 사용한다.
+- `service_role` 키와 VAPID 비밀 키는 서버 환경 변수에서만 사용한다.
 - 신청 기간 생성·수정·마감·재개, 월별 신청 저장, 월별 일정 등록·배정 확정, 일별 일정 변경·취소, 출석 확정처럼 여러 데이터가 함께 변하는 작업은 Postgres RPC로 원자 처리한다.
 - 신청 기간은 `save_schedule_application_period`와 `set_schedule_application_period_status`로 일정 등록과 분리해 운영한다. `save_monthly_schedule_registration`은 이미 마감된 신청 기간만 사용하며 마감일이나 기간 상태를 변경하지 않고, 게시 일정·확정 배정·출석 대기·알림 발송 대기·멱등 결과를 한 번에 저장한다.
 - 월 등록 RPC는 모든 신규 배정자가 해당 근무일에 신청했는지 검증한다. 일별 수정 RPC는 기존 확정 배정자의 worker ID를 보존할 수 있지만 새로 추가·교체하는 worker ID는 해당 근무일의 `applied` 신청이 있어야 한다.

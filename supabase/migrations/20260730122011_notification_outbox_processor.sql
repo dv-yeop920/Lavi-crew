@@ -53,20 +53,21 @@ begin
       locked_until = null,
       lease_token = null
   where notification.delivery_status = 'pending'
-    and notification.channel = 'kakao_alimtalk'
+    and notification.channel = 'web_push'
     and notification.attempt_count >= 3
     and notification.next_attempt_at <= now()
     and (notification.locked_until is null or notification.locked_until <= now());
 
+  -- Mark ineligible recipients (no active profile, no push subscription, no shift)
   update public.notification_logs notification
   set delivery_status = 'failed',
       error_code = 'RECIPIENT_INELIGIBLE',
-      failure_reason = 'Recipient is not eligible for Kakao Alimtalk delivery.',
+      failure_reason = 'Recipient has no active push subscription.',
       locked_at = null,
       locked_until = null,
       lease_token = null
   where notification.delivery_status = 'pending'
-    and notification.channel = 'kakao_alimtalk'
+    and notification.channel = 'web_push'
     and notification.next_attempt_at <= now()
     and (notification.locked_until is null or notification.locked_until <= now())
     and (
@@ -76,9 +77,11 @@ begin
         from public.profiles profile
         where profile.id = notification.recipient_id
           and profile.is_active
-          and profile.kakao_consent
-          and regexp_replace(profile.phone, '[^0-9]', '', 'g')
-            ~ '^01[016789][0-9]{7,8}$'
+      )
+      or not exists (
+        select 1
+        from public.push_subscriptions ps
+        where ps.user_id = notification.recipient_id
       )
       or not exists (
         select 1 from public.shifts shift_record
@@ -86,20 +89,22 @@ begin
       )
     );
 
+  -- Claim eligible pending notifications
   with candidates as (
     select notification.id
     from public.notification_logs notification
     join public.profiles profile on profile.id = notification.recipient_id
     join public.shifts shift_record on shift_record.id = notification.shift_id
     where notification.delivery_status = 'pending'
-      and notification.channel = 'kakao_alimtalk'
+      and notification.channel = 'web_push'
       and notification.attempt_count < 3
       and notification.next_attempt_at <= now()
       and (notification.locked_until is null or notification.locked_until <= now())
       and profile.is_active
-      and profile.kakao_consent
-      and regexp_replace(profile.phone, '[^0-9]', '', 'g')
-        ~ '^01[016789][0-9]{7,8}$'
+      and exists (
+        select 1 from public.push_subscriptions ps
+        where ps.user_id = notification.recipient_id
+      )
     order by notification.next_attempt_at, notification.created_at, notification.id
     for update of notification skip locked
     limit p_batch_size
@@ -122,7 +127,15 @@ begin
         'leaseToken', claimed.lease_token,
         'type', claimed.type,
         'recipientName', profile.name,
-        'recipientPhone', regexp_replace(profile.phone, '[^0-9]', '', 'g'),
+        'subscriptions', (
+          select jsonb_agg(jsonb_build_object(
+            'endpoint', ps.endpoint,
+            'keyP256dh', ps.key_p256dh,
+            'keyAuth', ps.key_auth
+          ))
+          from public.push_subscriptions ps
+          where ps.user_id = claimed.recipient_id
+        ),
         'workDate', shift_record.work_date,
         'startTime', shift_record.start_time,
         'endTime', shift_record.end_time

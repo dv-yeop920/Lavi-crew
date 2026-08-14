@@ -214,10 +214,13 @@ begin
   insert into public.notification_logs (
     recipient_id, shift_id, assignment_id, type, channel, delivery_status, correlation_id
   )
-  select distinct profile.id, p_shift_id, null, 'schedule_changed',
-    'kakao_alimtalk', 'pending', p_request_id
-  from public.profiles profile
-  where profile.id = any(affected_worker_ids) and profile.kakao_consent;
+  select distinct affected.id, p_shift_id, null, 'schedule_changed',
+    'web_push', 'pending', p_request_id
+  from unnest(affected_worker_ids) affected_uid
+  join public.profiles affected on affected.id = affected_uid
+  where exists (
+    select 1 from public.push_subscriptions ps where ps.user_id = affected.id
+  );
   get diagnostics notification_count = row_count;
 
   result_value := jsonb_build_object(
@@ -288,11 +291,12 @@ begin
     recipient_id, shift_id, assignment_id, type, channel, delivery_status, correlation_id
   )
   select assignment.worker_id, p_shift_id, assignment.id, 'schedule_cancelled',
-    'kakao_alimtalk', 'pending', p_request_id
+    'web_push', 'pending', p_request_id
   from public.shift_assignments assignment
-  join public.profiles profile on profile.id = assignment.worker_id
   where assignment.shift_id = p_shift_id and assignment.status = 'confirmed'
-    and profile.kakao_consent;
+    and exists (
+      select 1 from public.push_subscriptions ps where ps.user_id = assignment.worker_id
+    );
   get diagnostics notification_count = row_count;
   update public.shift_assignments set status = 'cancelled', cancelled_at = now(),
     cancelled_by = caller_id where shift_id = p_shift_id and status = 'confirmed';

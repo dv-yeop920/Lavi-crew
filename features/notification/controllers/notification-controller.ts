@@ -1,12 +1,12 @@
 import 'server-only'
 
 import {
-  createKakaoAlimtalkSender,
-  getKakaoAlimtalkConfig,
+  createWebPushSender,
+  getWebPushConfig,
   NotificationConfigurationError,
   type NotificationEnvironment,
   type NotificationSender,
-} from '../adapters/kakao-alimtalk-adapter'
+} from '../adapters/web-push-adapter'
 import {
   createServiceRoleNotificationRepository,
   type NotificationRepository,
@@ -19,8 +19,6 @@ export type NotificationProcessorSummary = {
   retried: number
   sent: number
 }
-
-const LEASE_SAFETY_MARGIN_SECONDS = 45
 
 async function processClaimedNotification(input: {
   notification: Awaited<ReturnType<NotificationRepository['claim']>>[number]
@@ -105,11 +103,9 @@ function processorInteger(
 export function getNotificationProcessorConfig(environment: NotificationEnvironment = process.env) {
   if (!environment.NEXT_PUBLIC_SUPABASE_URL || !environment.SUPABASE_SERVICE_ROLE_KEY)
     throw new NotificationConfigurationError()
-  const provider = getKakaoAlimtalkConfig(environment)
+  const provider = getWebPushConfig(environment)
   const batchSize = processorInteger(environment.NOTIFICATION_BATCH_SIZE, 5, 1, 5)
   const leaseSeconds = processorInteger(environment.NOTIFICATION_LEASE_SECONDS, 60, 60, 300)
-  if (leaseSeconds <= Math.ceil(provider.timeoutMs / 1000) + LEASE_SAFETY_MARGIN_SECONDS)
-    throw new NotificationConfigurationError()
   return { batchSize, leaseSeconds, provider }
 }
 
@@ -117,7 +113,7 @@ export async function processNotificationsController(
   environment: NotificationEnvironment = process.env,
 ) {
   const config = getNotificationProcessorConfig(environment)
-  const sender = createKakaoAlimtalkSender(config.provider)
+  const sender = createWebPushSender(config.provider)
   const repository = createServiceRoleNotificationRepository()
   return processNotificationBatch({
     batchSize: config.batchSize,

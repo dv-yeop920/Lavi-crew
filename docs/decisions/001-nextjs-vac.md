@@ -6,13 +6,13 @@
 
 ## 배경
 
-알바와 관리자가 같은 스케줄·출석·급여 데이터를 사용하면서도 화면과 권한은 분리해야 한다. Supabase RLS와 카카오 알림톡처럼 서버 경계가 중요한 연동도 포함된다.
+알바와 관리자가 같은 스케줄·출석·급여 데이터를 사용하면서도 화면과 권한은 분리해야 한다. Supabase RLS와 Web Push처럼 서버 경계가 중요한 연동도 포함된다.
 
 ## 결정
 
 - Next.js App Router와 React 19를 사용한다.
 - 기능별로 View → Action → Controller → Domain/Repository 흐름을 적용한다.
-- Supabase 접근은 Repository에, 카카오 알림톡은 Adapter에 격리한다.
+- Supabase 접근은 Repository에, Web Push는 Adapter에 격리한다.
 - 여러 레코드를 함께 변경하는 확정 작업은 Postgres RPC로 원자 처리한다.
 
 ## 이유

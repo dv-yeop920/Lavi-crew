@@ -22,7 +22,6 @@ export type ProfileViewModel = {
   email: string
   hourlyWage: number
   isActive: boolean
-  kakaoConsent: boolean
   name: string
   phone: string
 }
@@ -105,15 +104,6 @@ export function ProfileView({ profile }: { profile: ProfileViewModel }) {
             name="phone"
             required
           />
-          <label>
-            <input
-              defaultChecked={profile.kakaoConsent}
-              disabled={!isEditing || isUpdating}
-              name="kakaoConsent"
-              type="checkbox"
-            />{' '}
-            카카오 알림 수신 동의
-          </label>
           <div className={layout.wrap}>
             {isEditing ? (
               <>

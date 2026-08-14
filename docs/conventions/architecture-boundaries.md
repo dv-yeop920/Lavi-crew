@@ -12,7 +12,7 @@ flowchart LR
   C --> D["Domain<br/>순수 업무 규칙"]
   C --> R["Repository<br/>Supabase 쿼리"]
   R --> S["Supabase<br/>PostgreSQL · RLS"]
-  C --> K["Kakao Adapter<br/>알림톡"]
+  C --> K["Web Push Adapter<br/>푸시 알림"]
 ```
 
 로컬 상태나 파생 계산이 없는 단순한 View는 Hook 없이 Action을 직접 호출해도 된다(`docs/decisions/013-view-hook-separation.md`).

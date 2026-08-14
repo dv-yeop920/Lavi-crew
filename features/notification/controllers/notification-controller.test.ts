@@ -5,7 +5,7 @@ vi.mock('@/shared/supabase/service-role', () => ({
   createServiceRoleSupabaseClient: vi.fn(),
 }))
 
-import type { NotificationSender } from '../adapters/kakao-alimtalk-adapter'
+import type { NotificationSender } from '../adapters/web-push-adapter'
 import type { NotificationRepository } from '../repositories/notification-repository'
 
 import {
@@ -20,8 +20,10 @@ const notifications = [
     leaseToken: '8cf0ac26-ea5a-438b-8c68-caf84c52ff39',
     notificationId: 'e2308f73-a094-4dd1-8505-e216d5c4fc68',
     recipientName: '라비',
-    recipientPhone: '01012345678',
     startTime: '09:00:00',
+    subscriptions: [
+      { endpoint: 'https://push.example/a', keyAuth: 'auth-a', keyP256dh: 'p256dh-a' },
+    ],
     type: 'schedule_confirmed' as const,
     workDate: '2026-08-01',
   },
@@ -30,22 +32,21 @@ const notifications = [
     leaseToken: '214f8bc4-6067-4113-b5ab-11e63063c4b5',
     notificationId: '4ea7c8b3-ea85-45d2-aec5-c257b674a88c',
     recipientName: '크루',
-    recipientPhone: '01087654321',
     startTime: '10:00:00',
+    subscriptions: [
+      { endpoint: 'https://push.example/b', keyAuth: 'auth-b', keyP256dh: 'p256dh-b' },
+    ],
     type: 'schedule_changed' as const,
     workDate: '2026-08-02',
   },
 ]
 
 const configuredEnvironment = {
-  KAKAO_ALIMTALK_API_KEY: 'provider-key',
-  KAKAO_ALIMTALK_API_URL: 'https://provider.example/messages',
-  KAKAO_ALIMTALK_SENDER_KEY: 'sender-key',
-  KAKAO_ALIMTALK_TEMPLATE_SCHEDULE_CANCELLED: 'cancelled',
-  KAKAO_ALIMTALK_TEMPLATE_SCHEDULE_CHANGED: 'changed',
-  KAKAO_ALIMTALK_TEMPLATE_SCHEDULE_CONFIRMED: 'confirmed',
   NEXT_PUBLIC_SUPABASE_URL: 'https://project.supabase.co',
   SUPABASE_SERVICE_ROLE_KEY: 'service-role-key',
+  VAPID_PRIVATE_KEY: 'private-key',
+  VAPID_PUBLIC_KEY: 'public-key',
+  VAPID_SUBJECT: 'mailto:admin@example.com',
 }
 
 describe('notification processor controller', () => {
@@ -55,11 +56,10 @@ describe('notification processor controller', () => {
     )
   })
 
-  it('enforces processor batch, lease, timeout, and safety-margin bounds', () => {
+  it('enforces processor batch and lease bounds', () => {
     expect(getNotificationProcessorConfig(configuredEnvironment)).toMatchObject({
       batchSize: 5,
       leaseSeconds: 60,
-      provider: { timeoutMs: 5000 },
     })
     expect(() =>
       getNotificationProcessorConfig({
@@ -79,20 +79,6 @@ describe('notification processor controller', () => {
         NOTIFICATION_LEASE_SECONDS: '301',
       }),
     ).toThrow('NOTIFICATION_CONFIGURATION_MISSING')
-    expect(() =>
-      getNotificationProcessorConfig({
-        ...configuredEnvironment,
-        KAKAO_ALIMTALK_TIMEOUT_MS: '15000',
-        NOTIFICATION_LEASE_SECONDS: '60',
-      }),
-    ).toThrow('NOTIFICATION_CONFIGURATION_MISSING')
-    expect(
-      getNotificationProcessorConfig({
-        ...configuredEnvironment,
-        KAKAO_ALIMTALK_TIMEOUT_MS: '15000',
-        NOTIFICATION_LEASE_SECONDS: '61',
-      }),
-    ).toMatchObject({ batchSize: 5, leaseSeconds: 61, provider: { timeoutMs: 15000 } })
   })
 
   it('completes successes and schedules transient failures without exposing records', async () => {

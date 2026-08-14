@@ -429,7 +429,6 @@ export type Database = {
           hourly_wage: number
           id: string
           is_active: boolean
-          kakao_consent: boolean
           name: string
           phone: string
           role: Database['public']['Enums']['app_role']
@@ -442,7 +441,6 @@ export type Database = {
           hourly_wage?: number
           id: string
           is_active?: boolean
-          kakao_consent?: boolean
           name: string
           phone: string
           role?: Database['public']['Enums']['app_role']
@@ -455,13 +453,50 @@ export type Database = {
           hourly_wage?: number
           id?: string
           is_active?: boolean
-          kakao_consent?: boolean
           name?: string
           phone?: string
           role?: Database['public']['Enums']['app_role']
           updated_at?: string
         }
         Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          key_auth: string
+          key_p256dh: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          key_auth: string
+          key_p256dh: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          key_auth?: string
+          key_p256dh?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'push_subscriptions_user_id_fkey'
+            columns: ['user_id']
+            isOneToOne: false
+            referencedRelation: 'profiles'
+            referencedColumns: ['id']
+          },
+        ]
       }
       schedule_application_periods: {
         Row: {
@@ -831,7 +866,7 @@ export type Database = {
         Args: { p_invite_id: string; p_request_id: string }
         Returns: Json
       }
-      deactivate_own_profile: { Args: never; Returns: undefined }
+      deactivate_own_profile: { Args: Record<PropertyKey, never>; Returns: undefined }
       delete_notice: {
         Args: {
           p_expected_updated_at: string
@@ -840,14 +875,18 @@ export type Database = {
         }
         Returns: Json
       }
+      delete_push_subscription: {
+        Args: { p_endpoint: string }
+        Returns: undefined
+      }
       get_active_profile_names: {
-        Args: never
+        Args: Record<PropertyKey, never>
         Returns: {
           id: string
           name: string
         }[]
       }
-      is_admin: { Args: never; Returns: boolean }
+      is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       mark_notice_read: {
         Args: { p_notice_id: string; p_request_id: string }
         Returns: Json
@@ -924,12 +963,12 @@ export type Database = {
         Returns: Json
       }
       update_own_profile: {
-        Args: {
-          candidate_name: string
-          candidate_phone: string
-          consent: boolean
-        }
+        Args: { candidate_name: string; candidate_phone: string }
         Returns: undefined
+      }
+      upsert_push_subscription: {
+        Args: { p_endpoint: string; p_key_auth: string; p_key_p256dh: string }
+        Returns: string
       }
       validate_invite_code: {
         Args: { candidate_code: string }

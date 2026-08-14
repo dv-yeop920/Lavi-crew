@@ -37,10 +37,6 @@ const inviteCodeSchema = z
   .min(6, '라비에벨 전용 코드는 6자 이상이어야 합니다.')
   .transform((value) => value.toUpperCase())
 
-const kakaoConsentSchema = z.literal(true, {
-  error: '카카오 알림톡 수신에 동의해 주세요.',
-})
-
 function isCalendarDate(value: string) {
   const [year, month, day] = value.split('-').map(Number)
   const date = new Date(Date.UTC(year, month - 1, day))
@@ -79,7 +75,6 @@ function signupSchema(asOf: Date) {
       email: emailSchema,
       hiredAt: hiredAtSchema(asOf),
       inviteCode: inviteCodeSchema,
-      kakaoConsent: kakaoConsentSchema,
       name: nameSchema,
       password: passwordSchema,
       passwordConfirm: z.string().min(1, '비밀번호 확인을 입력해 주세요.'),
@@ -134,7 +129,6 @@ export function parseSignupInput(formData: FormData, asOf = new Date()) {
     email: stringValue(formData, 'email'),
     hiredAt: stringValue(formData, 'hiredAt'),
     inviteCode: stringValue(formData, 'inviteCode'),
-    kakaoConsent: formData.get('kakaoConsent') === 'on',
     name: stringValue(formData, 'name'),
     password: stringValue(formData, 'password'),
     passwordConfirm: stringValue(formData, 'passwordConfirm'),

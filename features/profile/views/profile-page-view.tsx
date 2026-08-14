@@ -12,7 +12,6 @@ export async function ProfilePageView() {
         email: maskEmail(profile.email),
         hourlyWage: profile.hourly_wage,
         isActive: profile.is_active,
-        kakaoConsent: profile.kakao_consent,
         name: profile.name,
         phone: profile.phone,
       }}

@@ -25,7 +25,6 @@ export async function signUpWorker(input: SignupInput, emailRedirectTo: string) 
       data: {
         hired_at: input.hiredAt,
         invite_code: input.inviteCode,
-        kakao_consent: input.kakaoConsent,
         name: input.name,
         phone: input.phone,
       },

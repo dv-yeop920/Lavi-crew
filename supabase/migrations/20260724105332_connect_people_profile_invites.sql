@@ -51,13 +51,12 @@ begin
     raise exception 'INVITE_CODE_INVALID';
   end if;
 
-  insert into public.profiles (id, email, name, phone, kakao_consent)
+  insert into public.profiles (id, email, name, phone)
   values (
     new.id,
     lower(new.email),
     new.raw_user_meta_data ->> 'name',
-    new.raw_user_meta_data ->> 'phone',
-    coalesce((new.raw_user_meta_data ->> 'kakao_consent')::boolean, false)
+    new.raw_user_meta_data ->> 'phone'
   );
 
   return new;
@@ -67,8 +66,7 @@ $$;
 create or replace function public.complete_worker_onboarding(
   candidate_name text,
   candidate_phone text,
-  candidate_invite_code text,
-  consent boolean
+  candidate_invite_code text
 )
 returns void
 language plpgsql
@@ -114,8 +112,8 @@ begin
     raise exception 'INVITE_CODE_INVALID';
   end if;
 
-  insert into public.profiles (id, email, name, phone, kakao_consent)
-  values (auth.uid(), account_email, trim(candidate_name), candidate_phone, consent);
+  insert into public.profiles (id, email, name, phone)
+  values (auth.uid(), account_email, trim(candidate_name), candidate_phone);
 end;
 $$;
 
@@ -224,8 +222,7 @@ $$;
 
 create or replace function public.update_own_profile(
   candidate_name text,
-  candidate_phone text,
-  consent boolean
+  candidate_phone text
 )
 returns void
 language plpgsql
@@ -244,8 +241,7 @@ begin
 
   update public.profiles
      set name = trim(candidate_name),
-         phone = candidate_phone,
-         kakao_consent = consent
+         phone = candidate_phone
    where id = auth.uid()
      and is_active;
 
@@ -280,12 +276,12 @@ revoke insert, update, delete on public.worker_position_skills from authenticate
 revoke all on function private.sync_profile_email() from public, anon, authenticated;
 revoke all on function public.admin_update_worker_profile(uuid, text, integer, text[]) from public, anon;
 revoke all on function public.admin_deactivate_worker(uuid) from public, anon;
-revoke all on function public.update_own_profile(text, text, boolean) from public, anon;
+revoke all on function public.update_own_profile(text, text) from public, anon;
 revoke all on function public.deactivate_own_profile() from public, anon;
 
 grant execute on function public.admin_update_worker_profile(uuid, text, integer, text[]) to authenticated;
 grant execute on function public.admin_deactivate_worker(uuid) to authenticated;
-grant execute on function public.update_own_profile(text, text, boolean) to authenticated;
+grant execute on function public.update_own_profile(text, text) to authenticated;
 grant execute on function public.deactivate_own_profile() to authenticated;
 
 grant select (email) on public.profiles to authenticated;

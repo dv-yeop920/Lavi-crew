@@ -28,7 +28,7 @@
 - Next.js App Router 16, React 19, TypeScript strict mode
 - vanilla-extract, React Compiler
 - Supabase Auth, PostgreSQL, RLS
-- Kakao 알림톡
+- Web Push (VAPID)
 - 패키지 관리자는 npm을 사용하고 `package-lock.json`을 유지한다.
 - 개발 서버: `npm run dev`
 - 정적 검사: `npm run lint`
@@ -82,7 +82,7 @@ docs/                      # 기획·아키텍처 문서
 
 ```text
 View → Hook → Action → Controller → Domain / Repository → Supabase
-                                  └→ Kakao Adapter
+                                  └→ Web Push Adapter
 ```
 
 - View: 표시, 레이아웃, 입력 마크업만 담당한다. Supabase 쓰기와 업무 규칙을 금지한다. 로컬 상태·파생 계산·이벤트 핸들러가 얽히면 Hook으로 추출한다. 단일 상태 토글처럼 사소한 로컬 상태까지 강제로 추출하지 않는다.
@@ -91,7 +91,7 @@ View → Hook → Action → Controller → Domain / Repository → Supabase
 - Controller: 역할 확인, 유스케이스 조합, Domain·Repository·Adapter 호출을 담당한다.
 - Domain: DB, React, Next.js, 외부 API에 의존하지 않는 순수 로직만 둔다.
 - Repository: Supabase 조회·저장만 담당하고 업무 정책을 판단하지 않는다.
-- Adapter: 카카오 알림톡 같은 외부 API를 격리하고 도메인 규칙을 판단하지 않는다.
+- Adapter: Web Push 같은 외부 API를 격리하고 도메인 규칙을 판단하지 않는다.
 - 여러 테이블을 함께 변경하는 마감·배정 확정·급여 산정은 Postgres RPC로 원자 처리한다.
 
 ## 6. 디자인과 공통 컴포넌트
@@ -135,7 +135,7 @@ View → Hook → Action → Controller → Domain / Repository → Supabase
 - 알바는 자신의 프로필·신청·배정·급여만 접근하도록 정책을 작성한다. 전체 일정 조회에 필요한 다른 인원의 이름과 포지션 배정은 민감 정보(시급·연락처)를 제외한 별도 경로로만 노출한다.
 - 관리 기능은 `admin` 역할을 서버에서 다시 확인한다.
 - 브라우저에는 Supabase 익명 키만 노출할 수 있다.
-- `SUPABASE_SERVICE_ROLE_KEY`와 카카오 API 키는 서버 전용 환경 변수와 서버 모듈에서만 사용한다.
+- `SUPABASE_SERVICE_ROLE_KEY`와 VAPID 키는 서버 전용 환경 변수와 서버 모듈에서만 사용한다.
 - `.env.example`에는 변수명과 설명만 두고 실제 키·전화번호·초대 코드를 넣지 않는다.
 - 관계 데이터가 있는 회원은 물리 삭제하지 않고 비활성화 상태로 처리한다.
 - 게시된 일정의 배정을 변경하면 기존 급여 항목을 무효 처리하고 새 급여를 재산정한다.
@@ -157,7 +157,7 @@ View → Hook → Action → Controller → Domain / Repository → Supabase
 ## 10. 절대 금지
 
 - View나 Client Component에서 Supabase 쓰기 쿼리를 직접 호출하지 않는다.
-- `service_role` 키, 카카오 키, 비밀번호, 실제 초대 코드를 코드·문서·로그·fixture에 기록하지 않는다.
+- `service_role` 키, VAPID 비밀 키, 비밀번호, 실제 초대 코드를 코드·문서·로그·fixture에 기록하지 않는다.
 - RLS를 끄거나 `service_role`로 사용자 권한 검사를 우회하지 않는다.
 - 확정 급여·배정 이력을 `DELETE`로 제거하지 않는다.
 - `Design.md`에서 TBD인 색상·간격·타이포그래피 값을 추측해 디자인 토큰으로 확정하지 않는다.

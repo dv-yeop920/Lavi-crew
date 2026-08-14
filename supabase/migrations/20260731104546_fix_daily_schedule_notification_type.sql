@@ -164,13 +164,16 @@ begin
   insert into public.notification_logs (
     recipient_id, shift_id, assignment_id, type, channel, delivery_status, correlation_id
   )
-  select distinct profile.id, p_shift_id, null::uuid,
+  select distinct affected.id, p_shift_id, null::uuid,
     'schedule_changed'::public.notification_type,
-    'kakao_alimtalk'::text,
+    'web_push'::text,
     'pending'::public.notification_delivery_status,
     p_request_id
-  from public.profiles profile
-  where profile.id = any(affected_worker_ids) and profile.kakao_consent;
+  from unnest(affected_worker_ids) affected_uid
+  join public.profiles affected on affected.id = affected_uid
+  where exists (
+    select 1 from public.push_subscriptions ps where ps.user_id = affected.id
+  );
   get diagnostics notification_count = row_count;
 
   result_value := jsonb_build_object(

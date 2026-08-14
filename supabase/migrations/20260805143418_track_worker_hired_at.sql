@@ -63,13 +63,12 @@ begin
     raise exception 'INVITE_CODE_INVALID';
   end if;
 
-  insert into public.profiles (id, email, name, phone, kakao_consent, hired_at)
+  insert into public.profiles (id, email, name, phone, hired_at)
   values (
     new.id,
     lower(new.email),
     new.raw_user_meta_data ->> 'name',
     new.raw_user_meta_data ->> 'phone',
-    coalesce((new.raw_user_meta_data ->> 'kakao_consent')::boolean, false),
     candidate_hired_at
   );
 

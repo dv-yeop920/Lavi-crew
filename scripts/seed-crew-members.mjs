@@ -74,7 +74,6 @@ const profileRows = members.map((member) => ({
   hourly_wage: member.hourlyWage,
   id: memberIdByEmail.get(member.email),
   is_active: true,
-  kakao_consent: false,
   name: member.name,
   phone: member.phone,
   role: 'worker',

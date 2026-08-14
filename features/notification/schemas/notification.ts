@@ -6,13 +6,19 @@ export const notificationTypeSchema = z.enum([
   'schedule_cancelled',
 ])
 
+const pushSubscriptionSchema = z.object({
+  endpoint: z.string().min(1),
+  keyAuth: z.string().min(1),
+  keyP256dh: z.string().min(1),
+})
+
 export const claimedNotificationSchema = z.object({
   endTime: z.string().min(1),
   leaseToken: z.uuid(),
   notificationId: z.uuid(),
   recipientName: z.string().trim().min(1).max(100),
-  recipientPhone: z.string().regex(/^01[016789][0-9]{7,8}$/),
   startTime: z.string().min(1),
+  subscriptions: z.array(pushSubscriptionSchema).min(1),
   type: notificationTypeSchema,
   workDate: z.iso.date(),
 })

@@ -324,7 +324,6 @@ test('회원가입 확인 메일과 PKCE callback이 실제 계정을 활성화�
   await page.getByLabel('비밀번호', { exact: true }).fill(password)
   await page.getByLabel('비밀번호 확인', { exact: true }).fill(password)
   await page.getByLabel('라비에벨 전용 코드', { exact: true }).fill(fixtures.signupInviteCode)
-  await page.getByRole('checkbox', { name: /카카오 알림톡 수신에 동의합니다/ }).check()
   await page.getByRole('button', { name: '회원가입', exact: true }).click()
   await expect(page.getByRole('status')).toContainText('가입 이메일로 확인 링크를 보냈습니다.')
 

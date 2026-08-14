@@ -11,7 +11,6 @@ function validSignupForm() {
   formData.set('password', 'password123!')
   formData.set('passwordConfirm', 'password123!')
   formData.set('inviteCode', 'lavi-crew')
-  formData.set('kakaoConsent', 'on')
   formData.set('hiredAt', '2026-08-01')
   return formData
 }
@@ -48,7 +47,6 @@ describe('auth Zod schemas', () => {
     expect(errors.password?.[0]).toBe('비밀번호를 입력해 주세요.')
     expect(errors.passwordConfirm?.[0]).toBe('비밀번호 확인을 입력해 주세요.')
     expect(errors.inviteCode?.[0]).toBe('라비에벨 전용 코드를 입력해 주세요.')
-    expect(errors.kakaoConsent?.[0]).toBe('카카오 알림톡 수신에 동의해 주세요.')
     expect(errors.hiredAt?.[0]).toBe('입사일을 입력해 주세요.')
   })
 

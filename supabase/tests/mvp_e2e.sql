@@ -37,8 +37,8 @@ create temp table e2e_workers (rn integer primary key, id uuid not null unique);
 insert into e2e_workers
 select n, gen_random_uuid() from generate_series(1, 11) n;
 insert into auth.users (id) select id from e2e_workers;
-insert into public.profiles (id, name, phone, hourly_wage, is_active, kakao_consent, hired_at)
-select id, 'E2E검증근로자' || rn, '019' || lpad(rn::text, 8, '0'), 10000, true, rn = 1, current_date
+insert into public.profiles (id, name, phone, hourly_wage, is_active, hired_at)
+select id, 'E2E검증근로자' || rn, '019' || lpad(rn::text, 8, '0'), 10000, true, current_date
 from e2e_workers;
 
 create temp table e2e_results (key text primary key, value jsonb not null);

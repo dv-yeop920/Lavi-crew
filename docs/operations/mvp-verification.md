@@ -2,7 +2,7 @@
 
 ## 2026-07-31
 
-- 범위: 외부 카카오 알림톡 제공자 실발송을 제외한 Supabase DB identity fixture·RLS·RPC와 핵심 업무 전이
+- 범위: 외부 Web Push 실발송을 제외한 Supabase DB identity fixture·RLS·RPC와 핵심 업무 전이
 - 원격 프로젝트: `vnfoyfcjpwxlurnhabla`
 - 원격 마이그레이션: foundation부터 `complete_foreign_key_indexes`까지 25개 적용 확인
 - 반복 가능한 시나리오: `supabase/tests/mvp_e2e.sql`
@@ -18,4 +18,4 @@
 - CI: `.github/workflows/ci.yml`의 `browser` job이 Chromium과 로컬 Supabase를 설치·초기화한 뒤 같은 브라우저 검증을 실행하고 실패 trace·screenshot을 보존한다.
 - 별도 검증: 비밀번호 재설정 메일, 관리자 일정 취소 UI, 출석 입력과 급여 화면의 역할 교차 브라우저 여정은 후속 자동화 범위다. DB/RPC 수준의 일정 취소·출석·급여 정합성은 `test:db`에서 검증한다.
 
-외부 알림톡 제공자 자격 증명, 승인 템플릿, 자동 호출 스케줄과 실수신 확인은 별도 운영 단계로 남긴다.
+VAPID 키 설정과 실수신 확인은 별도 운영 단계로 남긴다.

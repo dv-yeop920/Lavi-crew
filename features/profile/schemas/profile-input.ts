@@ -5,7 +5,6 @@ import type { FormActionResult } from '@/shared/forms/form-result'
 export type ProfileActionResult = FormActionResult
 
 export const profileUpdateSchema = z.object({
-  kakaoConsent: z.boolean(),
   name: z.string().trim().min(1, '이름을 입력해 주세요.').min(2, '이름은 2자 이상 입력해 주세요.'),
   phone: z
     .string()
@@ -25,7 +24,6 @@ function stringValue(formData: FormData, name: string) {
 
 export function parseProfileUpdate(formData: FormData) {
   return profileUpdateSchema.safeParse({
-    kakaoConsent: formData.get('kakaoConsent') === 'on',
     name: stringValue(formData, 'name'),
     phone: stringValue(formData, 'phone'),
   })

@@ -40,7 +40,7 @@ flowchart LR
 
 - 모든 Server Action은 `{ ok, code?, message }` 형태를 반환한다.
 - 관리자 회원 수정은 `name`, `hourlyWage`, `positionIds[]`만 받는다.
-- 본인 수정은 `name`, `phone`, `kakaoConsent`만 받으며 시급·역할·활성 상태는 입력 계약에 포함하지 않는다.
+- 본인 수정은 `name`, `phone`만 받으며 시급·역할·활성 상태는 입력 계약에 포함하지 않는다.
 
 ### Optimization and observability
 

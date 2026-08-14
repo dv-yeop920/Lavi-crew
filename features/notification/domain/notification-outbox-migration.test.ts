@@ -17,7 +17,6 @@ describe('notification outbox processor migration', () => {
     expect(sql).toContain('notification.next_attempt_at <= now()')
     expect(sql).toContain('notification.locked_until <= now()')
     expect(sql).toContain('profile.is_active')
-    expect(sql).toContain('profile.kakao_consent')
     expect(sql).toContain('limit p_batch_size')
     expect(sql).toContain('attempt_count = notification.attempt_count + 1')
     expect(sql).toContain('lease_token = pg_catalog.gen_random_uuid()')

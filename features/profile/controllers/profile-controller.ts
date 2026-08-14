@@ -19,7 +19,6 @@ export async function getOwnProfileController() {
 }
 
 export async function updateOwnProfileController(input: {
-  kakaoConsent: boolean
   name: string
   phone: string
 }): Promise<ProfileActionResult> {

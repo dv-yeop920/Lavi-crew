@@ -12,8 +12,10 @@ const claimed = {
   leaseToken: '8cf0ac26-ea5a-438b-8c68-caf84c52ff39',
   notificationId: 'e2308f73-a094-4dd1-8505-e216d5c4fc68',
   recipientName: '라비',
-  recipientPhone: '01012345678',
   startTime: '09:00:00',
+  subscriptions: [
+    { endpoint: 'https://push.example/sub1', keyAuth: 'auth-key', keyP256dh: 'p256dh-key' },
+  ],
   type: 'schedule_confirmed',
   workDate: '2026-08-01',
 }
@@ -34,7 +36,7 @@ describe('notification repository RPC contract', () => {
 
   it('rejects malformed privileged RPC payloads', async () => {
     const rpc = vi.fn<NotificationRpcClient['rpc']>().mockResolvedValue({
-      data: [{ ...claimed, recipientPhone: 'raw-phone' }],
+      data: [{ ...claimed, subscriptions: [] }],
       error: null,
     })
     await expect(createNotificationRepository({ rpc }).claim(20, 60)).rejects.toThrow(

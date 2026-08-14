@@ -22,7 +22,6 @@ create table public.profiles (
   role public.app_role not null default 'worker',
   hourly_wage integer not null default 10030 check (hourly_wage > 0),
   is_active boolean not null default true,
-  kakao_consent boolean not null default false,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -171,13 +170,28 @@ create table public.notification_logs (
   shift_id uuid references public.shifts(id) on delete restrict,
   assignment_id uuid references public.shift_assignments(id) on delete restrict,
   type public.notification_type not null,
-  channel text not null default 'kakao_alimtalk',
+  channel text not null default 'web_push',
   delivery_status public.notification_delivery_status not null default 'pending',
   provider_message_id text,
   failure_reason text,
   sent_at timestamptz,
   created_at timestamptz not null default now()
 );
+
+create table public.push_subscriptions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references public.profiles(id) on delete cascade,
+  endpoint text not null,
+  key_p256dh text not null,
+  key_auth text not null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  constraint push_subscriptions_endpoint_length check (char_length(endpoint) between 1 and 2048),
+  constraint push_subscriptions_key_p256dh_length check (char_length(key_p256dh) between 1 and 512),
+  constraint push_subscriptions_key_auth_length check (char_length(key_auth) between 1 and 512),
+  unique (user_id, endpoint)
+);
+create index push_subscriptions_user_id_idx on public.push_subscriptions (user_id);
 
 create index shifts_work_date_idx on public.shifts (work_date);
 create index assignments_worker_status_idx on public.shift_assignments (worker_id, status);
@@ -198,13 +212,14 @@ create trigger assignments_touch before update on public.shift_assignments for e
 create trigger attendance_touch before update on public.attendance_records for each row execute function public.touch_updated_at();
 create trigger payroll_touch before update on public.monthly_payrolls for each row execute function public.touch_updated_at();
 create trigger notices_touch before update on public.notices for each row execute function public.touch_updated_at();
+create trigger push_subscriptions_touch before update on public.push_subscriptions for each row execute function public.touch_updated_at();
 
 -- Auth users are created by Supabase Auth; signup metadata is consumed only by this trigger.
 create or replace function public.create_profile_for_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
-  insert into public.profiles (id, name, phone, kakao_consent)
-  values (new.id, new.raw_user_meta_data ->> 'name', new.raw_user_meta_data ->> 'phone', coalesce((new.raw_user_meta_data ->> 'kakao_consent')::boolean, false));
+  insert into public.profiles (id, name, phone)
+  values (new.id, new.raw_user_meta_data ->> 'name', new.raw_user_meta_data ->> 'phone');
   return new;
 end; $$;
 create trigger on_auth_user_created after insert on auth.users for each row execute function public.create_profile_for_new_user();
@@ -328,12 +343,12 @@ begin
     for update skip locked limit 1
   ) returning id into claimed_invite;
   if claimed_invite is null then raise exception 'INVITE_CODE_INVALID'; end if;
-  insert into public.profiles (id, name, phone, kakao_consent)
-  values (new.id, new.raw_user_meta_data ->> 'name', new.raw_user_meta_data ->> 'phone', coalesce((new.raw_user_meta_data ->> 'kakao_consent')::boolean, false));
+  insert into public.profiles (id, name, phone)
+  values (new.id, new.raw_user_meta_data ->> 'name', new.raw_user_meta_data ->> 'phone');
   return new;
 end; $$;
 
-create or replace function public.complete_worker_onboarding(candidate_name text, candidate_phone text, candidate_invite_code text, consent boolean)
+create or replace function public.complete_worker_onboarding(candidate_name text, candidate_phone text, candidate_invite_code text)
 returns void language plpgsql security definer set search_path = '' as $$
 declare claimed_invite uuid;
 begin
@@ -344,7 +359,7 @@ begin
   where id = (select id from public.invite_codes where code = upper(trim(candidate_invite_code)) and is_active and expires_at > now() and used_count < max_uses for update skip locked limit 1)
   returning id into claimed_invite;
   if claimed_invite is null then raise exception 'INVITE_CODE_INVALID'; end if;
-  insert into public.profiles (id, name, phone, kakao_consent) values (auth.uid(), trim(candidate_name), candidate_phone, consent);
+  insert into public.profiles (id, name, phone) values (auth.uid(), trim(candidate_name), candidate_phone);
 end; $$;
 
 create or replace function public.create_pending_attendance_record()
@@ -382,6 +397,6 @@ grant select on public.profiles, public.invite_codes, public.schedule_applicatio
 grant insert, update on public.schedule_applications, public.notice_reads to authenticated;
 grant insert, update, delete on public.invite_codes, public.schedule_application_periods, public.shifts, public.shift_assignments, public.worker_position_skills, public.attendance_records, public.monthly_payrolls, public.payroll_items, public.notices, public.notification_logs to authenticated;
 revoke all on function public.is_admin(), public.touch_updated_at(), public.create_profile_for_new_user(), public.validate_invite_code(text), public.claim_invite_code(text), public.create_pending_attendance_record() from public;
-revoke all on function public.close_application_period(uuid), public.confirm_attendance_and_payroll(uuid, public.attendance_status, text), public.complete_worker_onboarding(text, text, text, boolean) from public;
-grant execute on function public.close_application_period(uuid), public.confirm_attendance_and_payroll(uuid, public.attendance_status, text), public.complete_worker_onboarding(text, text, text, boolean) to authenticated;
+revoke all on function public.close_application_period(uuid), public.confirm_attendance_and_payroll(uuid, public.attendance_status, text), public.complete_worker_onboarding(text, text, text) from public;
+grant execute on function public.close_application_period(uuid), public.confirm_attendance_and_payroll(uuid, public.attendance_status, text), public.complete_worker_onboarding(text, text, text) to authenticated;
 grant execute on function public.is_admin() to authenticated;

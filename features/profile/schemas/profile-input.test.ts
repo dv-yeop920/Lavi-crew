@@ -7,12 +7,10 @@ describe('profile input parser', () => {
     const input = new FormData()
     input.set('name', '홍길동')
     input.set('phone', '010-1234-5678')
-    input.set('kakaoConsent', 'on')
     const parsed = parseProfileUpdate(input)
     expect(parsed.success).toBe(true)
     if (!parsed.success) return
     expect(parsed.data).toEqual({
-      kakaoConsent: true,
       name: '홍길동',
       phone: '01012345678',
     })
