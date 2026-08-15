@@ -170,6 +170,7 @@ export function AdminScheduleView({
         month={monthValue}
         period={viewModel.period}
         requestId={requestId}
+        selectedDates={[...selectedDates].sort()}
       />
 
       {selectedDates.size > 0 && viewModel.period.id ? (
@@ -178,10 +179,6 @@ export function AdminScheduleView({
         >
           {selectedDates.size}일 일정 등록하기
         </ButtonLink>
-      ) : selectedDates.size > 0 ? (
-        <Button disabled variant="secondary">
-          먼저 신청 기간을 열어주세요
-        </Button>
       ) : null}
 
       <section className={layout.stack} aria-labelledby="registered-schedule-title">

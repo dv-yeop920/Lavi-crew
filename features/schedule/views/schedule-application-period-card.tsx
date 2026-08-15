@@ -23,6 +23,7 @@ type ScheduleApplicationPeriodCardProps = {
   month: string
   period: MonthRegistrationViewModel['period']
   requestId: string
+  selectedDates: string[]
 }
 
 function getDeadlineInputs(month: string, value: string | null) {
@@ -83,6 +84,7 @@ export function ScheduleApplicationPeriodCard({
   month,
   period,
   requestId: initialRequestId,
+  selectedDates,
 }: ScheduleApplicationPeriodCardProps) {
   const router = useRouter()
   const initialDeadline = getDeadlineInputs(month, period.applicationDeadline)
@@ -103,7 +105,13 @@ export function ScheduleApplicationPeriodCard({
   )
   const isBusy = isSavingPeriod || isSavingStatus
 
-  useActionSuccessEffect(periodState, () => router.refresh())
+  useActionSuccessEffect(periodState, () => {
+    if (!period.id && selectedDates.length > 0) {
+      router.push(`/admin/schedules/new?month=${month}&dates=${selectedDates.join(',')}`)
+    } else {
+      router.refresh()
+    }
+  })
   useActionSuccessEffect(statusState, () => router.refresh())
 
   useEffect(() => {
@@ -194,7 +202,17 @@ export function ScheduleApplicationPeriodCard({
               />
             </label>
             <Button disabled={isBusy} type="submit">
-              {isSavingPeriod ? <>저장 중<LoadingDots /></> : period.id ? '마감 시각 변경' : '신청 기간 열기'}
+              {isSavingPeriod ? (
+                <>
+                  저장 중<LoadingDots />
+                </>
+              ) : period.id ? (
+                '마감 시각 변경'
+              ) : selectedDates.length > 0 ? (
+                '신청 기간 열고 일정 등록'
+              ) : (
+                '신청 기간 열기'
+              )}
             </Button>
           </div>
           {deadlineError ? (
