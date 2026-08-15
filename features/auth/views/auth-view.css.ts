@@ -4,6 +4,7 @@ import { semanticVars } from '@/shared/styles/theme.css'
 
 export const viewport = style({
   display: 'grid',
+  placeItems: 'center',
   minHeight: '100dvh',
   padding: 'max(1.5rem, env(safe-area-inset-top)) 1rem max(1.5rem, env(safe-area-inset-bottom))',
   background: semanticVars.color.background,

@@ -22,5 +22,5 @@ export const spinner = styleVariants({
 export const container = style({
   display: 'grid',
   placeItems: 'center',
-  padding: '2rem',
+  minHeight: 'calc(100dvh - 12rem)',
 })
