@@ -61,26 +61,18 @@ export async function getAdminMonthScheduleController(
         asOf,
       )
     : null
-  const workers = records.profiles.map((profile) => {
-    const positionIds = records.skills
-      .filter((skill) => skill.worker_id === profile.id)
-      .map((skill) => skill.position_id)
-      .filter((positionId): positionId is PositionId =>
-        POSITION_CATALOG.some((position) => position.id === positionId),
-      )
-    const workerAssignments = records.previousAssignments.filter(
-      (assignment) => assignment.worker_id === profile.id,
+  const workers = records.workers.map((worker) => {
+    const positionIds = worker.position_ids.filter((positionId): positionId is PositionId =>
+      POSITION_CATALOG.some((position) => position.id === positionId),
     )
     return {
-      appliedDates: records.applications
-        .filter(
-          (application) => application.worker_id === profile.id && application.status === 'applied',
-        )
-        .map((application) => application.work_date),
-      id: profile.id,
-      name: profile.name,
+      appliedDates: worker.applied_dates,
+      id: worker.worker_id,
+      name: worker.worker_name,
       positionIds,
-      summary: formatScheduleWorkerSummary(workerAssignments),
+      summary: formatScheduleWorkerSummary(
+        worker.previous_position_ids.map((position_id) => ({ position_id })),
+      ),
     }
   })
 

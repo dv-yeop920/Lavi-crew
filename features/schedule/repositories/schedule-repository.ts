@@ -18,7 +18,7 @@ export async function getAdminMonthScheduleRecords(monthStart: string, monthEnd:
   previousMonthStart.setUTCMonth(previousMonthStart.getUTCMonth() - 1)
   const previousMonthStartValue = previousMonthStart.toISOString().slice(0, 10)
 
-  const [period, shifts, profiles, skills, applications, previousAssignments] = await Promise.all([
+  const [period, shifts, workers] = await Promise.all([
     supabase
       .from('schedule_application_periods')
       .select('id, status, application_deadline, updated_at')
@@ -32,42 +32,20 @@ export async function getAdminMonthScheduleRecords(monthStart: string, monthEnd:
       .gte('work_date', monthStart)
       .lt('work_date', monthEnd)
       .order('work_date'),
-    supabase
-      .from('profiles')
-      .select('id, name, role, is_active, hourly_wage')
-      .eq('role', 'worker')
-      .eq('is_active', true)
-      .order('name'),
-    supabase.from('worker_position_skills').select('worker_id, position_id'),
-    supabase
-      .from('schedule_applications')
-      .select('worker_id, status, work_date')
-      .gte('work_date', monthStart)
-      .lt('work_date', monthEnd),
-    supabase
-      .from('shift_assignments')
-      .select('worker_id, position_id, status, shifts!inner(work_date)')
-      .eq('status', 'confirmed')
-      .gte('shifts.work_date', previousMonthStartValue)
-      .lt('shifts.work_date', previousMonthEnd),
+    supabase.rpc('get_admin_month_schedule_workers', {
+      p_month_end: monthEnd,
+      p_month_start: monthStart,
+      p_previous_month_start: previousMonthStartValue,
+    }),
   ])
 
-  const error =
-    period.error ||
-    shifts.error ||
-    profiles.error ||
-    skills.error ||
-    applications.error ||
-    previousAssignments.error
+  const error = period.error || shifts.error || workers.error
   if (error) throw new Error('일정 등록 데이터를 조회하지 못했습니다.')
 
   return {
-    applications: applications.data ?? [],
     period: period.data,
-    previousAssignments: previousAssignments.data ?? [],
-    profiles: profiles.data ?? [],
     shifts: shifts.data ?? [],
-    skills: skills.data ?? [],
+    workers: workers.data ?? [],
   }
 }
 

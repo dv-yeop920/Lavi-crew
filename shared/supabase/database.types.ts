@@ -886,6 +886,20 @@ export type Database = {
           name: string
         }[]
       }
+      get_admin_month_schedule_workers: {
+        Args: {
+          p_month_end: string
+          p_month_start: string
+          p_previous_month_start: string
+        }
+        Returns: {
+          applied_dates: string[]
+          position_ids: string[]
+          previous_position_ids: string[]
+          worker_id: string
+          worker_name: string
+        }[]
+      }
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
       mark_notice_read: {
         Args: { p_notice_id: string; p_request_id: string }
