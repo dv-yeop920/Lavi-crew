@@ -5,13 +5,10 @@ type PreviousAssignment = {
 }
 
 function getDemoLastMonthCounts(positionIds: PositionId[]) {
-  const primaryPositionId = positionIds.includes('manager') ? 'manager' : positionIds[0]
-  const secondaryPositionId = positionIds.find((positionId) => positionId !== primaryPositionId)
-
-  return [
-    primaryPositionId ? { count: 2, id: primaryPositionId } : null,
-    secondaryPositionId ? { count: 1, id: secondaryPositionId } : null,
-  ].filter((position): position is { count: number; id: PositionId } => position !== null)
+  return positionIds.slice(0, 3).map((id, index) => ({
+    count: 3 - index,
+    id,
+  }))
 }
 
 export function formatScheduleWorkerSummary(
