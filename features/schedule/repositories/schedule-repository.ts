@@ -35,6 +35,7 @@ export async function getAdminMonthScheduleRecords(monthStart: string, monthEnd:
     supabase
       .from('profiles')
       .select('id, name, role, is_active, hourly_wage')
+      .eq('role', 'worker')
       .eq('is_active', true)
       .order('name'),
     supabase.from('worker_position_skills').select('worker_id, position_id'),
