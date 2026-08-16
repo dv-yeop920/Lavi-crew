@@ -18,7 +18,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
 @keyframes splash-icon{from{opacity:0;transform:scale(.7)}to{opacity:1;transform:scale(1)}}
 @keyframes splash-char{from{clip-path:inset(0 100% 0 0);opacity:0}to{clip-path:inset(0 0 0 0);opacity:1}}
 @keyframes splash-out{0%{opacity:1;visibility:visible}90%{opacity:1}100%{opacity:0;visibility:hidden}}
-#splash{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#fff;animation:splash-out 1.8s ease-out 1.2s forwards}
+#splash{position:fixed;inset:0;z-index:9999;display:grid;place-items:center;background:#fff;pointer-events:none;animation:splash-out 1.8s ease-out 1.2s forwards}
 #splash>div{display:flex;flex-direction:column;align-items:center;gap:1rem}
 #splash svg{width:4rem;height:4rem;opacity:0;animation:splash-icon .5s ease-out forwards}
 #splash .t{display:flex;gap:.125rem;color:#4B0082;font-size:1.375rem;font-weight:800;letter-spacing:-.025em}
@@ -51,12 +51,6 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </div>
           </div>
         </div>
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "var s=document.getElementById('splash');if(s)s.addEventListener('animationend',function(e){if(e.animationName==='splash-out')s.remove()})",
-          }}
-        />
         {children}
       </body>
     </html>
