@@ -2,11 +2,12 @@ import 'server-only'
 
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
+import { cache } from 'react'
 
 import type { Database } from './database.types'
 import { getSupabasePublicEnv } from './env'
 
-export async function createServerSupabaseClient() {
+export const createServerSupabaseClient = cache(async function createServerSupabaseClient() {
   const cookieStore = await cookies()
   const { publishableKey, url } = getSupabasePublicEnv()
   return createServerClient<Database>(url, publishableKey, {
@@ -19,4 +20,4 @@ export async function createServerSupabaseClient() {
       },
     },
   })
-}
+})

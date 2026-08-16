@@ -32,8 +32,7 @@ function mapMutationError(error: { message: string } | null): NoticeActionResult
 }
 
 export async function getWorkerNoticesController(): Promise<WorkerNoticeViewModel> {
-  const worker = await requireRole('worker')
-  const records = await getWorkerNoticeRecords()
+  const [worker, records] = await Promise.all([requireRole('worker'), getWorkerNoticeRecords()])
   const notices: WorkerNoticeViewModel['notices'] = records.map((notice) => ({
     content: notice.content,
     createdAt: notice.created_at,
@@ -49,8 +48,7 @@ export async function getWorkerNoticesController(): Promise<WorkerNoticeViewMode
 }
 
 export async function getAdminNoticesController(): Promise<AdminNoticeViewModel> {
-  await requireRole('admin')
-  const records = await getAdminNoticeRecords()
+  const [, records] = await Promise.all([requireRole('admin'), getAdminNoticeRecords()])
   const activeWorkerIds = new Set(records.workers.map((worker) => worker.id))
   const activeWorkerCount = activeWorkerIds.size
   const notices: AdminNoticeViewModel['notices'] = records.notices.map((notice) => ({

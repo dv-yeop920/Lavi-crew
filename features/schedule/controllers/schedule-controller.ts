@@ -47,9 +47,11 @@ export async function getAdminMonthScheduleController(
   month: string,
   asOf = new Date(),
 ): Promise<MonthRegistrationViewModel> {
-  await requireRole('admin')
   const { monthEnd, monthStart } = getMonthBounds(month)
-  const records = await getAdminMonthScheduleRecords(monthStart, monthEnd)
+  const [, records] = await Promise.all([
+    requireRole('admin'),
+    getAdminMonthScheduleRecords(monthStart, monthEnd),
+  ])
   const registeredSchedules = getScheduleSummaries(records.shifts)
   const periodViewState = records.period
     ? getApplicationPeriodViewState(
@@ -130,9 +132,11 @@ function mapApplicationError(error: { message: string } | null) {
 }
 
 export async function getWorkerMonthApplicationController(month: string, asOf = new Date()) {
-  await requireRole('worker')
   const { monthEnd, monthStart } = getMonthBounds(month)
-  const records = await getWorkerMonthApplicationRecords(monthStart, monthEnd)
+  const [, records] = await Promise.all([
+    requireRole('worker'),
+    getWorkerMonthApplicationRecords(monthStart, monthEnd),
+  ])
   const periodViewState = records.period
     ? getApplicationPeriodViewState(
         records.period.status,

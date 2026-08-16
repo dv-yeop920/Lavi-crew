@@ -1,6 +1,8 @@
 import 'server-only'
 
-import { requireRole } from '@/shared/auth/session'
+import { redirect } from 'next/navigation'
+
+import { getAuthenticatedProfile, getSessionUserId, requireRole } from '@/shared/auth/session'
 import { getProfileUniqueConflict } from '@/shared/lib/postgres-conflict'
 
 import {
@@ -12,8 +14,14 @@ import {
 import type { ProfileActionResult } from '../schemas/profile-input'
 
 export async function getOwnProfileController() {
-  const worker = await requireRole('worker')
-  const profile = await getOwnProfileRecord(worker.id)
+  const userId = await getSessionUserId()
+  if (!userId) redirect('/')
+  const [authProfile, profile] = await Promise.all([
+    getAuthenticatedProfile(),
+    getOwnProfileRecord(userId),
+  ])
+  if (!authProfile || authProfile.role !== 'worker')
+    redirect(authProfile?.role === 'admin' ? '/admin' : '/')
   if (!profile) throw new Error('프로필을 찾을 수 없습니다.')
   return profile
 }

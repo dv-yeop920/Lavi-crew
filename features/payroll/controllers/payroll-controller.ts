@@ -1,6 +1,8 @@
 import 'server-only'
 
-import { requireRole } from '@/shared/auth/session'
+import { redirect } from 'next/navigation'
+
+import { getAuthenticatedProfile, getSessionUserId } from '@/shared/auth/session'
 
 import {
   calculatePaidMonthAverage,
@@ -18,7 +20,8 @@ function monthBounds(month: string) {
 }
 
 export async function getWorkerPayrollController(month: string): Promise<WorkerPayrollViewModel> {
-  const profile = await requireRole('worker')
+  const userId = await getSessionUserId()
+  if (!userId) redirect('/')
   if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) {
     return {
       averagePaidMonthAmount: 0,
@@ -31,13 +34,17 @@ export async function getWorkerPayrollController(month: string): Promise<WorkerP
   }
   const bounds = monthBounds(month)
   const weekBounds = getMonthCoveringWeekRange(month)
-  const records = await getWorkerPayrollRecords({
-    monthEnd: bounds.end,
-    monthStart: bounds.start,
-    weekEnd: weekBounds.endExclusive,
-    weekStart: weekBounds.start,
-    workerId: profile.id,
-  })
+  const [profile, records] = await Promise.all([
+    getAuthenticatedProfile(),
+    getWorkerPayrollRecords({
+      monthEnd: bounds.end,
+      monthStart: bounds.start,
+      weekEnd: weekBounds.endExclusive,
+      weekStart: weekBounds.start,
+      workerId: userId,
+    }),
+  ])
+  if (!profile || profile.role !== 'worker') redirect(profile?.role === 'admin' ? '/admin' : '/')
   const details = records.details.map((detail) => ({
     amount: detail.amount,
     id: detail.id,

@@ -12,9 +12,8 @@ import type { AdminDashboardViewModel } from '../schemas/admin-dashboard-view-mo
 export async function getAdminDashboardController(
   asOf = new Date(),
 ): Promise<AdminDashboardViewModel> {
-  await requireRole('admin')
   const range = getKstDashboardDateRange(asOf)
-  const records = await getAdminDashboardRecords(range)
+  const [, records] = await Promise.all([requireRole('admin'), getAdminDashboardRecords(range)])
   function buildMonth(monthStart: string) {
     const record = records.periods.find((period) => period.year_month === monthStart) ?? null
     const effectiveStatus = record

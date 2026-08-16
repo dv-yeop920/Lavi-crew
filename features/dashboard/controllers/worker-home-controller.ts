@@ -1,6 +1,8 @@
 import 'server-only'
 
-import { requireRole } from '@/shared/auth/session'
+import { redirect } from 'next/navigation'
+
+import { getAuthenticatedProfile, getSessionUserId } from '@/shared/auth/session'
 
 import { getWorkerHomeRecords } from '../repositories/worker-home-repository'
 import type { WorkerHomeViewModel } from '../schemas/worker-home-view-model'
@@ -15,14 +17,19 @@ function kstDate(asOf: Date) {
 }
 
 export async function getWorkerHomeController(asOf = new Date()): Promise<WorkerHomeViewModel> {
-  const profile = await requireRole('worker')
+  const userId = await getSessionUserId()
+  if (!userId) redirect('/')
   const today = kstDate(asOf)
-  const records = await getWorkerHomeRecords({
-    currentMonthStart: `${today.slice(0, 7)}-01`,
-    nowIso: asOf.toISOString(),
-    today,
-    workerId: profile.id,
-  })
+  const [profile, records] = await Promise.all([
+    getAuthenticatedProfile(),
+    getWorkerHomeRecords({
+      currentMonthStart: `${today.slice(0, 7)}-01`,
+      nowIso: asOf.toISOString(),
+      today,
+      workerId: userId,
+    }),
+  ])
+  if (!profile || profile.role !== 'worker') redirect(profile?.role === 'admin' ? '/admin' : '/')
   const nextAssignment =
     records.nextAssignments.find(
       (assignment) =>
