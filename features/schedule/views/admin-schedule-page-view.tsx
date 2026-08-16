@@ -1,7 +1,5 @@
 import { randomUUID } from 'node:crypto'
 
-import { redirect } from 'next/navigation'
-
 import { getAdminMonthScheduleController } from '../controllers/schedule-controller'
 import { getCanonicalMonth } from '../lib/month-query'
 
@@ -16,8 +14,7 @@ function getCurrentKoreanMonth() {
 }
 
 export async function AdminSchedulePageView({ monthQuery }: { monthQuery?: string }) {
-  const month = getCanonicalMonth(monthQuery)
-  if (!month) redirect(`/admin/schedules?month=${getCurrentKoreanMonth()}`)
+  const month = getCanonicalMonth(monthQuery) ?? getCurrentKoreanMonth()
   const viewModel = await getAdminMonthScheduleController(month)
   return <AdminScheduleView requestId={randomUUID()} viewModel={viewModel} />
 }

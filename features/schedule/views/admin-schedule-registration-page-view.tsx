@@ -1,11 +1,17 @@
 import { randomUUID } from 'node:crypto'
 
-import { redirect } from 'next/navigation'
-
 import { getAdminMonthScheduleController } from '../controllers/schedule-controller'
 import { getCanonicalMonth } from '../lib/month-query'
 
 import { AdminScheduleRegistrationView } from './admin-schedule-registration-view'
+
+function getCurrentKoreanMonth() {
+  return new Intl.DateTimeFormat('en-CA', {
+    month: '2-digit',
+    timeZone: 'Asia/Seoul',
+    year: 'numeric',
+  }).format(new Date())
+}
 
 export async function AdminScheduleRegistrationPageView({
   datesQuery,
@@ -14,15 +20,7 @@ export async function AdminScheduleRegistrationPageView({
   datesQuery?: string
   monthQuery?: string
 }) {
-  const month = getCanonicalMonth(monthQuery)
-  if (!month) {
-    const currentMonth = new Intl.DateTimeFormat('en-CA', {
-      month: '2-digit',
-      timeZone: 'Asia/Seoul',
-      year: 'numeric',
-    }).format(new Date())
-    redirect(`/admin/schedules/new?month=${currentMonth}`)
-  }
+  const month = getCanonicalMonth(monthQuery) ?? getCurrentKoreanMonth()
   const viewModel = await getAdminMonthScheduleController(month)
   const selectedDates = datesQuery
     ? datesQuery
