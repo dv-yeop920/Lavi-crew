@@ -72,6 +72,7 @@ export async function getAdminMonthScheduleController(
       positionIds,
       summary: formatScheduleWorkerSummary(
         worker.previous_position_ids.map((position_id) => ({ position_id })),
+        positionIds,
       ),
     }
   })
