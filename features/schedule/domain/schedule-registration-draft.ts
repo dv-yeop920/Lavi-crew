@@ -59,6 +59,7 @@ function isDraftEntry(value: unknown): value is ScheduleRegistrationDraftEntry {
   return (
     Number.isInteger(value.ceremonyCount) &&
     Number(value.ceremonyCount) >= 1 &&
+    Number(value.ceremonyCount) <= 10 &&
     typeof value.date === 'string' &&
     datePattern.test(value.date) &&
     typeof value.startTime === 'string' &&

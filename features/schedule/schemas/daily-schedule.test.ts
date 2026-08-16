@@ -30,4 +30,18 @@ describe('daily schedule schemas', () => {
       }).success,
     ).toBe(true)
   })
+
+  it('rejects more than ten ceremonies', () => {
+    expect(
+      updateDailyScheduleSchema.safeParse({
+        assignments: [],
+        ceremonyCount: 11,
+        endTime: '18:00',
+        expectedShiftUpdatedAt: version,
+        requestId: id,
+        shiftId: id,
+        startTime: '09:00',
+      }).success,
+    ).toBe(false)
+  })
 })

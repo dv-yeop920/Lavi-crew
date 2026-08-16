@@ -32,7 +32,11 @@ export const monthlyRegistrationSchema = z.object({
     .array(
       z.object({
         assignments: z.array(scheduleAssignmentSchema),
-        ceremonyCount: z.number().int().min(1, '예식 개수는 1개 이상이어야 합니다.'),
+        ceremonyCount: z
+          .number()
+          .int()
+          .min(1, '예식 개수는 1개 이상이어야 합니다.')
+          .max(10, '예식 개수는 10개 이하여야 합니다.'),
         endTime: timeSchema,
         startTime: timeSchema,
         workDate: dateSchema,

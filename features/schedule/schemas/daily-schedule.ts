@@ -9,7 +9,7 @@ const timeSchema = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, '근무 시간�
 
 export const updateDailyScheduleSchema = z.object({
   assignments: z.array(scheduleAssignmentSchema),
-  ceremonyCount: z.number().int().min(1),
+  ceremonyCount: z.number().int().min(1).max(10),
   endTime: timeSchema,
   expectedShiftUpdatedAt: versionSchema,
   requestId: z.uuid(),

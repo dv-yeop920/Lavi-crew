@@ -51,6 +51,8 @@ type ScheduleDraft = {
   startTime: string
 }
 
+const ceremonyCountOptions = Array.from({ length: 10 }, (_, index) => index + 1)
+
 function createDraft(date: string): ScheduleDraft {
   return {
     ceremonyCount: 1,
@@ -309,24 +311,26 @@ export function AdminScheduleRegistrationView({
                           <div className={styles.scheduleInfoGrid}>
                             <label className={styles.fieldLabel}>
                               <span>예식 개수</span>
-                              <input
+                              <select
                                 required
                                 aria-describedby={
                                   ceremonyError ? `${draft.date}-ceremony-error` : undefined
                                 }
                                 aria-invalid={ceremonyError ? true : undefined}
                                 className={styles.compactInput}
-                                min="1"
-                                type="number"
                                 value={draft.ceremonyCount}
-                                onChange={(event) => {
-                                  const nextValue = Number(event.target.value)
+                                onChange={(event) =>
                                   updateDraft(draft.date, {
-                                    ceremonyCount:
-                                      Number.isInteger(nextValue) && nextValue >= 1 ? nextValue : 1,
+                                    ceremonyCount: Number(event.target.value),
                                   })
-                                }}
-                              />
+                                }
+                              >
+                                {ceremonyCountOptions.map((count) => (
+                                  <option key={count} value={count}>
+                                    {count}
+                                  </option>
+                                ))}
+                              </select>
                               {ceremonyError ? (
                                 <span
                                   className={styles.fieldError}

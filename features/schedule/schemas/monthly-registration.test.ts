@@ -61,6 +61,30 @@ describe('parseMonthlyRegistrationFormData', () => {
     expect(parseMonthlyRegistrationFormData(invalid).success).toBe(false)
   })
 
+  it('rejects a ceremony count greater than ten', () => {
+    const formData = new FormData()
+    formData.set(
+      'payload',
+      JSON.stringify({
+        applicationDeadlineDate: '2026-07-25',
+        applicationDeadlineTime: '18:00',
+        expectedPeriodUpdatedAt: null,
+        month: '2026-08',
+        requestId: '00000000-0000-4000-8000-000000000001',
+        schedules: [
+          {
+            assignments: [],
+            ceremonyCount: 11,
+            endTime: '18:00',
+            startTime: '09:00',
+            workDate: '2026-08-01',
+          },
+        ],
+      }),
+    )
+    expect(parseMonthlyRegistrationFormData(formData).success).toBe(false)
+  })
+
   it('keeps nested assignment paths for accessible field errors', () => {
     const formData = new FormData()
     formData.set(

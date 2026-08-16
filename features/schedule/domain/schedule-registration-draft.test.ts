@@ -86,6 +86,17 @@ describe('schedule registration draft domain', () => {
     expect(getScheduleRegistrationDraftForMonth(withInvalidEntry, '2099-02')?.drafts).toEqual([])
   })
 
+  it('does not persist an out-of-range ceremony count', () => {
+    const empty = { monthDrafts: {}, version: SCHEDULE_REGISTRATION_DRAFT_VERSION }
+    const withInvalidEntry = upsertScheduleRegistrationDraftMonth(
+      empty,
+      '2099-02',
+      [{ ...entry, ceremonyCount: 11 }],
+      '2099-01-01T00:00:00.000Z',
+    )
+    expect(getScheduleRegistrationDraftForMonth(withInvalidEntry, '2099-02')?.drafts).toEqual([])
+  })
+
   it('returns the same document when removing a month that was never saved', () => {
     const empty = { monthDrafts: {}, version: SCHEDULE_REGISTRATION_DRAFT_VERSION }
     expect(removeScheduleRegistrationDraftMonth(empty, '2099-02')).toBe(empty)

@@ -35,6 +35,8 @@ type DailyScheduleDraft = {
   startTime: string
 }
 
+const ceremonyCountOptions = Array.from({ length: 10 }, (_, index) => index + 1)
+
 function formatDate(date: string) {
   return new Intl.DateTimeFormat('ko-KR', {
     day: 'numeric',
@@ -258,19 +260,22 @@ export function AdminDailyScheduleView({
           <div className={styles.scheduleInfoGrid}>
             <label className={styles.fieldLabel}>
               <span>예식 개수</span>
-              <input
+              <select
                 aria-describedby={
                   ceremonyCountError ? 'daily-schedule-ceremony-count-error' : undefined
                 }
                 aria-invalid={ceremonyCountError ? true : undefined}
                 className={styles.compactInput}
-                disabled={isUpdating}
-                min="1"
-                readOnly={!isEditing}
-                type="number"
+                disabled={!isEditing || isUpdating}
                 value={draft.ceremonyCount}
                 onChange={(event) => updateDraft({ ceremonyCount: Number(event.target.value) })}
-              />
+              >
+                {ceremonyCountOptions.map((count) => (
+                  <option key={count} value={count}>
+                    {count}
+                  </option>
+                ))}
+              </select>
             </label>
             <label className={styles.fieldLabel}>
               <span>근무 시작</span>
