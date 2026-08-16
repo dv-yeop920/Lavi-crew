@@ -51,6 +51,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
             </div>
           </div>
         </div>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "var s=document.getElementById('splash');if(s)s.addEventListener('animationend',function(e){if(e.animationName==='splash-out')s.remove()})",
+          }}
+        />
         {children}
       </body>
     </html>
