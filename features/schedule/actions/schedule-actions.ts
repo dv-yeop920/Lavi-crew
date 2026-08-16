@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { requireRole } from '@/shared/auth/session'
 
 import {
+  cancelScheduleApplicationPeriodController,
   saveMonthlyScheduleRegistrationController,
   saveScheduleApplicationPeriodController,
   saveWorkerMonthlyApplicationsController,
@@ -14,6 +15,7 @@ import {
   type MonthlyApplicationActionResult,
   monthlyApplicationSchema,
   parseJsonFormData,
+  scheduleApplicationPeriodCancelSchema,
   scheduleApplicationPeriodSchema,
   scheduleApplicationPeriodStatusSchema,
 } from '../schemas/monthly-application'
@@ -109,6 +111,29 @@ export async function setScheduleApplicationPeriodStatusAction(
     }
   }
   const result = await setScheduleApplicationPeriodStatusController(parsed.data)
+  if (result.ok) {
+    revalidatePath('/admin/schedules')
+    revalidatePath('/admin/schedules/new')
+    revalidatePath('/schedule/apply')
+  }
+  return result
+}
+
+export async function cancelScheduleApplicationPeriodAction(
+  _: ScheduleActionResult | null,
+  formData: FormData,
+): Promise<ScheduleActionResult> {
+  await requireRole('admin')
+  const parsed = parseJsonFormData(formData, scheduleApplicationPeriodCancelSchema)
+  if (!parsed.success) {
+    return {
+      code: 'INVALID_INPUT',
+      fieldErrors: parsed.error.flatten().fieldErrors,
+      message: '신청 기간 정보를 확인해 주세요.',
+      ok: false,
+    }
+  }
+  const result = await cancelScheduleApplicationPeriodController(parsed.data)
   if (result.ok) {
     revalidatePath('/admin/schedules')
     revalidatePath('/admin/schedules/new')

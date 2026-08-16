@@ -39,10 +39,19 @@ export const scheduleApplicationPeriodStatusSchema = z.object({
   requestId: z.uuid(),
 })
 
+export const scheduleApplicationPeriodCancelSchema = z.object({
+  expectedPeriodUpdatedAt: versionSchema,
+  periodId: z.uuid(),
+  requestId: z.uuid(),
+})
+
 export type MonthlyApplicationInput = z.infer<typeof monthlyApplicationSchema>
 export type ScheduleApplicationPeriodInput = z.infer<typeof scheduleApplicationPeriodSchema>
 export type ScheduleApplicationPeriodStatusInput = z.infer<
   typeof scheduleApplicationPeriodStatusSchema
+>
+export type ScheduleApplicationPeriodCancelInput = z.infer<
+  typeof scheduleApplicationPeriodCancelSchema
 >
 export type MonthlyApplicationActionResult = FormActionResult & {
   data?: { appliedCount: number; cancelledCount: number; selectedDates: string[] }

@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from '@/shared/supabase/server'
 
 import type {
   MonthlyApplicationInput,
+  ScheduleApplicationPeriodCancelInput,
   ScheduleApplicationPeriodInput,
   ScheduleApplicationPeriodStatusInput,
 } from '../schemas/monthly-application'
@@ -116,6 +117,17 @@ export async function setScheduleApplicationPeriodStatusRecord(
   return supabase.rpc('set_schedule_application_period_status', {
     p_expected_updated_at: input.expectedPeriodUpdatedAt,
     p_next_status: input.nextStatus,
+    p_period_id: input.periodId,
+    p_request_id: input.requestId,
+  })
+}
+
+export async function cancelScheduleApplicationPeriodRecord(
+  input: ScheduleApplicationPeriodCancelInput,
+) {
+  const supabase = await createServerSupabaseClient()
+  return supabase.rpc('cancel_schedule_application_period', {
+    p_expected_updated_at: input.expectedPeriodUpdatedAt,
     p_period_id: input.periodId,
     p_request_id: input.requestId,
   })

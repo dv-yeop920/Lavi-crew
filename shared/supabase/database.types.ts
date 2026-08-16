@@ -911,6 +911,14 @@ export type Database = {
         }
         Returns: Json
       }
+      cancel_schedule_application_period: {
+        Args: {
+          p_expected_updated_at: string
+          p_period_id: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
       save_own_monthly_schedule_applications: {
         Args: {
           p_expected_period_updated_at: string

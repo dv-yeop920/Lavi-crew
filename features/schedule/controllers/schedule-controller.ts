@@ -15,6 +15,7 @@ import {
 } from '../domain/monthly-registration'
 import { formatScheduleWorkerSummary } from '../lib/schedule-worker-summary'
 import {
+  cancelScheduleApplicationPeriodRecord,
   getAdminMonthScheduleRecords,
   getWorkerMonthApplicationRecords,
   saveMonthlyScheduleRegistrationRecord,
@@ -25,6 +26,7 @@ import {
 import type {
   MonthlyApplicationActionResult,
   MonthlyApplicationInput,
+  ScheduleApplicationPeriodCancelInput,
   ScheduleApplicationPeriodInput,
   ScheduleApplicationPeriodStatusInput,
 } from '../schemas/monthly-application'
@@ -107,6 +109,7 @@ const applicationErrorMessages = {
   INVALID_APPLICATION_DATE: '해당 월의 날짜만 신청할 수 있습니다.',
   INVALID_INPUT: '입력 내용을 확인해 주세요.',
   PERIOD_CANNOT_BE_REOPENED: '게시된 일정이 있거나 마감 시각이 지나 다시 열 수 없습니다.',
+  PERIOD_HAS_PAYROLL_HISTORY: '급여가 산정된 일정은 취소할 수 없습니다.',
   PERIOD_HAS_SCHEDULE_HISTORY: '일정이 등록된 월의 신청 마감 시각은 변경할 수 없습니다.',
   PERIOD_NOT_FOUND: '먼저 해당 월의 신청 기간을 열어 주세요.',
   STALE_PERIOD: '신청 기간이 변경되었습니다. 최신 상태를 다시 불러와 주세요.',
@@ -202,6 +205,14 @@ export async function setScheduleApplicationPeriodStatusController(
       ok: true,
     }
   )
+}
+
+export async function cancelScheduleApplicationPeriodController(
+  input: ScheduleApplicationPeriodCancelInput,
+): Promise<ScheduleActionResult> {
+  await requireRole('admin')
+  const result = await cancelScheduleApplicationPeriodRecord(input)
+  return mapApplicationError(result.error) ?? { message: '일정을 취소했습니다.', ok: true }
 }
 
 const domainErrorMessages = {

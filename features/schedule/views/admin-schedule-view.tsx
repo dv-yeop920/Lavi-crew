@@ -166,7 +166,7 @@ export function AdminScheduleView({
 
       <ScheduleApplicationPeriodCard
         hasScheduleHistory={viewModel.hasScheduleHistory}
-        key={monthValue}
+        key={`${monthValue}-${viewModel.period.id ?? ''}`}
         month={monthValue}
         period={viewModel.period}
         requestId={requestId}

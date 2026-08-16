@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation'
 import { useActionState, useEffect, useRef, useState } from 'react'
 
 import {
+  cancelScheduleApplicationPeriodAction,
   saveScheduleApplicationPeriodAction,
   setScheduleApplicationPeriodStatusAction,
 } from '@/features/schedule/actions/schedule-actions'
@@ -93,8 +94,12 @@ export function ScheduleApplicationPeriodCard({
   const [deadlineRequestId, setDeadlineRequestId] = useState(initialRequestId)
   const [statusRequestId, setStatusRequestId] = useState(initialRequestId)
   const [isConfirmingClose, setIsConfirmingClose] = useState(false)
+  const [isConfirmingCancel, setIsConfirmingCancel] = useState(false)
+  const [cancelRequestId, setCancelRequestId] = useState(initialRequestId)
   const closeConfirmationRef = useRef<HTMLElement>(null)
+  const cancelConfirmationRef = useRef<HTMLElement>(null)
   const closeTriggerRef = useRef<HTMLButtonElement>(null)
+  const cancelTriggerRef = useRef<HTMLButtonElement>(null)
   const [periodState, periodAction, isSavingPeriod] = useActionState(
     saveScheduleApplicationPeriodAction,
     null,
@@ -103,7 +108,11 @@ export function ScheduleApplicationPeriodCard({
     setScheduleApplicationPeriodStatusAction,
     null,
   )
-  const isBusy = isSavingPeriod || isSavingStatus
+  const [cancelState, cancelAction, isCancelling] = useActionState(
+    cancelScheduleApplicationPeriodAction,
+    null,
+  )
+  const isBusy = isSavingPeriod || isSavingStatus || isCancelling
 
   useActionSuccessEffect(periodState, () => {
     if (!period.id && selectedDates.length > 0) {
@@ -113,17 +122,23 @@ export function ScheduleApplicationPeriodCard({
     }
   })
   useActionSuccessEffect(statusState, () => router.refresh())
+  useActionSuccessEffect(cancelState, () => router.refresh())
 
   useEffect(() => {
     queueMicrotask(() => {
       setDeadlineRequestId(initialRequestId)
       setStatusRequestId(initialRequestId)
+      setCancelRequestId(initialRequestId)
     })
   }, [initialRequestId])
 
   useEffect(() => {
     if (isConfirmingClose) closeConfirmationRef.current?.focus()
   }, [isConfirmingClose])
+
+  useEffect(() => {
+    if (isConfirmingCancel) cancelConfirmationRef.current?.focus()
+  }, [isConfirmingCancel])
 
   function updateDeadline(update: () => void) {
     update()
@@ -330,6 +345,80 @@ export function ScheduleApplicationPeriodCard({
               {!statusState.ok &&
               (statusState.code === 'STALE_PERIOD' ||
                 statusState.code === 'PERIOD_CANNOT_BE_REOPENED') ? (
+                <Button variant="secondary" onClick={() => router.refresh()}>
+                  최신 상태 다시 불러오기
+                </Button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {isConfirmingCancel ? (
+            <section
+              aria-labelledby="cancel-period-title"
+              className={styles.confirmation}
+              ref={cancelConfirmationRef}
+              tabIndex={-1}
+            >
+              <h3 id="cancel-period-title">
+                {hasScheduleHistory
+                  ? '등록된 일정과 신청 기간을 모두 취소할까요?'
+                  : '신청 기간을 취소할까요?'}
+              </h3>
+              <p className={styles.meta}>
+                {hasScheduleHistory
+                  ? '등록된 일정, 배정, 구성원 신청이 모두 삭제되며 되돌릴 수 없습니다.'
+                  : '기존 구성원 신청이 모두 삭제되며 되돌릴 수 없습니다.'}
+              </p>
+              <form action={cancelAction} noValidate>
+                <input
+                  name="payload"
+                  type="hidden"
+                  value={JSON.stringify({
+                    expectedPeriodUpdatedAt: period.updatedAt,
+                    periodId: period.id,
+                    requestId: cancelRequestId,
+                  })}
+                />
+                <div className={layout.wrap}>
+                  <Button disabled={isBusy} type="submit">
+                    {isCancelling ? '취소 중…' : '일정 취소 확정'}
+                  </Button>
+                  <Button
+                    disabled={isBusy}
+                    variant="secondary"
+                    onClick={() => {
+                      setIsConfirmingCancel(false)
+                      queueMicrotask(() => cancelTriggerRef.current?.focus())
+                    }}
+                  >
+                    유지하기
+                  </Button>
+                </div>
+              </form>
+            </section>
+          ) : (
+            <Button
+              disabled={isBusy}
+              ref={cancelTriggerRef}
+              variant="secondary"
+              onClick={() => {
+                setCancelRequestId(crypto.randomUUID())
+                setIsConfirmingCancel(true)
+              }}
+            >
+              일정 취소 하기
+            </Button>
+          )}
+
+          {cancelState ? (
+            <div
+              className={cancelState.ok ? styles.saveMessage : styles.errorMessage}
+              role={cancelState.ok ? 'status' : 'alert'}
+            >
+              <p>{cancelState.message}</p>
+              {!cancelState.ok &&
+              (cancelState.code === 'STALE_PERIOD' ||
+                cancelState.code === 'PERIOD_HAS_PAYROLL_HISTORY') ? (
                 <Button variant="secondary" onClick={() => router.refresh()}>
                   최신 상태 다시 불러오기
                 </Button>
