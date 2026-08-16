@@ -7,18 +7,25 @@ alter table public.notice_reads
   add constraint notice_reads_notice_id_fkey
     foreign key (notice_id) references public.notices(id) on delete cascade;
 
--- 2. Drop soft-delete audit constraint and columns.
+-- 2. Drop RLS policy that depends on the status column.
+drop policy if exists "notices read published or admin" on public.notices;
+
+-- 3. Drop partial index that depends on the status column.
+drop index if exists notices_published_idx;
+
+-- 4. Drop soft-delete audit constraint and columns (including status).
 alter table public.notices
   drop constraint notices_deletion_audit_check,
   drop column deleted_by,
-  drop column deleted_at;
+  drop column deleted_at,
+  drop column status;
 
 drop index if exists notices_deleted_by_idx;
 
--- 3. Drop the status column (no longer needed — only published rows exist).
-alter table public.notices drop column status;
+-- 5. Drop orphan notice_status enum.
+drop type if exists public.notice_status;
 
--- 4. Replace delete_notice RPC with physical DELETE.
+-- 6. Replace delete_notice RPC with physical DELETE.
 create or replace function public.delete_notice(
   p_request_id uuid, p_notice_id uuid, p_expected_updated_at timestamptz
 ) returns jsonb
@@ -59,15 +66,14 @@ begin
 end;
 $$;
 
--- 5. Update RLS — remove status filter since status column is gone.
-drop policy if exists "notices read published or admin" on public.notices;
+-- 7. Recreate RLS — no status filter needed.
 create policy "notices read active or admin" on public.notices for select to authenticated
 using (
   (select private.is_active_user())
   or (select private.is_admin())
 );
 
--- 6. Update create_notice and update_notice to remove status references.
+-- 8. Update create_notice and update_notice to remove status references.
 create or replace function public.create_notice(
   p_request_id uuid, p_title text, p_content text, p_is_pinned boolean
 ) returns jsonb
@@ -153,7 +159,7 @@ begin
 end;
 $$;
 
--- 7. Update mark_notice_read to remove status check.
+-- 9. Update mark_notice_read to remove status check.
 create or replace function public.mark_notice_read(p_request_id uuid, p_notice_id uuid)
 returns jsonb
 language plpgsql security definer set search_path = ''
@@ -195,11 +201,6 @@ begin
 end;
 $$;
 
--- 8. Grant DELETE on notices to authenticated (needed by RPC security definer,
---    but also aligns grants with the new physical delete approach).
-grant delete on public.notices to authenticated;
-
--- 9. Drop the notices_published_idx that filtered on status (column is gone).
-drop index if exists notices_published_idx;
+-- 10. Create new index for common query pattern.
 create index notices_pinned_created_idx
   on public.notices (is_pinned desc, created_at desc);

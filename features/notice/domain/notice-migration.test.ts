@@ -64,4 +64,16 @@ describe('notice hard delete migration', () => {
     expect(hardDeleteSql).toContain('drop column status')
     expect(hardDeleteSql).toContain('drop constraint notices_deletion_audit_check')
   })
+
+  it('drops dependent objects before the status column', () => {
+    const policyDropPos = hardDeleteSql.indexOf('drop policy')
+    const indexDropPos = hardDeleteSql.indexOf('drop index if exists notices_published_idx')
+    const columnDropPos = hardDeleteSql.indexOf('drop column status')
+    expect(policyDropPos).toBeLessThan(columnDropPos)
+    expect(indexDropPos).toBeLessThan(columnDropPos)
+  })
+
+  it('cleans up orphan notice_status enum', () => {
+    expect(hardDeleteSql).toContain('drop type if exists public.notice_status')
+  })
 })

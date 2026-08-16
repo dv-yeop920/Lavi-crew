@@ -195,11 +195,8 @@ export type Database = {
           author_id: string
           content: string
           created_at: string
-          deleted_at: string | null
-          deleted_by: string | null
           id: string
           is_pinned: boolean
-          status: Database['public']['Enums']['notice_status']
           title: string
           updated_at: string
         }
@@ -207,11 +204,8 @@ export type Database = {
           author_id: string
           content: string
           created_at?: string
-          deleted_at?: string | null
-          deleted_by?: string | null
           id?: string
           is_pinned?: boolean
-          status?: Database['public']['Enums']['notice_status']
           title: string
           updated_at?: string
         }
@@ -219,11 +213,8 @@ export type Database = {
           author_id?: string
           content?: string
           created_at?: string
-          deleted_at?: string | null
-          deleted_by?: string | null
           id?: string
           is_pinned?: boolean
-          status?: Database['public']['Enums']['notice_status']
           title?: string
           updated_at?: string
         }
@@ -231,13 +222,6 @@ export type Database = {
           {
             foreignKeyName: 'notices_author_id_fkey'
             columns: ['author_id']
-            isOneToOne: false
-            referencedRelation: 'profiles'
-            referencedColumns: ['id']
-          },
-          {
-            foreignKeyName: 'notices_deleted_by_fkey'
-            columns: ['deleted_by']
             isOneToOne: false
             referencedRelation: 'profiles'
             referencedColumns: ['id']
@@ -498,6 +482,32 @@ export type Database = {
           },
         ]
       }
+      schedule_application_dates: {
+        Row: {
+          application_period_id: string
+          created_at: string
+          work_date: string
+        }
+        Insert: {
+          application_period_id: string
+          created_at?: string
+          work_date: string
+        }
+        Update: {
+          application_period_id?: string
+          created_at?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'schedule_application_dates_application_period_id_fkey'
+            columns: ['application_period_id']
+            isOneToOne: false
+            referencedRelation: 'schedule_application_periods'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       schedule_application_periods: {
         Row: {
           application_deadline: string
@@ -535,32 +545,6 @@ export type Database = {
             columns: ['managed_by']
             isOneToOne: false
             referencedRelation: 'profiles'
-            referencedColumns: ['id']
-          },
-        ]
-      }
-      schedule_application_dates: {
-        Row: {
-          application_period_id: string
-          created_at: string
-          work_date: string
-        }
-        Insert: {
-          application_period_id: string
-          created_at?: string
-          work_date: string
-        }
-        Update: {
-          application_period_id?: string
-          created_at?: string
-          work_date?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: 'schedule_application_dates_application_period_id_fkey'
-            columns: ['application_period_id']
-            isOneToOne: false
-            referencedRelation: 'schedule_application_periods'
             referencedColumns: ['id']
           },
         ]
@@ -841,6 +825,14 @@ export type Database = {
         }
         Returns: Json
       }
+      cancel_schedule_application_period: {
+        Args: {
+          p_expected_updated_at: string
+          p_period_id: string
+          p_request_id: string
+        }
+        Returns: Json
+      }
       check_signup_identity: {
         Args: {
           candidate_invite_code: string
@@ -892,7 +884,7 @@ export type Database = {
         Args: { p_invite_id: string; p_request_id: string }
         Returns: Json
       }
-      deactivate_own_profile: { Args: Record<PropertyKey, never>; Returns: undefined }
+      deactivate_own_profile: { Args: never; Returns: undefined }
       delete_notice: {
         Args: {
           p_expected_updated_at: string
@@ -906,7 +898,7 @@ export type Database = {
         Returns: undefined
       }
       get_active_profile_names: {
-        Args: Record<PropertyKey, never>
+        Args: never
         Returns: {
           id: string
           name: string
@@ -926,7 +918,7 @@ export type Database = {
           worker_name: string
         }[]
       }
-      is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
+      is_admin: { Args: never; Returns: boolean }
       mark_notice_read: {
         Args: { p_notice_id: string; p_request_id: string }
         Returns: Json
@@ -948,14 +940,6 @@ export type Database = {
           p_request_id: string
           p_schedules: Json
           p_year_month: string
-        }
-        Returns: Json
-      }
-      cancel_schedule_application_period: {
-        Args: {
-          p_expected_updated_at: string
-          p_period_id: string
-          p_request_id: string
         }
         Returns: Json
       }

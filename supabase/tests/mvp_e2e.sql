@@ -639,8 +639,8 @@ select 'assertions', jsonb_build_object(
     join public.shift_assignments assignment on assignment.id = item.assignment_id
     join public.shifts shift on shift.id = assignment.shift_id
     where shift.work_date = date '2001-01-06' and item.voided_at is not null),
-  'noticeDeleted', (select status = 'deleted' from public.notices where id =
-    (select (value ->> 'noticeId')::uuid from e2e_results where key = 'notice_created')),
+  'noticeDeleted', (select not exists(select 1 from public.notices where id =
+    (select (value ->> 'noticeId')::uuid from e2e_results where key = 'notice_created'))),
   'noticeReadCount', (select count(*) from public.notice_reads where notice_id =
     (select (value ->> 'noticeId')::uuid from e2e_results where key = 'notice_created')),
   'inviteReplayMatches',
@@ -691,7 +691,7 @@ begin
      or (evidence ->> 'activePayrollAmount')::integer is distinct from 105000
      or (evidence ->> 'voidedPayrollRevisionCount')::integer is distinct from 0
      or evidence ->> 'noticeDeleted' is distinct from 'true'
-     or (evidence ->> 'noticeReadCount')::integer is distinct from 1
+     or (evidence ->> 'noticeReadCount')::integer is distinct from 0
      or evidence ->> 'inviteReplayMatches' is distinct from 'true'
      or evidence ->> 'workerAdminRpcForbidden' is distinct from 'true'
      or evidence ->> 'workerIsolationEnforced' is distinct from 'true'
