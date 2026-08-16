@@ -19,11 +19,10 @@ describe('normalizeMonthlyApplicationDates', () => {
     ])
   })
 
-  it('accepts weekday dates in the requested month', () => {
-    expect(normalizeMonthlyApplicationDates('2026-08', ['2026-08-03'])).toEqual({
-      dates: ['2026-08-03'],
-      errors: [],
-    })
+  it('rejects weekday dates in the requested month', () => {
+    expect(normalizeMonthlyApplicationDates('2026-08', ['2026-08-03']).errors).toEqual([
+      { code: 'INVALID_APPLICATION_DATE', date: '2026-08-03' },
+    ])
   })
 })
 

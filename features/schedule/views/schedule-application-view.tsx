@@ -12,7 +12,12 @@ import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
 
-import { getDaysInMonth, getLeadingBlankCount, getWeekendType } from '../lib/calendar'
+import {
+  getDaysInMonth,
+  getLeadingBlankCount,
+  getWeekendDateValues,
+  getWeekendType,
+} from '../lib/calendar'
 
 import * as styles from './schedule.css'
 import * as layout from '@/shared/ui/layout/layout.css'
@@ -52,6 +57,14 @@ function formatSelectedDate(value: string) {
   }).format(new Date(`${value}T00:00:00Z`))
 }
 
+function formatApplicationDate(value: string) {
+  return new Intl.DateTimeFormat('ko-KR', {
+    day: 'numeric',
+    timeZone: 'UTC',
+    weekday: 'short',
+  }).format(new Date(`${value}T00:00:00Z`))
+}
+
 function areSelectionsEqual(first: Set<string>, second: string[]) {
   return first.size === second.length && second.every((date) => first.has(date))
 }
@@ -78,6 +91,8 @@ export function ScheduleApplicationView({
   })
   const selectedDateList = [...selectedDates].sort()
   const days = Array.from({ length: getDaysInMonth(year, monthIndex) }, (_, index) => index + 1)
+  const availableDates = getWeekendDateValues(year, monthIndex)
+  const availableDateSet = new Set(availableDates)
   const firstWeekday = getLeadingBlankCount(year, monthIndex)
 
   useEffect(() => {
@@ -111,7 +126,7 @@ export function ScheduleApplicationView({
   }
 
   function toggleDate(date: string) {
-    if (!canEdit) return
+    if (!canEdit || !availableDateSet.has(date)) return
     updateSelection((next) => {
       if (next.has(date)) next.delete(date)
       else next.add(date)
@@ -190,6 +205,11 @@ export function ScheduleApplicationView({
             있어요.
           </p>
         ) : null}
+        {canEdit ? (
+          <p className={styles.meta}>
+            신청 가능일 · {availableDates.map(formatApplicationDate).join(' · ')}
+          </p>
+        ) : null}
         <div
           className={`${styles.calendar} ${styles.applicationCalendar}`}
           aria-label={`${monthLabel} 일정 신청 달력`}
@@ -212,22 +232,25 @@ export function ScheduleApplicationView({
           {days.map((day) => {
             const date = formatDateValue(viewModel.month, day)
             const selected = selectedDates.has(date)
-            const stateLabel = !period
-              ? ' 신청 기간 미설정'
-              : !canEdit
-                ? selected
-                  ? ' 신청 완료, 변경 불가'
-                  : ' 신청 마감'
-                : selected
-                  ? ' 신청 취소'
-                  : ' 신청'
+            const isAvailableDate = availableDateSet.has(date)
+            const stateLabel = !isAvailableDate
+              ? ' 신청 대상 아님'
+              : !period
+                ? ' 신청 기간 미설정'
+                : !canEdit
+                  ? selected
+                    ? ' 신청 완료, 변경 불가'
+                    : ' 신청 마감'
+                  : selected
+                    ? ' 신청 취소'
+                    : ' 신청'
             return (
               <button
                 aria-label={`${monthNumber}월 ${day}일${stateLabel}`}
                 aria-pressed={selected}
                 className={styles.day}
                 data-weekday={getWeekendType(year, monthIndex, day)}
-                disabled={!canEdit || isPending}
+                disabled={!canEdit || !isAvailableDate || isPending}
                 key={date}
                 type="button"
                 onClick={() => toggleDate(date)}
