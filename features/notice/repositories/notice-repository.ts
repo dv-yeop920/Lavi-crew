@@ -8,7 +8,6 @@ export async function getWorkerNoticeRecords() {
   )
     .from('notices')
     .select('id, title, content, is_pinned, created_at, updated_at, notice_reads(worker_id)')
-    .eq('status', 'published')
   if (result.error) throw new Error('공지 목록을 조회하지 못했습니다.')
   return result.data ?? []
 }
@@ -18,8 +17,7 @@ export async function getAdminNoticeRecords() {
   const [notices, workers] = await Promise.all([
     supabase
       .from('notices')
-      .select('id, title, content, is_pinned, created_at, updated_at, notice_reads(worker_id)')
-      .eq('status', 'published'),
+      .select('id, title, content, is_pinned, created_at, updated_at, notice_reads(worker_id)'),
     supabase.from('profiles').select('id').eq('role', 'worker').eq('is_active', true),
   ])
   if (notices.error || workers.error) throw new Error('공지 관리 데이터를 조회하지 못했습니다.')

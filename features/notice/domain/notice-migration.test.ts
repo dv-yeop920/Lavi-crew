@@ -3,43 +3,65 @@ import { resolve } from 'node:path'
 
 import { describe, expect, it } from 'vitest'
 
-const sql = readFileSync(
+const mutationSql = readFileSync(
   resolve(process.cwd(), 'supabase/migrations/20260730121953_notice_mutations.sql'),
+  'utf8',
+).toLowerCase()
+
+const hardDeleteSql = readFileSync(
+  resolve(process.cwd(), 'supabase/migrations/20260816100000_notice_hard_delete.sql'),
   'utf8',
 ).toLowerCase()
 
 describe('notice mutation migration', () => {
   it('keeps idempotency requests private and row-level secured', () => {
-    expect(sql).toContain('create table private.notice_mutation_requests')
-    expect(sql).toContain('alter table private.notice_mutation_requests enable row level security')
-    expect(sql).toContain(
+    expect(mutationSql).toContain('create table private.notice_mutation_requests')
+    expect(mutationSql).toContain(
+      'alter table private.notice_mutation_requests enable row level security',
+    )
+    expect(mutationSql).toContain(
       'revoke all on private.notice_mutation_requests from public, anon, authenticated',
     )
-    expect(sql).toContain('payload_hash')
-    expect(sql).toContain('idempotency_key_reused')
+    expect(mutationSql).toContain('payload_hash')
+    expect(mutationSql).toContain('idempotency_key_reused')
   })
 
   it('uses hardened definer RPCs with optimistic concurrency', () => {
     for (const name of ['create_notice', 'update_notice', 'delete_notice', 'mark_notice_read']) {
-      expect(sql).toMatch(
+      expect(mutationSql).toMatch(
         new RegExp(
           `create function public\\.${name}[\\s\\S]*?security definer set search_path = ''`,
         ),
       )
     }
-    expect(sql).toContain("raise exception 'stale_notice'")
-    expect(sql).toContain("status = 'deleted', deleted_at = now(), deleted_by = caller_id")
-    expect(sql).not.toContain('delete from public.notices')
+    expect(mutationSql).toContain("raise exception 'stale_notice'")
   })
 
   it('removes direct writes and limits reads by role and ownership', () => {
-    expect(sql).toContain(
+    expect(mutationSql).toContain(
       'revoke insert, update, delete on public.notices, public.notice_reads from anon, authenticated',
     )
-    expect(sql).toContain("status = 'published' and (select private.is_active_user())")
-    expect(sql).toContain('worker_id = (select auth.uid())')
-    expect(sql).toContain('drop policy if exists "admin inserts notices"')
-    expect(sql).toContain('drop policy if exists "admin updates notices"')
-    expect(sql).toContain('drop policy if exists "workers create own notice reads"')
+    expect(mutationSql).toContain('worker_id = (select auth.uid())')
+    expect(mutationSql).toContain('drop policy if exists "admin inserts notices"')
+    expect(mutationSql).toContain('drop policy if exists "admin updates notices"')
+    expect(mutationSql).toContain('drop policy if exists "workers create own notice reads"')
+  })
+})
+
+describe('notice hard delete migration', () => {
+  it('physically deletes notices instead of soft delete', () => {
+    expect(hardDeleteSql).toContain('delete from public.notices where id = p_notice_id')
+    expect(hardDeleteSql).not.toContain("status = 'deleted'")
+  })
+
+  it('cascades notice_reads on notice deletion', () => {
+    expect(hardDeleteSql).toContain('on delete cascade')
+  })
+
+  it('drops soft-delete columns and status', () => {
+    expect(hardDeleteSql).toContain('drop column deleted_by')
+    expect(hardDeleteSql).toContain('drop column deleted_at')
+    expect(hardDeleteSql).toContain('drop column status')
+    expect(hardDeleteSql).toContain('drop constraint notices_deletion_audit_check')
   })
 })

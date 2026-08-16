@@ -33,7 +33,6 @@ export async function getWorkerHomeRecords(input: {
     supabase
       .from('notices')
       .select('id, title, content, is_pinned, created_at, notice_reads(read_at, worker_id)')
-      .eq('status', 'published')
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
       .limit(3),
