@@ -109,7 +109,13 @@ export function ProfileView({ profile }: { profile: ProfileViewModel }) {
             {isEditing ? (
               <>
                 <Button disabled={isUpdating} type="submit">
-                  {isUpdating ? <>저장 중<LoadingDots /></> : '변경 저장'}
+                  {isUpdating ? (
+                    <>
+                      저장 중<LoadingDots />
+                    </>
+                  ) : (
+                    '변경 저장'
+                  )}
                 </Button>
                 <Button variant="secondary" onClick={cancelEditing}>
                   취소
@@ -141,7 +147,13 @@ export function ProfileView({ profile }: { profile: ProfileViewModel }) {
           <p>로그인과 새 신청은 중단되며 기존 근무·출석·급여 이력은 보존됩니다.</p>
           <form action={withdrawFormAction} className={layout.wrap}>
             <Button disabled={isWithdrawingPending} type="submit">
-              {isWithdrawingPending ? <>처리 중<LoadingDots /></> : '탈퇴 신청 확인'}
+              {isWithdrawingPending ? (
+                <>
+                  처리 중<LoadingDots />
+                </>
+              ) : (
+                '탈퇴 신청 확인'
+              )}
             </Button>
             <Button variant="secondary" onClick={() => setIsWithdrawing(false)}>
               취소

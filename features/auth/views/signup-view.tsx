@@ -19,10 +19,10 @@ export function SignupView() {
     <main className={styles.viewport}>
       <div className={styles.shell}>
         <header className={styles.header}>
-          <span className={styles.brand}>라비크루</span>
+          <span className={styles.brand}>라비에벨</span>
           <h1>크루로 시작하기</h1>
           <p className={styles.description}>
-            라비에벨 구성원만 가입할 수 있어요. 전달받은 전용 코드를 준비해 주세요.
+            라비크루 구성원만 가입할 수 있어요. 전달받은 전용 코드를 준비해 주세요.
           </p>
         </header>
         <form
@@ -83,7 +83,7 @@ export function SignupView() {
           <TextField
             autoCapitalize="characters"
             error={getFirstFieldError(state?.fieldErrors, 'inviteCode')}
-            label="라비에벨 전용 코드"
+            label="라비크루 전용 코드"
             name="inviteCode"
             required
           />
@@ -96,7 +96,13 @@ export function SignupView() {
             </p>
           ) : null}
           <Button className={styles.fullButton} disabled={isPending} type="submit">
-            {isPending ? <>가입 요청 중<LoadingDots /></> : '회원가입'}
+            {isPending ? (
+              <>
+                가입 요청 중<LoadingDots />
+              </>
+            ) : (
+              '회원가입'
+            )}
           </Button>
         </form>
         <p className={styles.footer}>

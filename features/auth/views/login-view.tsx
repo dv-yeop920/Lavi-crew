@@ -19,7 +19,7 @@ export function LoginView() {
     <main className={styles.viewport}>
       <div className={styles.shell}>
         <header className={styles.header}>
-          <span className={styles.brand}>라비크루</span>
+          <span className={styles.brand}>라비에벨</span>
           <h1>반가워요</h1>
           <p className={styles.description}>근무 일정과 급여를 확인하려면 로그인해 주세요.</p>
         </header>
@@ -54,7 +54,13 @@ export function LoginView() {
             </p>
           ) : null}
           <Button className={styles.fullButton} disabled={isPending} type="submit">
-            {isPending ? <>로그인 중<LoadingDots /></> : '로그인'}
+            {isPending ? (
+              <>
+                로그인 중<LoadingDots />
+              </>
+            ) : (
+              '로그인'
+            )}
           </Button>
           <Link className={styles.resetLink} href="/forgot-password">
             비밀번호를 잊으셨나요?

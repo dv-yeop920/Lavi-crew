@@ -128,7 +128,15 @@ function NoticeEditor({
         ) : null}
         <div className={layout.wrap}>
           <Button disabled={isPending} type="submit">
-            {isPending ? <>저장 중<LoadingDots /></> : mode === 'create' ? '공지 등록' : '수정 저장'}
+            {isPending ? (
+              <>
+                저장 중<LoadingDots />
+              </>
+            ) : mode === 'create' ? (
+              '공지 등록'
+            ) : (
+              '수정 저장'
+            )}
           </Button>
           <Button disabled={isPending} onClick={onCancel} type="button" variant="secondary">
             취소
@@ -204,7 +212,13 @@ function DeleteNoticeDialog({
           ) : null}
           <div className={layout.wrap}>
             <Button disabled={isPending} type="submit">
-              {isPending ? <>삭제 중<LoadingDots /></> : '삭제 확인'}
+              {isPending ? (
+                <>
+                  삭제 중<LoadingDots />
+                </>
+              ) : (
+                '삭제 확인'
+              )}
             </Button>
             <Button
               disabled={isPending}

@@ -482,7 +482,13 @@ export function AdminScheduleRegistrationView({
             <p className={styles.meta}>저장 즉시 일정이 게시되고 배정이 확정됩니다.</p>
             <div className={layout.wrap}>
               <Button disabled={!canPublish || isPending} type="submit">
-                {isPending ? <>확정 중<LoadingDots /></> : `${summary.dateCount}일 일정 등록·배정 확정`}
+                {isPending ? (
+                  <>
+                    확정 중<LoadingDots />
+                  </>
+                ) : (
+                  `${summary.dateCount}일 일정 등록·배정 확정`
+                )}
               </Button>
               <Button
                 disabled={isPending}

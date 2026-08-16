@@ -299,7 +299,15 @@ export function ScheduleApplicationView({
               : ' · 저장된 상태입니다.'}
         </p>
         <Button disabled={!period || !canEdit || !isDirty || isPending} type="submit">
-          {isPending ? <>저장 중<LoadingDots /></> : isDirty ? '신청 변경 저장' : '신청 변경 없음'}
+          {isPending ? (
+            <>
+              저장 중<LoadingDots />
+            </>
+          ) : isDirty ? (
+            '신청 변경 저장'
+          ) : (
+            '신청 변경 없음'
+          )}
         </Button>
       </div>
     </form>

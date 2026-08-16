@@ -20,7 +20,7 @@ export function ResendConfirmationView() {
     <main className={styles.viewport}>
       <div className={styles.shell}>
         <header className={styles.header}>
-          <span className={styles.brand}>라비크루</span>
+          <span className={styles.brand}>라비에벨</span>
           <h1>이메일 확인 링크 재발송</h1>
           <p className={styles.description}>가입할 때 사용한 이메일로 새 확인 링크를 보내드려요.</p>
         </header>
@@ -49,7 +49,13 @@ export function ResendConfirmationView() {
             </p>
           ) : null}
           <Button className={styles.fullButton} disabled={isPending} type="submit">
-            {isPending ? <>발송 중<LoadingDots /></> : '확인 링크 다시 받기'}
+            {isPending ? (
+              <>
+                발송 중<LoadingDots />
+              </>
+            ) : (
+              '확인 링크 다시 받기'
+            )}
           </Button>
         </form>
         <p className={styles.footer}>

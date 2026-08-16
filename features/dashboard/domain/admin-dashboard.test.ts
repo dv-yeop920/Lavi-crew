@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  getEffectiveApplicationPeriodStatus,
-  getKstDashboardDateRange,
-} from './admin-dashboard'
+import { getEffectiveApplicationPeriodStatus, getKstDashboardDateRange } from './admin-dashboard'
 
 describe('admin dashboard date models', () => {
   it('uses the KST Monday week even around UTC midnight', () => {

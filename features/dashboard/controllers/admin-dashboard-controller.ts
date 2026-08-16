@@ -39,10 +39,7 @@ export async function getAdminDashboardController(
 
   return {
     asOfDate: range.today,
-    months: [
-      buildMonth(range.monthStart),
-      buildMonth(range.nextMonthStart),
-    ],
+    months: [buildMonth(range.monthStart), buildMonth(range.nextMonthStart)],
     currentWeek: {
       endExclusive: range.weekEndExclusive,
       schedules: records.weekSchedules.map((schedule) => ({

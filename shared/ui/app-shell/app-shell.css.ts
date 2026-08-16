@@ -29,11 +29,9 @@ export const topNavigation = style({
   background: semanticVars.color.surface,
 })
 
-export const brand = style({
-  color: semanticVars.color.primaryNormal,
-  fontSize: semanticVars.font.size.headingSmall,
-  fontWeight: semanticVars.font.weight.extraBold,
-  letterSpacing: semanticVars.font.letterSpacing.tight,
+export const brandIcon = style({
+  display: 'block',
+  borderRadius: '6px',
 })
 
 export const headerActions = style({

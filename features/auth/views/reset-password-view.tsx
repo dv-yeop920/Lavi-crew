@@ -19,7 +19,7 @@ export function ResetPasswordView() {
     <main className={styles.viewport}>
       <div className={styles.shell}>
         <header className={styles.header}>
-          <span className={styles.brand}>라비크루</span>
+          <span className={styles.brand}>라비에벨</span>
           <h1>새 비밀번호 설정</h1>
           <p className={styles.description}>8자 이상인 새 비밀번호를 입력해 주세요.</p>
         </header>
@@ -55,7 +55,13 @@ export function ResetPasswordView() {
             </p>
           ) : null}
           <Button className={styles.fullButton} disabled={isPending} type="submit">
-            {isPending ? <>변경 중<LoadingDots /></> : '비밀번호 변경'}
+            {isPending ? (
+              <>
+                변경 중<LoadingDots />
+              </>
+            ) : (
+              '비밀번호 변경'
+            )}
           </Button>
         </form>
         {state?.ok ? (

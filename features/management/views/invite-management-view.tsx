@@ -69,7 +69,13 @@ function InviteItem({ invite, requestId }: { invite: InviteViewModel; requestId:
           type="submit"
           variant="secondary"
         >
-          {isPending ? <>처리 중<LoadingDots /></> : '사용 중지'}
+          {isPending ? (
+            <>
+              처리 중<LoadingDots />
+            </>
+          ) : (
+            '사용 중지'
+          )}
         </Button>
       </form>
       {state?.message ? (
@@ -162,7 +168,13 @@ export function InviteManagementView({
               type="number"
             />
             <Button disabled={isPending} type="submit">
-              {isPending ? <>생성 중<LoadingDots /></> : '코드 생성'}
+              {isPending ? (
+                <>
+                  생성 중<LoadingDots />
+                </>
+              ) : (
+                '코드 생성'
+              )}
             </Button>
             {state?.message && !state.fieldErrors ? (
               <p

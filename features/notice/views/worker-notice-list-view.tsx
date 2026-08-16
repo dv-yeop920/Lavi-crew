@@ -56,7 +56,13 @@ function WorkerNoticeCard({
             />
             {state && !state.ok ? (
               <Button disabled={isPending} type="submit" variant="secondary">
-                {isPending ? <>읽음 처리 중<LoadingDots /></> : '읽음 처리 다시 시도'}
+                {isPending ? (
+                  <>
+                    읽음 처리 중<LoadingDots />
+                  </>
+                ) : (
+                  '읽음 처리 다시 시도'
+                )}
               </Button>
             ) : null}
           </form>

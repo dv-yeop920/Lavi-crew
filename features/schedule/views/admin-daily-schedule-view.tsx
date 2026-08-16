@@ -355,7 +355,13 @@ export function AdminDailyScheduleView({
           {isEditing ? (
             <div className={layout.wrap}>
               <Button disabled={!structureDirty || isUpdating} type="submit">
-                {isUpdating ? <>저장 중<LoadingDots /></> : '수정 저장'}
+                {isUpdating ? (
+                  <>
+                    저장 중<LoadingDots />
+                  </>
+                ) : (
+                  '수정 저장'
+                )}
               </Button>
               <Button
                 disabled={isUpdating}

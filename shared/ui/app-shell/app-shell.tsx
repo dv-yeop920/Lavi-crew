@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import type { ReactNode } from 'react'
 
 import { BottomNavigation, type NavigationItem } from './bottom-navigation'
@@ -15,7 +16,7 @@ export function AppShell({ children, headerAction, navigationItems }: AppShellPr
     <div className={styles.viewport}>
       <div className={styles.shell}>
         <header className={styles.topNavigation}>
-          <strong className={styles.brand}>라비에벨</strong>
+          <Image alt="Lavi" className={styles.brandIcon} height={28} src="/icon.svg" width={28} />
           <div className={styles.headerActions}>{headerAction}</div>
         </header>
         <main className={styles.content}>{children}</main>
