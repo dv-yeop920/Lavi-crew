@@ -81,6 +81,9 @@ export async function getAdminMonthScheduleController(
     hasScheduleHistory: records.shifts.length > 0,
     month,
     period: {
+      applicationDates: records.applicationDates.map(
+        (applicationDate) => applicationDate.work_date,
+      ),
       applicationDeadline: records.period?.application_deadline ?? null,
       canReopen: periodViewState?.canReopen ?? false,
       closedReason: periodViewState?.closedReason ?? null,
@@ -98,6 +101,7 @@ export async function getAdminMonthScheduleController(
 }
 
 const applicationErrorMessages = {
+  APPLICATION_DATES_LOCKED: '신청 기간을 연 뒤에는 신청 날짜를 변경할 수 없습니다.',
   APPLICATION_PERIOD_CLOSED: '신청 기간이 마감되었습니다.',
   FORBIDDEN: '이 작업을 수행할 권한이 없습니다.',
   IDEMPOTENCY_KEY_REUSED: '이미 사용한 요청입니다. 화면을 새로고침해 주세요.',
@@ -142,6 +146,9 @@ export async function getWorkerMonthApplicationController(month: string, asOf = 
     month,
     period: records.period
       ? {
+          applicationDates: records.applicationDates.map(
+            (applicationDate) => applicationDate.work_date,
+          ),
           applicationDeadline: records.period.application_deadline,
           closedReason: periodViewState?.closedReason ?? null,
           id: records.period.id,
@@ -159,11 +166,17 @@ export async function saveWorkerMonthlyApplicationsController(
   input: MonthlyApplicationInput,
 ): Promise<MonthlyApplicationActionResult> {
   await requireRole('worker')
-  const { dates, errors } = normalizeMonthlyApplicationDates(input.month, input.selectedDates)
+  const { monthEnd, monthStart } = getMonthBounds(input.month)
+  const records = await getWorkerMonthApplicationRecords(monthStart, monthEnd)
+  const { dates, errors } = normalizeMonthlyApplicationDates(
+    input.month,
+    input.selectedDates,
+    records.applicationDates.map((applicationDate) => applicationDate.work_date),
+  )
   if (errors.length > 0) {
     return {
       code: errors[0].code,
-      fieldErrors: { selectedDates: ['해당 월의 날짜만 선택할 수 있습니다.'] },
+      fieldErrors: { selectedDates: ['관리자가 연 신청 날짜만 선택할 수 있습니다.'] },
       message: '신청 날짜를 확인해 주세요.',
       ok: false,
     }
@@ -221,6 +234,7 @@ const domainErrorMessages = {
 } satisfies Record<RegistrationRuleErrorCode, string>
 
 const safeErrorMessages = {
+  APPLICATION_DATE_NOT_OPEN: '신청 기간에 열어 둔 날짜만 일정으로 등록할 수 있습니다.',
   APPLICATION_PERIOD_OPEN: '신청 기간을 마감한 뒤 일정을 게시해 주세요.',
   DATE_ALREADY_REGISTERED: '이미 등록된 날짜가 있습니다. 최신 일정을 다시 확인해 주세요.',
   FORBIDDEN: '일정을 등록할 권한이 없습니다.',

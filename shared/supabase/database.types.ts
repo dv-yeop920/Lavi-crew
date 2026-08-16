@@ -539,6 +539,32 @@ export type Database = {
           },
         ]
       }
+      schedule_application_dates: {
+        Row: {
+          application_period_id: string
+          created_at: string
+          work_date: string
+        }
+        Insert: {
+          application_period_id: string
+          created_at?: string
+          work_date: string
+        }
+        Update: {
+          application_period_id?: string
+          created_at?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: 'schedule_application_dates_application_period_id_fkey'
+            columns: ['application_period_id']
+            isOneToOne: false
+            referencedRelation: 'schedule_application_periods'
+            referencedColumns: ['id']
+          },
+        ]
+      }
       schedule_applications: {
         Row: {
           application_period_id: string
@@ -944,6 +970,17 @@ export type Database = {
       }
       save_schedule_application_period: {
         Args: {
+          p_application_deadline: string
+          p_expected_updated_at: string
+          p_period_id: string
+          p_request_id: string
+          p_year_month: string
+        }
+        Returns: Json
+      }
+      save_schedule_application_period_with_dates: {
+        Args: {
+          p_application_dates: string[]
           p_application_deadline: string
           p_expected_updated_at: string
           p_period_id: string

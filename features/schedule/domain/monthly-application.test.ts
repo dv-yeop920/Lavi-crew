@@ -9,20 +9,30 @@ import {
 describe('normalizeMonthlyApplicationDates', () => {
   it('sorts and deduplicates dates in the requested month', () => {
     expect(
-      normalizeMonthlyApplicationDates('2026-08', ['2026-08-09', '2026-08-01', '2026-08-09']),
+      normalizeMonthlyApplicationDates(
+        '2026-08',
+        ['2026-08-09', '2026-08-01', '2026-08-09'],
+        ['2026-08-01', '2026-08-09'],
+      ),
     ).toEqual({ dates: ['2026-08-01', '2026-08-09'], errors: [] })
   })
 
   it('rejects dates outside the requested month', () => {
-    expect(normalizeMonthlyApplicationDates('2026-08', ['2026-09-05']).errors).toEqual([
+    expect(normalizeMonthlyApplicationDates('2026-08', ['2026-09-05'], []).errors).toEqual([
       { code: 'INVALID_APPLICATION_DATE', date: '2026-09-05' },
     ])
   })
 
   it('rejects weekday dates in the requested month', () => {
-    expect(normalizeMonthlyApplicationDates('2026-08', ['2026-08-03']).errors).toEqual([
+    expect(normalizeMonthlyApplicationDates('2026-08', ['2026-08-03'], []).errors).toEqual([
       { code: 'INVALID_APPLICATION_DATE', date: '2026-08-03' },
     ])
+  })
+
+  it('rejects a weekend that the manager did not open', () => {
+    expect(
+      normalizeMonthlyApplicationDates('2026-08', ['2026-08-08'], ['2026-08-01']).errors,
+    ).toEqual([{ code: 'INVALID_APPLICATION_DATE', date: '2026-08-08' }])
   })
 })
 

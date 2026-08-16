@@ -150,6 +150,7 @@ export function ScheduleApplicationPeriodCard({
   }
 
   const periodPayload = JSON.stringify({
+    applicationDates: selectedDates,
     applicationDeadline: toDeadlineIso(deadlineDate, deadlineTime),
     expectedPeriodUpdatedAt: period.updatedAt,
     month,
@@ -216,7 +217,7 @@ export function ScheduleApplicationPeriodCard({
                 onChange={(event) => updateDeadline(() => setDeadlineTime(event.target.value))}
               />
             </label>
-            <Button disabled={isBusy} type="submit">
+            <Button disabled={isBusy || selectedDates.length === 0} type="submit">
               {isSavingPeriod ? (
                 <>
                   저장 중<LoadingDots />
@@ -226,7 +227,7 @@ export function ScheduleApplicationPeriodCard({
               ) : selectedDates.length > 0 ? (
                 '신청 기간 열고 일정 등록'
               ) : (
-                '신청 기간 열기'
+                '신청 날짜를 선택해 주세요'
               )}
             </Button>
           </div>

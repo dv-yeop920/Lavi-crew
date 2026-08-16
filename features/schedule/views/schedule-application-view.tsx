@@ -12,12 +12,7 @@ import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 import { StatusBadge } from '@/shared/ui/status-badge/status-badge'
 
-import {
-  getDaysInMonth,
-  getLeadingBlankCount,
-  getWeekendDateValues,
-  getWeekendType,
-} from '../lib/calendar'
+import { getDaysInMonth, getLeadingBlankCount, getWeekendType } from '../lib/calendar'
 
 import * as styles from './schedule.css'
 import * as layout from '@/shared/ui/layout/layout.css'
@@ -83,7 +78,8 @@ export function ScheduleApplicationView({
   const monthIndex = monthNumber - 1
   const monthLabel = `${year}년 ${monthNumber}월`
   const period = viewModel.period
-  const canEdit = period?.status === 'open'
+  const availableDates = period?.applicationDates ?? []
+  const canEdit = period?.status === 'open' && availableDates.length > 0
   const isDirty = !areSelectionsEqual(selectedDates, savedDates)
   const { navigate } = useDirtyNavigationGuard({
     confirmationMessage: '저장하지 않은 신청 변경이 있습니다. 이동할까요?',
@@ -91,7 +87,6 @@ export function ScheduleApplicationView({
   })
   const selectedDateList = [...selectedDates].sort()
   const days = Array.from({ length: getDaysInMonth(year, monthIndex) }, (_, index) => index + 1)
-  const availableDates = getWeekendDateValues(year, monthIndex)
   const availableDateSet = new Set(availableDates)
   const firstWeekday = getLeadingBlankCount(year, monthIndex)
 

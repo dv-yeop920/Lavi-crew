@@ -11,7 +11,7 @@ import { ContentCard } from '@/shared/ui/content-card/content-card'
 import { PageHeader } from '@/shared/ui/page-header/page-header'
 
 import { RegisteredScheduleCard } from '../components/registered-schedule-card'
-import { getDaysInMonth, getLeadingBlankCount, getWeekendType } from '../lib/calendar'
+import { getDaysInMonth, getLeadingBlankCount, getWeekendType, isWeekend } from '../lib/calendar'
 
 import { ScheduleApplicationPeriodCard } from './schedule-application-period-card'
 
@@ -32,7 +32,9 @@ export function AdminScheduleView({
   viewModel: MonthRegistrationViewModel
 }) {
   const router = useRouter()
-  const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set())
+  const [selectedDates, setSelectedDates] = useState<Set<string>>(
+    () => new Set(viewModel.period.applicationDates),
+  )
   const [year, monthNumber] = viewModel.month.split('-').map(Number)
   const monthIndex = monthNumber - 1
   const monthValue = viewModel.month
@@ -47,10 +49,11 @@ export function AdminScheduleView({
     left.date.localeCompare(right.date),
   )
   const registeredDays = new Set(monthSchedules.map((schedule) => Number(schedule.date.slice(-2))))
-  const [selectedMonth, setSelectedMonth] = useState(viewModel.month)
-  if (selectedMonth !== viewModel.month) {
-    setSelectedMonth(viewModel.month)
-    setSelectedDates(new Set())
+  const periodVersion = `${viewModel.month}:${viewModel.period.id ?? ''}:${viewModel.period.updatedAt ?? ''}:${viewModel.period.applicationDates.join(',')}`
+  const [selectedPeriodVersion, setSelectedPeriodVersion] = useState(periodVersion)
+  if (selectedPeriodVersion !== periodVersion) {
+    setSelectedPeriodVersion(periodVersion)
+    setSelectedDates(new Set(viewModel.period.applicationDates))
   }
 
   function moveMonth(offset: number) {
@@ -113,6 +116,7 @@ export function AdminScheduleView({
             const dateValue = `${monthValue}-${String(day).padStart(2, '0')}`
             const isRegistered = registeredDays.has(day)
             const isSelected = selectedDates.has(dateValue)
+            const canSelectDate = !viewModel.period.id && isWeekend(year, monthIndex, day)
             if (isRegistered) {
               return (
                 <span
@@ -132,6 +136,7 @@ export function AdminScheduleView({
                 aria-pressed={isSelected}
                 className={styles.day}
                 data-weekday={getWeekendType(year, monthIndex, day)}
+                disabled={!canSelectDate}
                 key={day}
                 type="button"
                 onClick={() => {
@@ -155,10 +160,14 @@ export function AdminScheduleView({
 
       {selectedDates.size > 0 ? (
         <div className={layout.row}>
-          <p className={styles.meta}>{selectedDates.size}일 선택됨</p>
-          <Button variant="secondary" onClick={() => setSelectedDates(new Set())}>
-            선택 해제
-          </Button>
+          <p className={styles.meta}>
+            {viewModel.period.id ? '신청 날짜가 저장되었습니다.' : `${selectedDates.size}일 선택됨`}
+          </p>
+          {!viewModel.period.id ? (
+            <Button variant="secondary" onClick={() => setSelectedDates(new Set())}>
+              선택 해제
+            </Button>
+          ) : null}
         </div>
       ) : (
         <p className={styles.meta}>등록할 날짜를 달력에서 선택하세요.</p>

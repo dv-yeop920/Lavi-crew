@@ -22,12 +22,15 @@ export async function AdminScheduleRegistrationPageView({
 }) {
   const month = getCanonicalMonth(monthQuery) ?? getCurrentKoreanMonth()
   const viewModel = await getAdminMonthScheduleController(month)
+  const selectableDates = viewModel.period.applicationDates.filter((date) =>
+    viewModel.unregisteredDates.includes(date),
+  )
   const selectedDates = datesQuery
     ? datesQuery
         .split(',')
-        .filter((date) => viewModel.unregisteredDates.includes(date))
+        .filter((date) => selectableDates.includes(date))
         .sort()
-    : viewModel.unregisteredDates
+    : selectableDates
   return (
     <AdminScheduleRegistrationView
       requestId={randomUUID()}

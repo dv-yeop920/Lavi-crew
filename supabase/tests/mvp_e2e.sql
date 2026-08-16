@@ -140,9 +140,10 @@ select set_config('request.jwt.claims', jsonb_build_object(
   'sub', (select admin_id from e2e_context), 'role', 'authenticated'
 )::text, true);
 insert into e2e_results
-select 'period_created', public.save_schedule_application_period(
+select 'period_created', public.save_schedule_application_period_with_dates(
   '40000000-0000-4000-8000-000000000001', date '2099-01-01',
-  timestamptz '2098-12-15 23:59:59+09', null, null
+  timestamptz '2098-12-15 23:59:59+09', null, null,
+  (select selected_dates from e2e_payloads)
 );
 
 select set_config('request.jwt.claim.sub', (select worker_id::text from e2e_context), true);

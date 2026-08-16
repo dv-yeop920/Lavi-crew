@@ -39,10 +39,19 @@ export async function getAdminMonthScheduleRecords(monthStart: string, monthEnd:
     }),
   ])
 
-  const error = period.error || shifts.error || workers.error
+  const applicationDates = period.data
+    ? await supabase
+        .from('schedule_application_dates')
+        .select('work_date')
+        .eq('application_period_id', period.data.id)
+        .order('work_date')
+    : { data: [], error: null }
+
+  const error = period.error || shifts.error || workers.error || applicationDates.error
   if (error) throw new Error('일정 등록 데이터를 조회하지 못했습니다.')
 
   return {
+    applicationDates: applicationDates.data ?? [],
     period: period.data,
     shifts: shifts.data ?? [],
     workers: workers.data ?? [],
@@ -64,8 +73,21 @@ export async function getWorkerMonthApplicationRecords(monthStart: string, month
       .lt('work_date', monthEnd)
       .order('work_date'),
   ])
-  if (period.error || applications.error) throw new Error('월별 신청 정보를 조회하지 못했습니다.')
-  return { applications: applications.data ?? [], period: period.data }
+  const applicationDates = period.data
+    ? await supabase
+        .from('schedule_application_dates')
+        .select('work_date')
+        .eq('application_period_id', period.data.id)
+        .order('work_date')
+    : { data: [], error: null }
+  if (period.error || applications.error || applicationDates.error) {
+    throw new Error('월별 신청 정보를 조회하지 못했습니다.')
+  }
+  return {
+    applicationDates: applicationDates.data ?? [],
+    applications: applications.data ?? [],
+    period: period.data,
+  }
 }
 
 export async function saveWorkerMonthlyApplicationsRecord(input: MonthlyApplicationInput) {
@@ -80,7 +102,8 @@ export async function saveWorkerMonthlyApplicationsRecord(input: MonthlyApplicat
 
 export async function saveScheduleApplicationPeriodRecord(input: ScheduleApplicationPeriodInput) {
   const supabase = await createServerSupabaseClient()
-  return supabase.rpc('save_schedule_application_period', {
+  return supabase.rpc('save_schedule_application_period_with_dates', {
+    p_application_dates: input.applicationDates,
     p_application_deadline: input.applicationDeadline,
     p_expected_updated_at: input.expectedPeriodUpdatedAt as string,
     p_period_id: input.periodId as string,

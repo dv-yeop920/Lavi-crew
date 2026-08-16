@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { canPublishMonthlySchedule, getStoredApplicationDeadline } from './application-period'
 
 const period = {
+  applicationDates: ['2026-08-01'],
   applicationDeadline: '2026-07-31T09:00:00.000Z',
   canReopen: false,
   closedReason: 'deadline' as const,

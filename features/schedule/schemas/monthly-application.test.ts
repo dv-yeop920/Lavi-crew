@@ -24,10 +24,24 @@ describe('monthly application schemas', () => {
   it('requires an optimistic-concurrency version for an existing period', () => {
     expect(
       scheduleApplicationPeriodSchema.safeParse({
+        applicationDates: ['2026-08-01'],
         applicationDeadline: '2026-08-01T09:00:00+09:00',
         expectedPeriodUpdatedAt: null,
         month: '2026-08',
         periodId: requestId,
+        requestId,
+      }).success,
+    ).toBe(false)
+  })
+
+  it('requires the administrator to select at least one application date', () => {
+    expect(
+      scheduleApplicationPeriodSchema.safeParse({
+        applicationDates: [],
+        applicationDeadline: '2026-08-01T09:00:00+09:00',
+        expectedPeriodUpdatedAt: null,
+        month: '2026-08',
+        periodId: null,
         requestId,
       }).success,
     ).toBe(false)

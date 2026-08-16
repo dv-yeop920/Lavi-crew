@@ -43,10 +43,15 @@ function isDateInMonth(month: string, dateValue: string) {
   )
 }
 
-export function normalizeMonthlyApplicationDates(month: string, selectedDates: string[]) {
+export function normalizeMonthlyApplicationDates(
+  month: string,
+  selectedDates: string[],
+  availableDates: string[],
+) {
   const dates = [...new Set(selectedDates)].sort()
+  const availableDateSet = new Set(availableDates)
   const errors = dates
-    .filter((date) => !isDateInMonth(month, date))
+    .filter((date) => !isDateInMonth(month, date) || !availableDateSet.has(date))
     .map<MonthlyApplicationDateError>((date) => ({
       code: 'INVALID_APPLICATION_DATE',
       date,

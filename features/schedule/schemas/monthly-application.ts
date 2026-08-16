@@ -16,6 +16,7 @@ export const monthlyApplicationSchema = z.object({
 
 export const scheduleApplicationPeriodSchema = z
   .object({
+    applicationDates: z.array(dateSchema).min(1, '신청 날짜를 한 개 이상 선택해 주세요.'),
     applicationDeadline: z.iso.datetime({ offset: true }),
     expectedPeriodUpdatedAt: versionSchema.nullable(),
     month: monthSchema,

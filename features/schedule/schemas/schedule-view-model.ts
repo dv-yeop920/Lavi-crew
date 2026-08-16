@@ -22,6 +22,7 @@ export type MonthRegistrationViewModel = {
   hasScheduleHistory: boolean
   month: string
   period: {
+    applicationDates: string[]
     applicationDeadline: string | null
     canReopen: boolean
     closedReason: 'deadline' | 'manual' | null
@@ -37,6 +38,7 @@ export type MonthRegistrationViewModel = {
 export type WorkerMonthApplicationViewModel = {
   month: string
   period: {
+    applicationDates: string[]
     applicationDeadline: string
     closedReason: 'deadline' | 'manual' | null
     id: string
