@@ -12,6 +12,12 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
   return (
     <html lang="ko" data-theme="light">
       <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "if(sessionStorage.getItem('_sp'))document.head.insertAdjacentHTML('beforeend','<style>#splash{display:none!important}</style>');else sessionStorage.setItem('_sp','1');",
+          }}
+        />
         <style
           dangerouslySetInnerHTML={{
             __html: `
