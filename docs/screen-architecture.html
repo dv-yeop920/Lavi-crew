@@ -5,18 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="referrer" content="no-referrer">
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' 'wasm-unsafe-eval' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src 'unsafe-inline' blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'none'">
-<title>라비크루 화면 구조</title>
+<title>라비에벨 화면 구조</title>
 <style>:root{color-scheme:light dark;background:light-dark(rgb(255 255 255), rgb(24 24 24))}html,body{margin:0}body{box-sizing:border-box;padding:1rem;background:inherit}iframe{display:block;width:100%;max-width:736px;height:calc(100vh - 2rem);margin:0 auto;border:0}</style>
 </head>
 <body>
-<iframe sandbox="allow-scripts" referrerpolicy="no-referrer" title="라비크루 화면 구조" srcdoc="&lt;!doctype html&gt;
+<iframe sandbox="allow-scripts" referrerpolicy="no-referrer" title="라비에벨 화면 구조" srcdoc="&lt;!doctype html&gt;
 &lt;html lang=&quot;en&quot;&gt;
 &lt;head&gt;
 &lt;meta charset=&quot;utf-8&quot;&gt;
 &lt;meta name=&quot;viewport&quot; content=&quot;width=device-width, initial-scale=1&quot;&gt;
 &lt;meta name=&quot;referrer&quot; content=&quot;no-referrer&quot;&gt;
 &lt;meta http-equiv=&quot;Content-Security-Policy&quot; content=&quot;default-src &#x27;none&#x27;; script-src &#x27;unsafe-inline&#x27; &#x27;unsafe-eval&#x27; &#x27;wasm-unsafe-eval&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; style-src &#x27;unsafe-inline&#x27; blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; img-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; font-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; media-src blob: data: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://esm.sh https://fonts.bunny.net https://fonts.googleapis.com https://fonts.gstatic.com https://unpkg.com; worker-src blob:; connect-src blob: data:; frame-src &#x27;none&#x27;; object-src &#x27;none&#x27;; base-uri &#x27;none&#x27;; form-action &#x27;none&#x27;&quot;&gt;
-&lt;title&gt;라비크루 화면 구조&lt;/title&gt;
+&lt;title&gt;라비에벨 화면 구조&lt;/title&gt;
 &lt;style&gt;:root {
   color-scheme: light dark;
   background-color: var(--background) !important;
@@ -764,14 +764,14 @@ html&gt;body{padding:0}&lt;/style&gt;
     &lt;h2&gt;MVP 클라이언트 화면 설계 완료&lt;/h2&gt;
     &lt;p&gt;아래 화면 구조를 확정본으로 사용한다. Supabase Auth·RLS·일정·신청·출석·급여·공지 API와 서버 전용 Web Push(VAPID) 알림 발송 작업이 연결돼 있다. 운영 전 VAPID 키 설정과 자동 호출 스케줄이 필요하다.&lt;/p&gt;
   &lt;/article&gt;
-  &lt;section class=&quot;tree&quot; aria-label=&quot;라비크루 화면 구조&quot;&gt;
+  &lt;section class=&quot;tree&quot; aria-label=&quot;라비에벨 화면 구조&quot;&gt;
     &lt;article class=&quot;card&quot;&gt;
       &lt;h2&gt;공통 진입 화면&lt;/h2&gt;
       &lt;p&gt;이메일 로그인 · 회원가입(이름 · 이메일 · 휴대폰 번호 · 입사일) · 이메일 확인 · 초대 코드 검증 · 이메일 비밀번호 재설정&lt;/p&gt;
     &lt;/article&gt;
     &lt;article class=&quot;card&quot;&gt;
       &lt;h2&gt;공통 앱 셸&lt;/h2&gt;
-      &lt;p&gt;상단: 라비크루 · 계정 액션(역할명 미표시) / 하단: 역할별 주요 목적지 아이콘 + 라벨 · 현재 위치 · 모바일 safe area&lt;/p&gt;
+      &lt;p&gt;상단: 라비에벨 · 계정 액션(역할명 미표시) / 하단: 역할별 주요 목적지 아이콘 + 라벨 · 현재 위치 · 모바일 safe area&lt;/p&gt;
     &lt;/article&gt;
     &lt;div class=&quot;arrow&quot; aria-hidden=&quot;true&quot;&gt;↓ 역할에 따른 화면 분기&lt;/div&gt;
     &lt;div class=&quot;branches&quot;&gt;

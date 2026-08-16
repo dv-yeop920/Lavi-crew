@@ -45,7 +45,7 @@ export function WorkerHomeView({ viewModel }: { viewModel: WorkerHomeViewModel }
   return (
     <div className={layout.page}>
       <PageHeader
-        eyebrow="오늘의 라비크루"
+        eyebrow="오늘의 라비에벨"
         title={`안녕하세요, ${viewModel.name}님`}
         description="확정된 일정과 신청 현황, 새 공지를 확인하세요."
       />

@@ -587,7 +587,7 @@ src/shared/styles/tokens/
 
 ## 17. Lavi Crew Confirmed Theme
 
-사용자 승인에 따라 라비크루 MVP는 흰 배경의 Light theme를 기본이자 유일한 테마로 사용한다.
+사용자 승인에 따라 라비에벨 MVP는 흰 배경의 Light theme를 기본이자 유일한 테마로 사용한다.
 
 ### 17.1 Primary palette
 

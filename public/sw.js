@@ -6,7 +6,7 @@ self.addEventListener('push', (event) => {
   } catch {
     return
   }
-  const title = data.title || '라비크루 알림'
+  const title = data.title || '라비에벨 알림'
   const options = {
     body: data.body || '',
     icon: '/icon-192.png',

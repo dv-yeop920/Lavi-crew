@@ -67,7 +67,7 @@ export function LoginView() {
           </Link>
         </form>
         <p className={styles.footer}>
-          아직 라비크루 계정이 없나요?
+          아직 라비에벨 계정이 없나요?
           <Link className={styles.link} href="/signup">
             회원가입
           </Link>
