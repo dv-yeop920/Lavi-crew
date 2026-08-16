@@ -302,6 +302,8 @@ export const fieldLabel = style({
 })
 
 export const compactInput = style({
+  WebkitAppearance: 'none',
+  appearance: 'none',
   width: '100%',
   minHeight: '2.75rem',
   paddingInline: '0.75rem',
@@ -310,6 +312,7 @@ export const compactInput = style({
   background: semanticVars.color.surface,
   color: semanticVars.color.labelNormal,
   font: 'inherit',
+  fontSize: '1rem',
   selectors: {
     '&:focus-visible': {
       borderColor: semanticVars.color.primaryNormal,

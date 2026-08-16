@@ -14,6 +14,8 @@ export const label = style({
 })
 
 export const input = style({
+  WebkitAppearance: 'none',
+  appearance: 'none',
   width: '100%',
   minHeight: '3rem',
   paddingInline: '0.875rem',
@@ -21,7 +23,7 @@ export const input = style({
   borderRadius: '0.75rem',
   background: semanticVars.color.surface,
   color: semanticVars.color.labelNormal,
-  fontSize: semanticVars.font.size.bodyLarge,
+  fontSize: '1rem',
   selectors: {
     '&::placeholder': {
       color: semanticVars.color.labelMuted,

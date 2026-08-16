@@ -28,6 +28,15 @@ globalStyle('button, input, textarea, select', {
   font: 'inherit',
 })
 
+globalStyle('input[type="date"], input[type="time"]', {
+  WebkitAppearance: 'none',
+  appearance: 'none',
+})
+
+globalStyle('input[type="date"]::-webkit-date-and-time-value', {
+  textAlign: 'left',
+})
+
 globalStyle('button', {
   fontSize: semanticVars.font.size.labelMedium,
   fontWeight: semanticVars.font.weight.bold,
