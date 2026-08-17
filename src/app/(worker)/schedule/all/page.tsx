@@ -1,4 +1,4 @@
-import { WorkerFullSchedulePageView } from '@/features/schedule/views/worker-full-schedule-page-view'
+import { WorkerFullSchedulePageView } from '@/features/schedule/view/worker-full-schedule-page-view'
 
 type WorkerFullSchedulePageProps = {
   searchParams: Promise<{ month?: string }>

@@ -1,4 +1,4 @@
-import { AdminDailySchedulePageView } from '@/features/schedule/views/admin-daily-schedule-page-view'
+import { AdminDailySchedulePageView } from '@/features/schedule/view/admin-daily-schedule-page-view'
 
 type AdminDailySchedulePageProps = {
   params: Promise<{ date: string }>

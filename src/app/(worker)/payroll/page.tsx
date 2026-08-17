@@ -1,4 +1,4 @@
-import { WorkerPayrollPageView } from '@/features/payroll/views/worker-payroll-page-view'
+import { WorkerPayrollPageView } from '@/features/payroll/view/worker-payroll-page-view'
 
 type WorkerPayrollPageProps = {
   searchParams: Promise<{ month?: string }>

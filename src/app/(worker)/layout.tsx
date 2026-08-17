@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 
-import { LogoutButton } from '@/features/auth/components/logout-button'
-import { ServiceWorkerRegister } from '@/features/notification/components/service-worker-register'
+import { LogoutButton } from '@/features/auth/view/components/logout-button'
+import { ServiceWorkerRegister } from '@/features/notification/view/components/service-worker-register'
 import { AppShell } from '@/shared/ui/app-shell/app-shell'
 
 const navigationItems = [

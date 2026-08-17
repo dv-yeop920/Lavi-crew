@@ -1,4 +1,4 @@
-import { AdminSchedulePageView } from '@/features/schedule/views/admin-schedule-page-view'
+import { AdminSchedulePageView } from '@/features/schedule/view/admin-schedule-page-view'
 
 type AdminSchedulesPageProps = {
   searchParams: Promise<{ month?: string }>

@@ -1,4 +1,4 @@
-import { AuthCallbackErrorView } from '@/features/auth/views/auth-callback-error-view'
+import { AuthCallbackErrorView } from '@/features/auth/view/auth-callback-error-view'
 
 export default async function AuthErrorPage({
   searchParams,

@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation'
 
-import { getCanonicalMonth } from '@/features/schedule/lib/month-query'
-import { AdminScheduleHistoryMonthPageView } from '@/features/schedule/views/admin-schedule-history-month-page-view'
+import { getCanonicalMonth } from '@/features/schedule/model/month-query'
+import { AdminScheduleHistoryMonthPageView } from '@/features/schedule/view/admin-schedule-history-month-page-view'
 
 type AdminScheduleHistoryMonthPageProps = {
   params: Promise<{ month: string }>

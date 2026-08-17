@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
 
-import { LogoutButton } from '@/features/auth/components/logout-button'
+import { LogoutButton } from '@/features/auth/view/components/logout-button'
 import { AppShell } from '@/shared/ui/app-shell/app-shell'
 
 const navigationItems = [

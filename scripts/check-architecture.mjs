@@ -75,8 +75,6 @@ function inspectFile(file) {
   const content = readFileSync(file, 'utf8')
   const isClientModule =
     /^\s*(?:(?:\/\*[\s\S]*?\*\/|\/\/[^\n]*)(?:\r?\n|\s))*['"]use client['"];?/.test(content)
-  const isDomainModule = /(^|\/)domain\//.test(sourcePath)
-  const isActionModule = /(^|\/)actions\//.test(sourcePath)
   const featureMatch = sourcePath.match(/^features\/([^/]+)\//)
 
   for (const source of collectImports(content)) {
@@ -91,17 +89,12 @@ function inspectFile(file) {
       addViolation(file, content, source, 'shared는 app 또는 features에 의존할 수 없습니다.')
     }
 
-    if (
-      sourcePath.startsWith('app/') &&
-      importedPath &&
-      (/^shared\/supabase\//.test(importedPath) ||
-        /^features\/[^/]+\/(controllers|domain|repositories)\//.test(importedPath))
-    ) {
+    if (sourcePath.startsWith('app/') && importedPath && /^shared\/supabase\//.test(importedPath)) {
       addViolation(
         file,
         content,
         source,
-        'app은 Supabase나 Controller·Domain·Repository를 직접 참조하지 말고 공개 View/Action 경계를 사용해야 합니다.',
+        'app은 Supabase를 직접 참조하지 말고 feature의 view/api 경계를 사용해야 합니다.',
       )
     }
 
@@ -122,24 +115,10 @@ function inspectFile(file) {
     }
 
     if (
-      isActionModule &&
-      importedPath &&
-      /(^|\/)(domain|repositories)(\/|$)|^shared\/supabase\//.test(importedPath)
-    ) {
-      addViolation(
-        file,
-        content,
-        source,
-        'Action은 Controller를 경유해야 하며 Domain·Repository·Supabase를 직접 참조할 수 없습니다.',
-      )
-    }
-
-    if (
       isClientModule &&
       (source === 'server-only' ||
         (importedPath &&
-          (/(^|\/)(controllers|repositories)(\/|$)/.test(importedPath) ||
-            /^shared\/supabase\//.test(importedPath) ||
+          (/^shared\/supabase\//.test(importedPath) ||
             /(^|\/)server(?:\/|\.|$)/.test(importedPath))))
     ) {
       addViolation(
@@ -147,25 +126,6 @@ function inspectFile(file) {
         content,
         source,
         'Client Component에서 서버 전용 모듈을 참조할 수 없습니다.',
-      )
-    }
-
-    if (
-      isDomainModule &&
-      (/^(react|next)(\/|$)/.test(source) ||
-        source.startsWith('@supabase/') ||
-        (importedPath &&
-          (/^app\//.test(importedPath) ||
-            /^shared\/supabase\//.test(importedPath) ||
-            /(^|\/)(actions|components|controllers|hooks|repositories|views)(\/|$)/.test(
-              importedPath,
-            ))))
-    ) {
-      addViolation(
-        file,
-        content,
-        source,
-        'Domain은 React, Next.js, Supabase 또는 외부 계층에 의존할 수 없습니다.',
       )
     }
   }

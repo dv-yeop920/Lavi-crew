@@ -1,1 +1,1 @@
-export { PushSubscriptionToggle } from './components/push-subscription-toggle'
+export { PushSubscriptionToggle } from './view/components/push-subscription-toggle'

@@ -1,6 +1,6 @@
 import { timingSafeEqual } from 'node:crypto'
 
-import { processNotificationsAction } from '@/features/notification/actions/process-notifications-action'
+import { processNotificationsAction } from '@/features/notification/api/process-notifications-action'
 
 export const runtime = 'nodejs'
 

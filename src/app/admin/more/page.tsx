@@ -1,4 +1,4 @@
-import { ManagementMenuView } from '@/features/management/views/management-view'
+import { ManagementMenuView } from '@/features/management/view/management-view'
 
 export default function AdminManagementPage() {
   return <ManagementMenuView />

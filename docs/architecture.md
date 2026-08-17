@@ -10,32 +10,28 @@
 
 ## VAC 구조
 
-기능 단위로 View, Action, Controller를 함께 배치한다. View는 데이터를 직접 변경하지 않고 Action을 호출하며, Action은 Controller에 요청을 위임한다.
+기능 단위로 view, api, model을 함께 배치한다. view는 데이터를 직접 변경하지 않고 api의 Action을 호출하며, Action은 model의 Controller에 요청을 위임한다.
 
 ```mermaid
 flowchart LR
-  V["View<br/>페이지 · UI 조합"] --> H["Hook<br/>로컬 상태 · 파생 계산 · 이벤트 핸들러"]
-  H --> A["Action<br/>Server Action · Route Handler"]
-  A --> C["Controller<br/>유스케이스 · 권한 확인"]
-  C --> D["Domain<br/>급여 계산 · 스케줄 규칙"]
-  C --> R["Repository<br/>Supabase 쿼리"]
+  V["view<br/>페이지 · UI 조합 · 로컬 상태 · 이벤트 핸들러"] --> A["api: Action<br/>Server Action · Route Handler"]
+  A --> C["model: Controller<br/>유스케이스 · 권한 확인"]
+  C --> D["model: Domain<br/>급여 계산 · 스케줄 규칙"]
+  C --> R["api: Repository<br/>Supabase 쿼리"]
   R --> S["Supabase<br/>Auth · PostgreSQL · RLS"]
-  C --> K["Web Push Adapter<br/>푸시 알림 발송"]
+  C --> K["api: Adapter<br/>Web Push 발송"]
 ```
 
-로컬 상태나 파생 계산이 없는 단순한 View는 Hook 없이 Action을 직접 호출해도 된다.
+로컬 상태나 파생 계산이 없는 단순한 view 컴포넌트는 별도 훅 없이 Action을 직접 호출해도 된다.
 
 ### 계층 책임
 
 | 계층 | 책임 | 금지 사항 |
 | --- | --- | --- |
-| View | 화면 표시, 레이아웃, 입력 마크업 | Supabase 쓰기 호출, 업무 규칙 구현 |
-| Hook | View의 로컬 상태, 파생 계산, 이벤트 핸들러, 브라우저 전용 API 접근 | Supabase 쓰기 직접 호출, 업무 규칙 판단 |
-| Action | 입력 수신, 스키마 검증, Controller 호출, 화면 갱신 | DB 쿼리와 업무 규칙 혼합 |
-| Controller | 유스케이스 조합, 역할 확인, 업무 규칙 실행 | 폼 형식 검증, UI 상태와 SQL 세부 구현 |
-| Domain | 급여 계산, 마감·배정 규칙 같은 순수 로직 | 외부 API, DB 접근 |
-| Repository | Supabase 데이터 조회·저장 | 권한 정책과 업무 규칙 판단 |
-| Adapter | Web Push 등 외부 API 연동 | 도메인 규칙 판단 |
+| view | 화면 표시, 레이아웃, 입력 마크업, 하위 UI 조합(view/components), 로컬 상태·파생 계산·이벤트 핸들러·브라우저 전용 API 접근(view/hooks) | Supabase 쓰기 호출, 업무 규칙 구현·판단 |
+| api | 입력 수신·스키마 검증·model 호출·캐시 갱신(Action), Supabase 데이터 조회·저장(Repository), Web Push 등 외부 API 연동(Adapter) | DB 쿼리와 업무 규칙 혼합, 권한 정책과 도메인 규칙 판단 |
+| model | 유스케이스 조합·역할 확인·업무 규칙 실행(Controller), 급여 계산·마감·배정 규칙 같은 순수 로직(Domain) | 폼 형식 검증, UI 상태·SQL 세부 구현, 외부 API·DB 직접 접근 |
+| schema | Zod 스키마로 입력 검증 규칙 정의 | 업무 규칙 판단, Supabase 접근 |
 
 ## 폴더 구조
 
@@ -55,16 +51,10 @@ src/
 │  ├─ payroll/
 │  ├─ profile/
 │  └─ schedule/
-│     ├─ views/
-│     ├─ hooks/
-│     ├─ actions/
-│     ├─ controllers/
-│     ├─ repositories/
-│     ├─ domain/
-│     ├─ schemas/
-│     ├─ components/
-│     ├─ adapters/
-│     └─ lib/
+│     ├─ view/              # 화면 표시, 하위 컴포넌트(view/components), 훅(view/hooks), CSS
+│     ├─ model/             # Controller, Domain, lib
+│     ├─ api/               # Server Action, Repository, Adapter
+│     └─ schema/            # Zod 검증 스키마
 ├─ shared/                 # 기능 비의존 공통 코드
 │  ├─ auth/
 │  ├─ domain/
@@ -84,7 +74,7 @@ docs/                      # 요구사항·설계·ADR·운영 문서
 
 화면에 보이는 인원·공지·일정은 모두 Supabase 조회 결과다. 초기 구성원은 `scripts/seed-crew-members.mjs`가 Auth Admin API로 실제 인증 계정과 `public.profiles` 행을 만들어 채우며, 이후 모든 배정·출석·급여는 실제 UUID를 통해 RLS가 적용된 경로로만 저장한다.
 
-관리자 일정 등록 화면의 임시 저장은 아직 확정하지 않은 초안만 버전이 명시된 브라우저 `localStorage`에 보관한다. Domain이 문서 구조 검증과 월 단위 병합을 담당하고 Adapter와 Hook이 브라우저 저장소 접근을 격리한다. 확정(스케줄 확정)은 항상 Server Action → Controller → RPC 경로로 저장하며, 저장에 성공하면 해당 월의 초안을 지운다.
+관리자 일정 등록 화면의 임시 저장은 아직 확정하지 않은 초안만 버전이 명시된 브라우저 `localStorage`에 보관한다. model의 Domain이 문서 구조 검증과 월 단위 병합을 담당하고 api의 Adapter와 view의 훅이 브라우저 저장소 접근을 격리한다. 확정(스케줄 확정)은 항상 api의 Action → model의 Controller → RPC 경로로 저장하며, 저장에 성공하면 해당 월의 초안을 지운다.
 
 ## 권한과 보안
 

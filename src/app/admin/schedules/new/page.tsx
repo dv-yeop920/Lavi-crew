@@ -1,4 +1,4 @@
-import { AdminScheduleRegistrationPageView } from '@/features/schedule/views/admin-schedule-registration-page-view'
+import { AdminScheduleRegistrationPageView } from '@/features/schedule/view/admin-schedule-registration-page-view'
 
 type AdminScheduleRegistrationPageProps = {
   searchParams: Promise<{ dates?: string; month?: string }>

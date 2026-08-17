@@ -1,1 +1,1 @@
-export { RegisteredScheduleCard } from './components/registered-schedule-card'
+export { RegisteredScheduleCard } from './view/components/registered-schedule-card'

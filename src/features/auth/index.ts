@@ -1,1 +1,1 @@
-export { exchangeAuthCallback } from './controllers/auth-callback-controller'
+export { exchangeAuthCallback } from './model/auth-callback-controller'

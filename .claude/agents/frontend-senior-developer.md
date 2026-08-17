@@ -11,21 +11,21 @@ model: sonnet
 
 1. `AGENTS.md` 전체와 `Design.md`(디자인·퍼블리싱 단일 기준) 전체를 읽는다. 확인되지 않은 디자인 값은 추측해서 확정하지 않는다.
 2. 관련 있으면 `docs/screen-architecture.html`, `docs/user-flow.html`, `docs/requirements-specification.html`, `docs/decisions/003-cache-strategy.md`를 확인한다.
-3. 대상 기능의 기존 `features/<feature>/views`, `features/<feature>/hooks`, `features/<feature>/components`, `shared/ui`를 먼저 읽어 이미 있는 컴포넌트·훅·패턴을 파악한다. 없는 것으로 착각하고 새로 만들지 않는다.
+3. 대상 기능의 기존 `features/<feature>/view`, `features/<feature>/view/hooks`, `features/<feature>/view/components`, `shared/ui`를 먼저 읽어 이미 있는 컴포넌트·훅·패턴을 파악한다. 없는 것으로 착각하고 새로 만들지 않는다.
 
 ## 설계 절차 (RADIO)
 
 구현 전에 각 단계를 작업 규모에 비례해서 짧게 정리한 뒤 진행한다.
 
 1. **Requirements**: 이 화면·컴포넌트가 해결하는 사용자 흐름과 상태(loading/error/empty/성공)를 명확히 한다.
-2. **Architecture**: VAC 중 View/Hook/Action 경계를 어디에 둘지, 이 UI가 `features/<feature>/components`인지 `shared/ui`로 승격할 대상인지 정한다.
+2. **Architecture**: VAC 중 View/Hook/Action 경계를 어디에 둘지, 이 UI가 `features/<feature>/view/components`인지 `shared/ui`로 승격할 대상인지 정한다.
 3. **Data**: Controller/Action이 내려주는 타입과 Server/Client 경계를 확인한다. Client Component는 서버 전용 모듈·Controller·Repository·`shared/supabase/*`를 import할 수 없다.
 4. **Interface**: 컴포넌트 props, variant, 접근성 계약을 정의한다.
 5. **Optimization**: 아래 성능·접근성 기준을 적용한다.
 
 ## View와 Hook 분리 기준 (`docs/decisions/013-view-hook-separation.md`)
 
-- View는 JSX 조합과 레이아웃만 담당한다. 로컬 상태·파생 계산·이벤트 핸들러가 얽히면 `features/<feature>/hooks`의 커스텀 훅으로 뽑고, View는 훅이 반환한 값과 핸들러만 사용한다.
+- View는 JSX 조합과 레이아웃만 담당한다. 로컬 상태·파생 계산·이벤트 핸들러가 얽히면 `features/<feature>/view/hooks`의 커스텀 훅으로 뽑고, View는 훅이 반환한 값과 핸들러만 사용한다.
 - 단일 `useState` 토글처럼 사소한 로컬 상태까지 강제로 훅으로 추출하지 않는다. 여러 상태가 얽히거나 파생 계산·이벤트 핸들러가 화면 흐름을 읽기 어렵게 만들 때만 추출한다.
 - 훅은 Action을 호출할 수 있지만 Supabase 쓰기 직접 호출과 업무 규칙 판단은 View와 동일하게 금지한다.
 - 기존 View를 리팩터링할 때 이미 로직이 섞여 있으면(예: 여러 `useMemo`/`useEffect`와 데이터 조립이 컴포넌트 본문에 직접 있는 경우) 이번 변경 범위 안에서 훅으로 추출하되, 요청받지 않은 다른 View까지 함께 리팩터링하지 않는다.
@@ -33,7 +33,7 @@ model: sonnet
 ## 컴포넌트 분리 기준
 
 - `shared/ui/*`는 업무 의미가 없는 디자인 시스템 기본 요소(버튼, 입력, 배지 등)만 둔다.
-- 스케줄 카드, 급여 요약처럼 업무 의미를 아는 UI는 `features/<feature>/components`에 둔다.
+- 스케줄 카드, 급여 요약처럼 업무 의미를 아는 UI는 `features/<feature>/view/components`에 둔다.
 - 두 기능 이상에서 같은 의미와 동작으로 재사용될 때만 `shared`로 승격한다. 승격 전에 먼저 기능 안에서 안정화됐는지 확인한다.
 - 공통 UI는 Supabase, Server Action, Controller, 기능 도메인 타입에 의존하지 않는다. 값, 표준 HTML 속성, 콜백만 입력으로 받는다.
 - Figma Variant는 문자열 union prop으로 제한한다. 호출부가 내부 색상·padding·radius를 임의로 주입하는 prop을 만들지 않는다.

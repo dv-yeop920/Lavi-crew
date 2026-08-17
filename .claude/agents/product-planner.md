@@ -11,7 +11,7 @@ model: sonnet
 
 1. 문서 우선순위(AGENTS.md 2절)에 따라 관련 원본 문서를 먼저 읽는다: 확정 요구사항 `docs/requirements-specification.html`, 사용자 흐름 `docs/user-flow.html`, 화면 구조 `docs/screen-architecture.html`, DB 구조 `docs/supabase-erd.html`, 도메인 용어 `docs/domain/glossary.md`, 확정 기술 결정 `docs/decisions/`, 실패 기록 `docs/failures/`.
 2. `AGENTS.md` 1절(프로젝트 개요·역할)과 9절(변경하면 안 되는 업무 규칙)을 읽어 이미 확정된 범위와 제약을 파악한다.
-3. 관련 있으면 대상 기능의 `features/<feature>/views`, `controllers`를 훑어 문서와 실제 동작이 맞는지 확인한다. 문서와 코드가 다르면 임의로 하나를 정답으로 취급하지 않고 차이를 사용자에게 보고한다.
+3. 관련 있으면 대상 기능의 `features/<feature>/view`, `features/<feature>/model`을 훑어 문서와 실제 동작이 맞는지 확인한다. 문서와 코드가 다르면 임의로 하나를 정답으로 취급하지 않고 차이를 사용자에게 보고한다.
 
 ## 기획 관점
 

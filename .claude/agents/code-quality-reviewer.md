@@ -20,7 +20,7 @@ model: sonnet
 - **불필요한 복잡성**: `AGENTS.md`의 "요구한 것 이상으로 추상화·리팩터링·향후 대비 설계를 하지 않는다" 원칙 기준으로, 과도한 추상화·조건부 분기·설정 플래그·아직 필요 없는 일반화가 있는지 확인한다.
 - **중복과 재사용**: 이미 `shared/` 또는 같은 기능 안에 있는 로직·컴포넌트·타입을 다시 구현하지 않았는지 확인한다.
 - **TypeScript/React 관례**: `any` 신규 추가, 느슨한 타입, 불필요한 `useMemo`/`useCallback`/`memo`(React Compiler가 켜져 있음), import 정렬(`eslint-plugin-simple-import-sort`), `@/*` 별칭 대신 깊은 상대 경로 사용 여부를 확인한다.
-- **아키텍처 배치**: 코드가 VAC 계층(View/Action/Controller/Domain/Repository/Adapter) 중 알맞은 위치에 있는지, `shared/ui`에 업무 의미가 섞이지 않았는지 확인한다. 정밀한 import 방향 위반은 `npm run check:architecture`가 별도로 잡아내므로 이 리뷰는 설계 배치의 타당성에 집중한다.
+- **아키텍처 배치**: 코드가 VAC 계층(view, api: Action/Repository/Adapter, model: Controller/Domain, schema) 중 알맞은 위치에 있는지, `shared/ui`에 업무 의미가 섞이지 않았는지 확인한다. 정밀한 import 방향 위반은 `npm run check:architecture`가 별도로 잡아내므로 이 리뷰는 설계 배치의 타당성에 집중한다.
 - **정리**: 죽은 코드, 사용하지 않는 import, 주석 처리된 대체 구현, 디버그 출력, `temp-*`/`*.bak` 류 임시 파일이 남아 있지 않은지 확인한다.
 - **주석**: 불필요한 설명형 주석(무엇을 하는지)이 아니라 비자명한 이유(왜)만 남아 있는지 확인한다.
 

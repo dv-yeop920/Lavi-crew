@@ -4,7 +4,7 @@ const { processNotificationsAction } = vi.hoisted(() => ({
   processNotificationsAction: vi.fn(),
 }))
 
-vi.mock('@/features/notification/actions/process-notifications-action', () => ({
+vi.mock('@/features/notification/api/process-notifications-action', () => ({
   processNotificationsAction,
 }))
 

@@ -49,15 +49,11 @@
 
 ```text
 src/app/                   # 라우트, 레이아웃, 페이지 조합
-src/features/<feature>/    # 기능별 VAC, 스키마, 기능 컴포넌트
-  views/
-  hooks/
-  actions/
-  controllers/
-  domain/
-  repositories/
-  schemas/
-  components/
+src/features/<feature>/    # 기능별 VAC, 스키마
+  view/                    # 화면, 기능 컴포넌트(components/), 상태·이벤트 훅(hooks/)
+  api/                     # Server Action, Supabase repository, 외부 API adapter
+  model/                   # Controller, 순수 도메인 로직, 업무용 표시 헬퍼
+  schema/                  # Zod 검증 스키마
 src/shared/auth/           # 공통 인증·역할 확인
 src/shared/supabase/       # Supabase 클라이언트와 서버 연결
 src/shared/ui/             # 도메인 비의존 공통 UI
@@ -71,6 +67,7 @@ docs/                      # 기획·아키텍처 문서
 
 - `src/app`에는 업무 규칙이나 Supabase 쓰기 쿼리를 넣지 않는다.
 - 기능에 종속된 코드는 `src/features/<feature>`에 둔다.
+- 기능 폴더는 `view`·`api`·`model`·`schema` 4개로 구성한다. 각 폴더의 책임은 5절을 따른다.
 - `src/shared`는 `src/app`이나 `src/features`를 import하지 않는다.
 - 기능 간에 상대 기능의 내부 파일을 직접 import하지 않는다. 공통 의미가 확인된 타입과 UI만 `shared`로 승격한다.
 - 하위 디렉토리에 별도 `AGENTS.md`를 추가할 때는 그 영역의 예외만 기록하고 루트 규칙을 복사하지 않는다.
@@ -81,17 +78,14 @@ docs/                      # 기획·아키텍처 문서
 호출 방향은 다음을 지킨다.
 
 ```text
-View → Hook → Action → Controller → Domain / Repository → Supabase
-                                  └→ Web Push Adapter
+view → api(Action) → model(Controller → 순수 로직) + api(Repository/Adapter) → Supabase
+                                                                             └→ Web Push
 ```
 
-- View: 표시, 레이아웃, 입력 마크업만 담당한다. Supabase 쓰기와 업무 규칙을 금지한다. 로컬 상태·파생 계산·이벤트 핸들러가 얽히면 Hook으로 추출한다. 단일 상태 토글처럼 사소한 로컬 상태까지 강제로 추출하지 않는다.
-- Hook: `src/features/<feature>/hooks`에 두는 커스텀 React 훅으로 View의 로컬 상태, 파생 계산, 이벤트 핸들러, 브라우저 전용 API 접근을 담당한다. Action 호출은 할 수 있지만 Supabase 쓰기 직접 호출과 업무 규칙 판단은 View와 동일하게 금지한다(`docs/decisions/013-view-hook-separation.md`).
-- Action: 입력 수신, 스키마 검증, Controller 호출, 캐시 갱신만 담당한다.
-- Controller: 역할 확인, 유스케이스 조합, Domain·Repository·Adapter 호출을 담당한다.
-- Domain: DB, React, Next.js, 외부 API에 의존하지 않는 순수 로직만 둔다.
-- Repository: Supabase 조회·저장만 담당하고 업무 정책을 판단하지 않는다.
-- Adapter: Web Push 같은 외부 API를 격리하고 도메인 규칙을 판단하지 않는다.
+- `view` (`src/features/<feature>/view`): 화면 표시, 레이아웃, 입력 마크업을 담당한다. Supabase 쓰기와 업무 규칙을 금지한다. `view/components`에는 그 화면 전용 기능 컴포넌트를, `view/hooks`에는 로컬 상태·파생 계산·이벤트 핸들러·브라우저 전용 API 접근을 담당하는 커스텀 React 훅을 둔다. 훅은 `api`의 Action을 호출할 수 있지만 Supabase 쓰기 직접 호출과 업무 규칙 판단은 금지한다(`docs/decisions/013-view-hook-separation.md`). 단일 상태 토글처럼 사소한 로컬 상태까지 강제로 훅으로 추출하지 않는다.
+- `api` (`src/features/<feature>/api`): Server Action으로 입력을 받아 `schema`로 검증하고 `model`의 Controller를 호출한 뒤 캐시를 갱신한다. 같은 폴더의 Repository는 Supabase 조회·저장만 담당하며 업무 정책을 판단하지 않는다. Adapter는 Web Push 같은 외부 API를 격리하고 도메인 규칙을 판단하지 않는다. Action은 Controller를 통해서만 Repository·Adapter를 사용하고, 업무 규칙 판단은 하지 않는다.
+- `model` (`src/features/<feature>/model`): Controller가 역할 확인, 유스케이스 조합, `api`의 Repository·Adapter 호출을 담당한다. 순수 도메인 로직과 업무용 표시 헬퍼는 DB, React, Next.js, 외부 API에 의존하지 않는 함수로 같은 폴더에 둔다.
+- `schema` (`src/features/<feature>/schema`): Zod 검증 스키마를 둔다.
 - 여러 테이블을 함께 변경하는 마감·배정 확정·급여 산정은 Postgres RPC로 원자 처리한다.
 
 ## 6. 디자인과 공통 컴포넌트
@@ -101,7 +95,7 @@ View → Hook → Action → Controller → Domain / Repository → Supabase
 - 정적 스타일은 `*.css.ts`에 작성한다. 런타임 계산이 필요한 값 외에는 인라인 스타일을 사용하지 않는다.
 - 컴포넌트에서는 Atomic token이나 HEX 값 대신 Semantic token을 사용한다.
 - 버튼, 입력, 배지처럼 도메인 의미가 없는 UI만 `src/shared/ui/<component>/`에 둔다.
-- 스케줄 카드, 급여 요약처럼 업무 의미를 아는 UI는 `src/features/<feature>/components`에 둔다.
+- 스케줄 카드, 급여 요약처럼 업무 의미를 아는 UI는 `src/features/<feature>/view/components`에 둔다.
 - 디자인 시스템 기본 요소이거나 두 기능 이상에서 같은 의미와 동작으로 사용될 때만 공통 UI로 승격한다.
 - 공통 UI는 Supabase, Server Action, Controller, 기능 도메인 타입에 의존하지 않는다. 값, 표준 HTML 속성, 콜백을 입력으로 받는다.
 - 공통 UI는 Server Component 호환을 기본으로 하고 상호작용이 필요한 가장 작은 파일에만 `'use client'`를 선언한다.

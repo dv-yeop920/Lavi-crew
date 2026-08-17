@@ -1,4 +1,4 @@
-import { WorkerSchedulePageView } from '@/features/schedule/views/worker-schedule-page-view'
+import { WorkerSchedulePageView } from '@/features/schedule/view/worker-schedule-page-view'
 
 type WorkerSchedulePageProps = {
   searchParams: Promise<{ anchor?: string; mode?: string }>

@@ -1,4 +1,4 @@
-import { WorkerDetailPageView } from '@/features/management/views/worker-detail-page-view'
+import { WorkerDetailPageView } from '@/features/management/view/worker-detail-page-view'
 
 type AdminWorkerDetailPageProps = {
   params: Promise<{ workerId: string }>

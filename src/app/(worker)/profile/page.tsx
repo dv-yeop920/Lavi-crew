@@ -1,4 +1,4 @@
-import { ProfilePageView } from '@/features/profile/views/profile-page-view'
+import { ProfilePageView } from '@/features/profile/view/profile-page-view'
 
 export default function ProfilePage() {
   return <ProfilePageView />

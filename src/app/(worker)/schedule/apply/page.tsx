@@ -1,4 +1,4 @@
-import { ScheduleApplicationPageView } from '@/features/schedule/views/schedule-application-page-view'
+import { ScheduleApplicationPageView } from '@/features/schedule/view/schedule-application-page-view'
 
 type ScheduleApplicationPageProps = {
   searchParams: Promise<{ month?: string }>
