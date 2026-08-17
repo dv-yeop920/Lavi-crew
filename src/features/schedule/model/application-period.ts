@@ -18,9 +18,6 @@ export function getStoredApplicationDeadline(deadline: string | null) {
   }
 }
 
-export function canPublishMonthlySchedule(period: MonthRegistrationViewModel['period']) {
-  return (
-    period.status === 'closed' &&
-    Boolean(period.id && period.updatedAt && period.applicationDeadline)
-  )
+export function canRegisterMonthlySchedule(period: MonthRegistrationViewModel['period']) {
+  return Boolean(period.id && period.updatedAt && period.applicationDeadline)
 }

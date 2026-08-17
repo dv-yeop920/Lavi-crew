@@ -233,7 +233,6 @@ const domainErrorMessages = {
 
 const safeErrorMessages = {
   APPLICATION_DATE_NOT_OPEN: '신청 기간에 열어 둔 날짜만 일정으로 등록할 수 있습니다.',
-  APPLICATION_PERIOD_OPEN: '신청 기간을 마감한 뒤 일정을 게시해 주세요.',
   DATE_ALREADY_REGISTERED: '이미 등록된 날짜가 있습니다. 최신 일정을 다시 확인해 주세요.',
   FORBIDDEN: '일정을 등록할 권한이 없습니다.',
   IDEMPOTENCY_KEY_REUSED: '이미 사용한 저장 요청입니다. 페이지를 새로고침해 주세요.',

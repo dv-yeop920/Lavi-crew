@@ -6,7 +6,7 @@ import { useActionState, useEffect, useRef, useState } from 'react'
 
 import { saveMonthlyScheduleRegistrationAction } from '@/features/schedule/api/schedule-actions'
 import {
-  canPublishMonthlySchedule,
+  canRegisterMonthlySchedule,
   getStoredApplicationDeadline,
 } from '@/features/schedule/model/application-period'
 import { reconcileDateDrafts } from '@/features/schedule/model/draft-reconciliation'
@@ -112,7 +112,7 @@ export function AdminScheduleRegistrationView({
   const monthLabel = formatMonth(month)
   const enabledDrafts = drafts.filter((draft) => draft.isEnabled)
   const isDirty = enabledDrafts.length > 0
-  const canPublish = canPublishMonthlySchedule(period)
+  const canRegister = canRegisterMonthlySchedule(period)
   const { navigate } = useDirtyNavigationGuard({
     confirmationMessage: '작성 중인 일정이 있습니다. 저장하지 않고 이동할까요?',
     isDirty: isDirty && !state?.ok,
@@ -284,13 +284,9 @@ export function AdminScheduleRegistrationView({
         title={`${monthLabel} 일정 등록`}
       />
 
-      {!canPublish ? (
+      {!canRegister ? (
         <div className={styles.errorMessage} role="status">
-          <p>
-            {period.id
-              ? '일정은 미리 작성할 수 있으며 신청 기간을 마감한 뒤 최종 저장할 수 있습니다.'
-              : '먼저 신청 기간을 열어야 합니다. 일정은 미리 작성할 수 있습니다.'}
-          </p>
+          <p>먼저 신청 기간을 열어야 합니다. 일정은 미리 작성할 수 있습니다.</p>
           <p className={styles.meta}>
             신청 기간 관리는 일정 달력 화면에서 진행합니다.{' '}
             <Link className={styles.link} href={`/admin/schedules?month=${month}`}>
@@ -490,8 +486,7 @@ export function AdminScheduleRegistrationView({
             {!state.ok &&
             (state.code === 'STALE_PERIOD' ||
               state.code === 'DATE_ALREADY_REGISTERED' ||
-              state.code === 'PERIOD_DEADLINE_MISMATCH' ||
-              state.code === 'APPLICATION_PERIOD_OPEN') ? (
+              state.code === 'PERIOD_DEADLINE_MISMATCH') ? (
               <Button variant="secondary" onClick={() => router.refresh()}>
                 최신 상태 다시 불러오기
               </Button>
@@ -502,7 +497,7 @@ export function AdminScheduleRegistrationView({
           <div className={layout.wrapEnd}>
             <Button
               ref={reviewButtonRef}
-              disabled={!canPublish || !isRegistrationReady || isPending}
+              disabled={!canRegister || !isRegistrationReady || isPending}
               onClick={() => setIsConfirming(true)}
             >
               스케줄 확정
@@ -523,7 +518,7 @@ export function AdminScheduleRegistrationView({
             </p>
             <p className={styles.meta}>저장 즉시 일정이 게시되고 배정이 확정됩니다.</p>
             <div className={layout.wrap}>
-              <Button disabled={!canPublish || isPending} type="submit">
+              <Button disabled={!canRegister || isPending} type="submit">
                 {isPending ? (
                   <>
                     확정 중<LoadingDots />

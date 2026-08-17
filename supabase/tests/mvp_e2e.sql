@@ -208,13 +208,6 @@ select set_config('request.jwt.claim.sub', (select admin_id::text from e2e_conte
 select set_config('request.jwt.claims', jsonb_build_object(
   'sub', (select admin_id from e2e_context), 'role', 'authenticated'
 )::text, true);
-insert into e2e_results
-select 'period_closed', public.set_schedule_application_period_status(
-  '40000000-0000-4000-8000-000000000003',
-  (select (value ->> 'periodId')::uuid from e2e_results where key = 'period_created'),
-  'closed',
-  (select (value ->> 'updatedAt')::timestamptz from e2e_results where key = 'period_created')
-);
 
 do $$
 begin
@@ -222,7 +215,7 @@ begin
     perform public.save_monthly_schedule_registration(
       '40000000-0000-4000-8000-000000000017', date '2099-01-01',
       timestamptz '2098-12-15 23:59:59+09',
-      (select (value ->> 'updatedAt')::timestamptz from e2e_results where key = 'period_closed'),
+      (select (value ->> 'updatedAt')::timestamptz from e2e_results where key = 'period_created'),
       (select non_applicant_schedules from e2e_payloads)
     );
     raise exception 'EXPECTED_WORKER_NOT_APPLIED';
@@ -242,14 +235,14 @@ insert into e2e_results
 select 'publish_first', public.save_monthly_schedule_registration(
   '40000000-0000-4000-8000-000000000004', date '2099-01-01',
   timestamptz '2098-12-15 23:59:59+09',
-  (select (value ->> 'updatedAt')::timestamptz from e2e_results where key = 'period_closed'),
+  (select (value ->> 'updatedAt')::timestamptz from e2e_results where key = 'period_created'),
   (select schedules from e2e_payloads)
 );
 insert into e2e_results
 select 'publish_replay', public.save_monthly_schedule_registration(
   '40000000-0000-4000-8000-000000000004', date '2099-01-01',
   timestamptz '2098-12-15 23:59:59+09',
-  (select (value ->> 'updatedAt')::timestamptz from e2e_results where key = 'period_closed'),
+  (select (value ->> 'updatedAt')::timestamptz from e2e_results where key = 'period_created'),
   (select schedules from e2e_payloads)
 );
 reset role;

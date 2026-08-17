@@ -39,9 +39,10 @@ All mutations return a small JSON result. Errors include `FORBIDDEN`, `INVALID_I
 `PERIOD_CANNOT_BE_REOPENED`, `INVALID_APPLICATION_DATE`, and
 `IDEMPOTENCY_KEY_REUSED`.
 
-Monthly publishing requires the existing period to be manually closed or effectively closed
-at its stored deadline. The compatibility deadline argument is read-only: it must equal the
-stored value, and publishing passes the stored value to the legacy atomic implementation.
+Monthly publishing is allowed while the existing period is open. The compatibility deadline
+argument is read-only: it must equal the stored value, and publishing passes the stored value
+to the legacy atomic implementation. Every newly published assignment must still reference a
+worker whose application for that date is currently applied.
 
 ### Optimization and observability
 

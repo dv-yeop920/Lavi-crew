@@ -19,6 +19,13 @@ const immutablePeriodMigration = readFileSync(
   ),
   'utf8',
 )
+const openPeriodRegistrationMigration = readFileSync(
+  new URL(
+    '../../../../supabase/migrations/20260817183139_allow_open_period_schedule_registration.sql',
+    import.meta.url,
+  ),
+  'utf8',
+)
 
 describe('date-based monthly application migration contract', () => {
   it('prevents deadline changes and reopening after any schedule history exists', () => {
@@ -45,10 +52,15 @@ describe('date-based monthly application migration contract', () => {
     expect(replayCheck).toBeLessThan(staleCheck)
   })
 
-  it('publishes only a manually or effectively closed period', () => {
-    expect(publishWrapper).toContain("period_record.status <> 'closed'")
-    expect(publishWrapper).toContain('period_record.application_deadline > now()')
-    expect(publishWrapper).toContain("raise exception 'APPLICATION_PERIOD_OPEN'")
+  it('allows an administrator to publish while the application period is open', () => {
+    expect(openPeriodRegistrationMigration).toContain(
+      'create or replace function public.save_monthly_schedule_registration(',
+    )
+    expect(openPeriodRegistrationMigration).not.toContain(
+      "raise exception 'APPLICATION_PERIOD_OPEN'",
+    )
+    expect(openPeriodRegistrationMigration).toContain("raise exception 'FORBIDDEN'")
+    expect(openPeriodRegistrationMigration).toContain("raise exception 'WORKER_NOT_APPLIED'")
   })
 
   it('rejects a deadline mismatch and passes only the stored deadline to legacy publishing', () => {
