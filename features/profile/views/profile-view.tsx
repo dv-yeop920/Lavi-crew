@@ -2,6 +2,7 @@
 
 import { useActionState, useRef, useState } from 'react'
 
+import { PushSubscriptionToggle } from '@/features/notification'
 import {
   deactivateOwnProfileAction,
   updateOwnProfileAction,
@@ -77,6 +78,10 @@ export function ProfileView({ profile }: { profile: ProfileViewModel }) {
           <strong>현재 적용 시급</strong>
           <span>{currencyFormatter.format(profile.hourlyWage)}원</span>
         </div>
+      </ContentCard>
+
+      <ContentCard>
+        <PushSubscriptionToggle />
       </ContentCard>
 
       <ContentCard>

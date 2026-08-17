@@ -4,6 +4,7 @@ export const notificationTypeSchema = z.enum([
   'schedule_confirmed',
   'schedule_changed',
   'schedule_cancelled',
+  'schedule_opened',
 ])
 
 const pushSubscriptionSchema = z.object({
@@ -13,14 +14,14 @@ const pushSubscriptionSchema = z.object({
 })
 
 export const claimedNotificationSchema = z.object({
-  endTime: z.string().min(1),
+  endTime: z.string().min(1).nullable(),
   leaseToken: z.uuid(),
   notificationId: z.uuid(),
   recipientName: z.string().trim().min(1).max(100),
-  startTime: z.string().min(1),
+  startTime: z.string().min(1).nullable(),
   subscriptions: z.array(pushSubscriptionSchema).min(1),
   type: notificationTypeSchema,
-  workDate: z.iso.date(),
+  workDate: z.iso.date().nullable(),
 })
 
 export const claimedNotificationsSchema = z.array(claimedNotificationSchema)

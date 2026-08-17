@@ -44,7 +44,20 @@ export function getWebPushConfig(
 }
 
 function buildPayload(notification: ClaimedNotification) {
-  const variables = getNotificationTemplateVariables(notification)
+  if (notification.type === 'schedule_opened') {
+    return JSON.stringify({
+      body: '새로운 스케줄 신청 기간이 열렸습니다.',
+      title: `일정 신청 오픈 - ${notification.recipientName}`,
+      type: notification.type,
+    })
+  }
+  const variables = getNotificationTemplateVariables({
+    endTime: notification.endTime ?? '',
+    recipientName: notification.recipientName,
+    startTime: notification.startTime ?? '',
+    type: notification.type,
+    workDate: notification.workDate ?? '',
+  })
   const titles: Record<string, string> = {
     schedule_cancelled: '일정 취소',
     schedule_changed: '일정 변경',

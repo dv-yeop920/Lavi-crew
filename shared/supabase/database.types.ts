@@ -1026,7 +1026,8 @@ export type Database = {
       attendance_status: 'pending' | 'present' | 'absent'
       notice_status: 'published' | 'deleted'
       notification_delivery_status: 'pending' | 'sent' | 'failed'
-      notification_type: 'schedule_confirmed' | 'schedule_changed' | 'schedule_cancelled'
+      notification_type:
+        'schedule_confirmed' | 'schedule_changed' | 'schedule_cancelled' | 'schedule_opened'
       payroll_status: 'calculated' | 'closed'
       shift_status: 'draft' | 'published' | 'cancelled'
     }
@@ -1157,7 +1158,12 @@ export const Constants = {
       attendance_status: ['pending', 'present', 'absent'],
       notice_status: ['published', 'deleted'],
       notification_delivery_status: ['pending', 'sent', 'failed'],
-      notification_type: ['schedule_confirmed', 'schedule_changed', 'schedule_cancelled'],
+      notification_type: [
+        'schedule_confirmed',
+        'schedule_changed',
+        'schedule_cancelled',
+        'schedule_opened',
+      ],
       payroll_status: ['calculated', 'closed'],
       shift_status: ['draft', 'published', 'cancelled'],
     },
