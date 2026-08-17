@@ -360,6 +360,10 @@ select 'daily_cancelled', public.cancel_daily_schedule(
 reset role;
 
 -- Negative RLS control: this published shift has no assignment for worker rn=1.
+insert into public.schedule_application_dates (application_period_id, work_date)
+select (value ->> 'periodId')::uuid, date '2099-01-17'
+from e2e_results where key = 'period_created'
+on conflict do nothing;
 insert into public.shifts (
   application_period_id, work_date, start_time, end_time,
   ceremony_count, status, created_by
@@ -376,6 +380,9 @@ insert into public.schedule_application_periods (
 select date '2001-01-01', timestamptz '2000-12-31 23:59:59+09',
   'closed', now(), admin_id
 from e2e_context;
+insert into public.schedule_application_dates (application_period_id, work_date)
+select id, date '2001-01-06'
+from public.schedule_application_periods where year_month = date '2001-01-01';
 insert into public.shifts (
   application_period_id, work_date, start_time, end_time,
   ceremony_count, status, created_by

@@ -84,7 +84,6 @@ async function expectNoHorizontalOverflow(page: Page) {
 }
 
 const scheduleMonth = '2099-01'
-const scheduleMonthLabel = '2099년 1월'
 const firstScheduleDate = '2099-01-03'
 const secondScheduleDate = '2099-01-04'
 
@@ -166,13 +165,13 @@ test('관리자 마감·배정·수정과 알바 신청·조회가 실제 DB에�
     await adminPage.goto(`/admin/schedules?month=${scheduleMonth}`)
     await expect(adminPage.getByRole('heading', { name: '일정 달력' })).toBeVisible()
     await expect(
-      adminPage.getByRole('button', { name: '먼저 신청 기간을 열어주세요' }),
+      adminPage.getByRole('button', { name: '신청 날짜를 선택해 주세요' }),
     ).toBeDisabled()
+    await adminPage.getByRole('button', { name: '1월 3일' }).click()
+    await adminPage.getByRole('button', { name: '1월 4일' }).click()
     await adminPage.getByLabel('마감 날짜', { exact: true }).fill('2098-12-15')
     await adminPage.getByLabel('마감 시간', { exact: true }).fill('18:00')
-    await adminPage.getByRole('button', { name: '신청 기간 열기' }).click()
-    await expect(adminPage.getByText('신청 중', { exact: true })).toBeVisible()
-    await adminPage.getByRole('link', { name: `${scheduleMonthLabel} 일정 등록하기` }).click()
+    await adminPage.getByRole('button', { name: '신청 기간 열고 일정 등록' }).click()
     await expect(adminPage).toHaveURL(`/admin/schedules/new?month=${scheduleMonth}`)
   })
 
@@ -225,7 +224,7 @@ test('관리자 마감·배정·수정과 알바 신청·조회가 실제 DB에�
   })
 
   await test.step('관리자가 이틀의 일정과 포지션별 인원을 확정한다', async () => {
-    await adminPage.getByRole('link', { name: `${scheduleMonthLabel} 일정 등록하기` }).click()
+    await adminPage.getByRole('link', { name: '2일 일정 등록하기' }).click()
     await expect(adminPage).toHaveURL(`/admin/schedules/new?month=${scheduleMonth}`)
     await expect(adminPage.getByRole('heading', { name: '2099년 1월 일정 등록' })).toBeVisible()
 
