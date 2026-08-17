@@ -20,7 +20,7 @@ flowchart LR
 ## 권장 예시
 
 ```tsx
-// app/(worker)/schedule/page.tsx
+// src/app/(worker)/schedule/page.tsx
 import { ScheduleView } from '@/features/schedule/views/schedule-view'
 
 export default function SchedulePage() {
@@ -29,7 +29,7 @@ export default function SchedulePage() {
 ```
 
 ```ts
-// features/schedule/hooks/use-schedule-application-form.ts
+// src/features/schedule/hooks/use-schedule-application-form.ts
 'use client'
 
 import { useState } from 'react'
@@ -53,7 +53,7 @@ export function useScheduleApplicationForm() {
 ```
 
 ```ts
-// features/schedule/actions/apply-schedule.ts
+// src/features/schedule/actions/apply-schedule.ts
 'use server'
 
 import { applyScheduleController } from '@/features/schedule/controllers/apply-schedule-controller'
@@ -68,28 +68,28 @@ export async function applySchedule(input: unknown) {
 ## 금지 예시
 
 ```tsx
-// app/(worker)/schedule/page.tsx
+// src/app/(worker)/schedule/page.tsx
 import { createClient } from '@/shared/supabase/server'
 
 // 페이지가 Repository나 Supabase를 직접 호출하지 않는다.
 ```
 
 ```ts
-// features/schedule/actions/apply-schedule.ts
+// src/features/schedule/actions/apply-schedule.ts
 import { saveApplication } from '@/features/schedule/repositories/schedule-repository'
 
 // Action은 Repository를 직접 호출하지 않고 Controller를 경유한다.
 ```
 
 ```ts
-// features/schedule/hooks/use-schedule-application-form.ts
+// src/features/schedule/hooks/use-schedule-application-form.ts
 import { saveApplication } from '@/features/schedule/repositories/schedule-repository'
 
 // Hook도 View와 동일하게 Repository·Supabase를 직접 호출하지 않는다.
 ```
 
 ```ts
-// shared/ui/button/button.tsx
+// src/shared/ui/button/button.tsx
 import type { Schedule } from '@/features/schedule/domain/schedule'
 
 // shared UI는 기능 도메인 타입을 알지 않는다.
@@ -99,8 +99,8 @@ import type { Schedule } from '@/features/schedule/domain/schedule'
 
 `npm run check:architecture`는 다음 대표 위반을 검사한다.
 
-- `shared`에서 `app` 또는 `features`를 참조하는 import
-- `app`에서 Supabase, Controller, Domain, Repository를 직접 참조하는 import
+- `src/shared`에서 `src/app` 또는 `src/features`를 참조하는 import
+- `src/app`에서 Supabase, Controller, Domain, Repository를 직접 참조하는 import
 - Action에서 Domain, Repository, Supabase를 직접 참조하는 import
 - 한 feature에서 다른 feature의 내부 파일을 직접 참조하는 import
 - Client Component에서 서버 전용 모듈을 참조하는 import

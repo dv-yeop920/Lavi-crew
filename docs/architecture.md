@@ -40,33 +40,46 @@ flowchart LR
 ## 폴더 구조
 
 ```text
-app/
-├─ (auth)/                 # 로그인 · 회원가입
-├─ (worker)/               # 알바 전용 화면
-├─ (admin)/admin/          # 관리자 전용 화면
-└─ api/                    # 웹훅 · 외부 HTTP 엔드포인트
-
-features/
-├─ schedule/
-│  ├─ views/
-│  ├─ hooks/
-│  ├─ actions/
-│  ├─ controllers/
-│  ├─ repositories/
+src/
+├─ app/                    # 라우트, 레이아웃, 페이지 조합
+│  ├─ (auth)/              # 인증 화면
+│  ├─ (worker)/            # 알바 전용 화면
+│  ├─ admin/               # 관리자 전용 화면
+│  └─ api/                 # 외부 HTTP 엔드포인트
+├─ features/               # 기능별 VAC 구조
+│  ├─ auth/
+│  ├─ dashboard/
+│  ├─ management/
+│  ├─ notice/
+│  ├─ notification/
+│  ├─ payroll/
+│  ├─ profile/
+│  └─ schedule/
+│     ├─ views/
+│     ├─ hooks/
+│     ├─ actions/
+│     ├─ controllers/
+│     ├─ repositories/
+│     ├─ domain/
+│     ├─ schemas/
+│     ├─ components/
+│     ├─ adapters/
+│     └─ lib/
+├─ shared/                 # 기능 비의존 공통 코드
+│  ├─ auth/
 │  ├─ domain/
-│  ├─ schemas/
-│  └─ components/
-├─ attendance/
-├─ payroll/
-├─ notice/
-├─ worker-management/
-└─ invitation/
+│  ├─ forms/
+│  ├─ lib/
+│  ├─ styles/
+│  ├─ supabase/
+│  ├─ types/
+│  └─ ui/
+└─ proxy.ts                # 요청 단계 인증·리다이렉트 경계
 
-shared/
-├─ auth/
-├─ supabase/
-├─ ui/
-└─ lib/
+public/                    # 정적 자산
+scripts/                   # 시드·검사·E2E 실행 도구
+supabase/                  # 마이그레이션·RLS·RPC·DB 테스트
+docs/                      # 요구사항·설계·ADR·운영 문서
 ```
 
 화면에 보이는 인원·공지·일정은 모두 Supabase 조회 결과다. 초기 구성원은 `scripts/seed-crew-members.mjs`가 Auth Admin API로 실제 인증 계정과 `public.profiles` 행을 만들어 채우며, 이후 모든 배정·출석·급여는 실제 UUID를 통해 RLS가 적용된 경로로만 저장한다.
@@ -90,7 +103,7 @@ shared/
 ### Supabase 스키마와 타입
 
 - `supabase/migrations/`의 파일명과 버전은 원격 `supabase_migrations.schema_migrations` 이력과 동일하게 유지한다. 이미 적용된 마이그레이션의 SQL은 수정하지 않고 후속 마이그레이션으로 보정한다.
-- `shared/supabase/database.types.ts`는 연결된 원격 프로젝트에서 생성한 타입이다. 테이블, enum, RPC 시그니처가 바뀌면 같은 변경에서 다시 생성한다.
+- `src/shared/supabase/database.types.ts`는 연결된 원격 프로젝트에서 생성한 타입이다. 테이블, enum, RPC 시그니처가 바뀌면 같은 변경에서 다시 생성한다.
 - `@supabase/supabase-js`와 `@supabase/ssr`는 정확한 버전을 고정하고 `package-lock.json`을 함께 갱신한다.
 - 2026년 Data API 노출 정책 변경에 대비해 `anon`과 `authenticated`의 테이블 권한을 마이그레이션에서 명시한다. RLS와 테이블 `GRANT`를 서로 다른 보안 계층으로 취급한다.
 - 로컬 검증은 `npm run db:start` → `npm run db:reset` → `npm run test:db` 순서로 실행한다. DB E2E는 clean local 전용이며 fixture를 단일 트랜잭션에서 생성·검증·롤백한다. 연결된 원격 DB에는 이 명령을 실행하지 않는다.

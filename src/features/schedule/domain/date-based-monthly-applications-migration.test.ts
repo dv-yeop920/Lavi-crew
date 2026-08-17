@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest'
 
 const migration = readFileSync(
   new URL(
-    '../../../supabase/migrations/20260730121847_date_based_monthly_applications.sql',
+    '../../../../supabase/migrations/20260730121847_date_based_monthly_applications.sql',
     import.meta.url,
   ),
   'utf8',
@@ -14,7 +14,7 @@ const publishWrapper = migration.slice(
 )
 const immutablePeriodMigration = readFileSync(
   new URL(
-    '../../../supabase/migrations/20260730125925_prevent_published_period_reopen.sql',
+    '../../../../supabase/migrations/20260730125925_prevent_published_period_reopen.sql',
     import.meta.url,
   ),
   'utf8',

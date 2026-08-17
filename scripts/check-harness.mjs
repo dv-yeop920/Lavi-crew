@@ -111,7 +111,7 @@ for (const claudeAgent of claudeAgents) {
   }
 }
 
-for (const root of ['app', 'features', 'shared', 'docs', 'scripts', '.claude']) {
+for (const root of ['src', 'docs', 'scripts', '.claude']) {
   for (const path of walk(resolve(repositoryRoot, root))) {
     if (forbiddenArtifactName.test(basename(path))) {
       errors.push(`임시 또는 대체 작업 파일을 정리하세요: ${projectPath(path)}`)

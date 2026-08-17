@@ -48,8 +48,8 @@
 아직 생성되지 않은 디렉토리는 기능 구현 시 아래 목표 구조에 맞춰 만든다.
 
 ```text
-app/                       # 라우트, 레이아웃, 페이지 조합
-features/<feature>/        # 기능별 VAC, 스키마, 기능 컴포넌트
+src/app/                   # 라우트, 레이아웃, 페이지 조합
+src/features/<feature>/    # 기능별 VAC, 스키마, 기능 컴포넌트
   views/
   hooks/
   actions/
@@ -58,10 +58,10 @@ features/<feature>/        # 기능별 VAC, 스키마, 기능 컴포넌트
   repositories/
   schemas/
   components/
-shared/auth/               # 공통 인증·역할 확인
-shared/supabase/           # Supabase 클라이언트와 서버 연결
-shared/ui/                 # 도메인 비의존 공통 UI
-shared/lib/                # 도메인 비의존 순수 유틸리티
+src/shared/auth/           # 공통 인증·역할 확인
+src/shared/supabase/       # Supabase 클라이언트와 서버 연결
+src/shared/ui/             # 도메인 비의존 공통 UI
+src/shared/lib/            # 도메인 비의존 순수 유틸리티
 docs/                      # 기획·아키텍처 문서
   decisions/               # 기술 결정과 대안(ADR)
   conventions/             # 구체적인 구현 예시
@@ -69,9 +69,9 @@ docs/                      # 기획·아키텍처 문서
   failures/                # 실패한 접근과 현재 대안
 ```
 
-- `app`에는 업무 규칙이나 Supabase 쓰기 쿼리를 넣지 않는다.
-- 기능에 종속된 코드는 `features/<feature>`에 둔다.
-- `shared`는 `app`이나 `features`를 import하지 않는다.
+- `src/app`에는 업무 규칙이나 Supabase 쓰기 쿼리를 넣지 않는다.
+- 기능에 종속된 코드는 `src/features/<feature>`에 둔다.
+- `src/shared`는 `src/app`이나 `src/features`를 import하지 않는다.
 - 기능 간에 상대 기능의 내부 파일을 직접 import하지 않는다. 공통 의미가 확인된 타입과 UI만 `shared`로 승격한다.
 - 하위 디렉토리에 별도 `AGENTS.md`를 추가할 때는 그 영역의 예외만 기록하고 루트 규칙을 복사하지 않는다.
 - `scripts/check-architecture.mjs`가 감지하는 경계 위반은 예외 처리로 우회하지 말고 구조를 바로잡는다. 검사기가 아직 감지하지 못한다는 이유로 문서의 경계를 어겨도 되는 것은 아니다.
@@ -86,7 +86,7 @@ View → Hook → Action → Controller → Domain / Repository → Supabase
 ```
 
 - View: 표시, 레이아웃, 입력 마크업만 담당한다. Supabase 쓰기와 업무 규칙을 금지한다. 로컬 상태·파생 계산·이벤트 핸들러가 얽히면 Hook으로 추출한다. 단일 상태 토글처럼 사소한 로컬 상태까지 강제로 추출하지 않는다.
-- Hook: `features/<feature>/hooks`에 두는 커스텀 React 훅으로 View의 로컬 상태, 파생 계산, 이벤트 핸들러, 브라우저 전용 API 접근을 담당한다. Action 호출은 할 수 있지만 Supabase 쓰기 직접 호출과 업무 규칙 판단은 View와 동일하게 금지한다(`docs/decisions/013-view-hook-separation.md`).
+- Hook: `src/features/<feature>/hooks`에 두는 커스텀 React 훅으로 View의 로컬 상태, 파생 계산, 이벤트 핸들러, 브라우저 전용 API 접근을 담당한다. Action 호출은 할 수 있지만 Supabase 쓰기 직접 호출과 업무 규칙 판단은 View와 동일하게 금지한다(`docs/decisions/013-view-hook-separation.md`).
 - Action: 입력 수신, 스키마 검증, Controller 호출, 캐시 갱신만 담당한다.
 - Controller: 역할 확인, 유스케이스 조합, Domain·Repository·Adapter 호출을 담당한다.
 - Domain: DB, React, Next.js, 외부 API에 의존하지 않는 순수 로직만 둔다.
@@ -97,11 +97,11 @@ View → Hook → Action → Controller → Domain / Repository → Supabase
 ## 6. 디자인과 공통 컴포넌트
 
 - 시각 규칙은 `Design.md`를 단일 기준으로 사용한다.
-- `Design.md`의 FSD 경로 예시보다 이 문서와 `docs/architecture.md`의 실제 구조를 우선한다.
+- `Design.md`의 FSD 경로 예시보다 이 문서와 `docs/architecture.md`의 실제 `src` 구조를 우선한다.
 - 정적 스타일은 `*.css.ts`에 작성한다. 런타임 계산이 필요한 값 외에는 인라인 스타일을 사용하지 않는다.
 - 컴포넌트에서는 Atomic token이나 HEX 값 대신 Semantic token을 사용한다.
-- 버튼, 입력, 배지처럼 도메인 의미가 없는 UI만 `shared/ui/<component>/`에 둔다.
-- 스케줄 카드, 급여 요약처럼 업무 의미를 아는 UI는 `features/<feature>/components`에 둔다.
+- 버튼, 입력, 배지처럼 도메인 의미가 없는 UI만 `src/shared/ui/<component>/`에 둔다.
+- 스케줄 카드, 급여 요약처럼 업무 의미를 아는 UI는 `src/features/<feature>/components`에 둔다.
 - 디자인 시스템 기본 요소이거나 두 기능 이상에서 같은 의미와 동작으로 사용될 때만 공통 UI로 승격한다.
 - 공통 UI는 Supabase, Server Action, Controller, 기능 도메인 타입에 의존하지 않는다. 값, 표준 HTML 속성, 콜백을 입력으로 받는다.
 - 공통 UI는 Server Component 호환을 기본으로 하고 상호작용이 필요한 가장 작은 파일에만 `'use client'`를 선언한다.

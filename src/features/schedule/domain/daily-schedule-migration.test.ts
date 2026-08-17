@@ -4,14 +4,14 @@ import { describe, expect, it } from 'vitest'
 
 const migration = readFileSync(
   new URL(
-    '../../../supabase/migrations/20260730121911_daily_schedule_and_attendance_mutations.sql',
+    '../../../../supabase/migrations/20260730121911_daily_schedule_and_attendance_mutations.sql',
     import.meta.url,
   ),
   'utf8',
 )
 const attendanceLegacy = readFileSync(
   new URL(
-    '../../../supabase/migrations/20260724111735_harden_worker_skills_and_attendance.sql',
+    '../../../../supabase/migrations/20260724111735_harden_worker_skills_and_attendance.sql',
     import.meta.url,
   ),
   'utf8',

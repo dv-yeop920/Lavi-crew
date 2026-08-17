@@ -3,12 +3,16 @@ import { dirname, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const repositoryRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const sourceRoots = ['app', 'features', 'shared']
+const sourceRoots = ['src/app', 'src/features', 'src/shared']
 const sourceExtensions = new Set(['.ts', '.tsx', '.js', '.jsx', '.mjs'])
 const violations = []
 
 function toProjectPath(path) {
   return relative(repositoryRoot, path).split(sep).join('/')
+}
+
+function toSourcePath(path) {
+  return path.startsWith('src/') ? path.slice('src/'.length) : path
 }
 
 function collectSourceFiles(directory) {
@@ -49,7 +53,7 @@ function collectImports(content) {
 
 function resolveProjectImport(file, source) {
   if (source.startsWith('@/')) {
-    return source.slice(2)
+    return `src/${source.slice(2)}`
   }
 
   if (source.startsWith('.')) {
@@ -67,18 +71,20 @@ function addViolation(file, content, source, rule) {
 
 function inspectFile(file) {
   const projectPath = toProjectPath(file)
+  const sourcePath = toSourcePath(projectPath)
   const content = readFileSync(file, 'utf8')
   const isClientModule =
     /^\s*(?:(?:\/\*[\s\S]*?\*\/|\/\/[^\n]*)(?:\r?\n|\s))*['"]use client['"];?/.test(content)
-  const isDomainModule = /(^|\/)domain\//.test(projectPath)
-  const isActionModule = /(^|\/)actions\//.test(projectPath)
-  const featureMatch = projectPath.match(/^features\/([^/]+)\//)
+  const isDomainModule = /(^|\/)domain\//.test(sourcePath)
+  const isActionModule = /(^|\/)actions\//.test(sourcePath)
+  const featureMatch = sourcePath.match(/^features\/([^/]+)\//)
 
   for (const source of collectImports(content)) {
-    const importedPath = resolveProjectImport(file, source)
+    const resolvedImportPath = resolveProjectImport(file, source)
+    const importedPath = resolvedImportPath ? toSourcePath(resolvedImportPath) : null
 
     if (
-      projectPath.startsWith('shared/') &&
+      sourcePath.startsWith('shared/') &&
       importedPath &&
       /^(app|features)\//.test(importedPath)
     ) {
@@ -86,7 +92,7 @@ function inspectFile(file) {
     }
 
     if (
-      projectPath.startsWith('app/') &&
+      sourcePath.startsWith('app/') &&
       importedPath &&
       (/^shared\/supabase\//.test(importedPath) ||
         /^features\/[^/]+\/(controllers|domain|repositories)\//.test(importedPath))
