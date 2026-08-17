@@ -18,6 +18,7 @@ type ScheduleDraftLike = ScheduleRegistrationDraftEntry & { date: string }
 
 type UseScheduleRegistrationDraftOptions<Draft extends ScheduleDraftLike> = {
   month: string
+  onRestore?: (restoredDates: string[]) => void
   setDrafts: Dispatch<SetStateAction<Draft[]>>
 }
 
@@ -28,6 +29,7 @@ type UseScheduleRegistrationDraftOptions<Draft extends ScheduleDraftLike> = {
  */
 export function useScheduleRegistrationDraft<Draft extends ScheduleDraftLike>({
   month,
+  onRestore,
   setDrafts,
 }: UseScheduleRegistrationDraftOptions<Draft>) {
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
@@ -43,11 +45,15 @@ export function useScheduleRegistrationDraft<Draft extends ScheduleDraftLike>({
       setLastSavedAt(record?.savedAt ?? null)
       if (!record) return
       setDrafts((current) => mergeRestoredScheduleRegistrationDrafts(current, record.drafts))
+      const enabledDates = record.drafts
+        .filter((draft) => draft.isEnabled)
+        .map((draft) => draft.date)
+      if (enabledDates.length > 0) onRestore?.(enabledDates)
     })
     return () => {
       isCancelled = true
     }
-  }, [month, setDrafts])
+  }, [month, onRestore, setDrafts])
 
   function saveMonthDrafts(drafts: Draft[]) {
     const enabledDrafts = drafts.filter((draft) => draft.isEnabled)

@@ -95,8 +95,10 @@ export function AdminScheduleRegistrationView({
   const { month, period, registeredSchedules, workers } = viewModel
   const storedDeadline = getStoredApplicationDeadline(period.applicationDeadline)
   const [drafts, setDrafts] = useState(() => selectedDates.map(createDraft))
+  const [expandedDates, setExpandedDates] = useState<Set<string>>(new Set())
   const { clearDraft, lastSavedAt, saveMonthDrafts } = useScheduleRegistrationDraft({
     month,
+    onRestore: (dates) => setExpandedDates(new Set(dates)),
     setDrafts,
   })
   const { dismissToast, showToast, toasts } = useToast()
@@ -123,6 +125,20 @@ export function AdminScheduleRegistrationView({
     if (isConfirming) confirmationTitleRef.current?.focus()
   }, [isConfirming])
 
+  const errorDates = (() => {
+    if (!state || state.ok || !state.fieldErrors) return new Set<string>()
+    const dates = new Set<string>()
+    for (const path of Object.keys(state.fieldErrors)) {
+      const match = path.match(/^dates\.(\d{4}-\d{2}-\d{2})\./)
+      if (match) dates.add(match[1])
+    }
+    return dates
+  })()
+
+  function isDateExpanded(date: string) {
+    return expandedDates.has(date) || errorDates.has(date)
+  }
+
   useEffect(() => {
     let isCancelled = false
     queueMicrotask(() => {
@@ -133,6 +149,23 @@ export function AdminScheduleRegistrationView({
       isCancelled = true
     }
   }, [selectedDates])
+
+  function expandDate(date: string) {
+    setExpandedDates((current) => new Set(current).add(date))
+  }
+
+  function collapseDate(date: string) {
+    setExpandedDates((current) => {
+      const next = new Set(current)
+      next.delete(date)
+      return next
+    })
+  }
+
+  function enableAndExpand(date: string) {
+    updateDraft(date, { isEnabled: true })
+    expandDate(date)
+  }
 
   function updateDraft(date: string, changes: Partial<ScheduleDraft>) {
     setDrafts((current) =>
@@ -291,12 +324,16 @@ export function AdminScheduleRegistrationView({
                       <div className={layout.row}>
                         <h3 id={`schedule-${draft.date}`}>{formatDate(draft.date)}</h3>
                         {draft.isEnabled ? (
-                          <StatusBadge tone="warning">작성 중</StatusBadge>
+                          <>
+                            <StatusBadge tone="warning">작성 중</StatusBadge>
+                            {!isDateExpanded(draft.date) ? (
+                              <Button variant="secondary" onClick={() => expandDate(draft.date)}>
+                                펼치기
+                              </Button>
+                            ) : null}
+                          </>
                         ) : (
-                          <Button
-                            variant="secondary"
-                            onClick={() => updateDraft(draft.date, { isEnabled: true })}
-                          >
+                          <Button variant="secondary" onClick={() => enableAndExpand(draft.date)}>
                             일정 설정
                           </Button>
                         )}
@@ -306,7 +343,7 @@ export function AdminScheduleRegistrationView({
                           {dateError}
                         </p>
                       ) : null}
-                      {draft.isEnabled ? (
+                      {isDateExpanded(draft.date) ? (
                         <>
                           <div className={styles.scheduleInfoGrid}>
                             <label className={styles.fieldLabel}>
@@ -420,10 +457,7 @@ export function AdminScheduleRegistrationView({
                             <Button disabled={isPending} onClick={handleSaveMonthDrafts}>
                               임시 저장
                             </Button>
-                            <Button
-                              variant="secondary"
-                              onClick={() => updateDraft(draft.date, { isEnabled: false })}
-                            >
+                            <Button variant="secondary" onClick={() => collapseDate(draft.date)}>
                               접기
                             </Button>
                           </div>
