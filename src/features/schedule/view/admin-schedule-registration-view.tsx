@@ -10,7 +10,10 @@ import {
   getStoredApplicationDeadline,
 } from '@/features/schedule/model/application-period'
 import { reconcileDateDrafts } from '@/features/schedule/model/draft-reconciliation'
-import { createRegistrationSummary } from '@/features/schedule/model/monthly-registration'
+import {
+  createRegistrationSummary,
+  isMonthlyRegistrationReady,
+} from '@/features/schedule/model/monthly-registration'
 import type {
   AssignmentWorkerOption,
   MonthRegistrationViewModel,
@@ -260,6 +263,7 @@ export function AdminScheduleRegistrationView({
     })),
   }
   const summary = createRegistrationSummary(payload.schedules)
+  const isRegistrationReady = isMonthlyRegistrationReady(month, payload.schedules)
   const fieldErrors = state?.ok ? undefined : state?.fieldErrors
   const errorEntries = Object.entries(fieldErrors ?? {}).flatMap(([path, messages]) =>
     (messages ?? []).map((message) => ({ message, path })),
@@ -498,7 +502,7 @@ export function AdminScheduleRegistrationView({
           <div className={layout.wrapEnd}>
             <Button
               ref={reviewButtonRef}
-              disabled={!canPublish || enabledDrafts.length === 0 || isPending}
+              disabled={!canPublish || !isRegistrationReady || isPending}
               onClick={() => setIsConfirming(true)}
             >
               스케줄 확정

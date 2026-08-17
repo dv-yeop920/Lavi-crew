@@ -4,6 +4,7 @@ import {
   createRegistrationSummary,
   getScheduleSummaries,
   getUnregisteredDates,
+  isMonthlyRegistrationReady,
   type ScheduleInput,
   validateMonthlyRegistration,
 } from './monthly-registration'
@@ -102,6 +103,26 @@ describe('validateMonthlyRegistration', () => {
 })
 
 describe('monthly schedule registration view rules', () => {
+  it('enables confirmation only when every active schedule has a complete valid assignment', () => {
+    const completeSchedule = validSchedule()
+    const incompleteSchedule = validSchedule()
+    incompleteSchedule.workDate = '2026-08-02'
+    incompleteSchedule.assignments[0].workerId = ''
+
+    expect(isMonthlyRegistrationReady('2026-08', [])).toBe(false)
+    expect(isMonthlyRegistrationReady('2026-08', [completeSchedule, incompleteSchedule])).toBe(
+      false,
+    )
+
+    incompleteSchedule.assignments[0].workerId = workers[10]
+    expect(isMonthlyRegistrationReady('2026-08', [completeSchedule, incompleteSchedule])).toBe(true)
+
+    incompleteSchedule.assignments[1].workerId = workers[10]
+    expect(isMonthlyRegistrationReady('2026-08', [completeSchedule, incompleteSchedule])).toBe(
+      false,
+    )
+  })
+
   it('excludes every existing shift date including cancelled history', () => {
     expect(getUnregisteredDates('2026-08', ['2026-08-01', '2026-08-02'])).not.toContain(
       '2026-08-01',

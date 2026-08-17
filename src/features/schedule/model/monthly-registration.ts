@@ -50,6 +50,16 @@ export function createRegistrationSummary(schedules: ScheduleInput[]) {
   }
 }
 
+export function isMonthlyRegistrationReady(month: string, schedules: ScheduleInput[]) {
+  return (
+    schedules.length > 0 &&
+    schedules.every((schedule) =>
+      schedule.assignments.every((assignment) => assignment.workerId.length > 0),
+    ) &&
+    validateMonthlyRegistration(month, schedules).length === 0
+  )
+}
+
 export function getScheduleSummaries(
   shifts: Array<{
     cancellation_reason: string | null

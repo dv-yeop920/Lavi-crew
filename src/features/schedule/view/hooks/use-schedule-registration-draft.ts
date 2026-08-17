@@ -1,6 +1,6 @@
 'use client'
 
-import { type Dispatch, type SetStateAction, useCallback, useEffect, useState } from 'react'
+import { type Dispatch, type SetStateAction, useCallback, useEffect, useRef, useState } from 'react'
 
 import {
   readScheduleRegistrationDraft,
@@ -33,6 +33,11 @@ export function useScheduleRegistrationDraft<Draft extends ScheduleDraftLike>({
   setDrafts,
 }: UseScheduleRegistrationDraftOptions<Draft>) {
   const [lastSavedAt, setLastSavedAt] = useState<string | null>(null)
+  const onRestoreRef = useRef(onRestore)
+
+  useEffect(() => {
+    onRestoreRef.current = onRestore
+  }, [onRestore])
 
   useEffect(() => {
     let isCancelled = false
@@ -48,12 +53,12 @@ export function useScheduleRegistrationDraft<Draft extends ScheduleDraftLike>({
       const enabledDates = record.drafts
         .filter((draft) => draft.isEnabled)
         .map((draft) => draft.date)
-      if (enabledDates.length > 0) onRestore?.(enabledDates)
+      if (enabledDates.length > 0) onRestoreRef.current?.(enabledDates)
     })
     return () => {
       isCancelled = true
     }
-  }, [month, onRestore, setDrafts])
+  }, [month, setDrafts])
 
   function saveMonthDrafts(drafts: Draft[]) {
     const enabledDrafts = drafts.filter((draft) => draft.isEnabled)
